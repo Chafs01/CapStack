@@ -1,0 +1,3011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CapStack | Real Estate Underwriting</title>
+<meta name="description" content="Generate institutional-quality real estate pro formas in minutes. Full DCF analysis, IRR, sensitivity tables, and Excel export for multifamily, commercial, mixed-use, and development deals.">
+<meta property="og:title" content="CapStack | Real Estate Underwriting">
+<meta property="og:description" content="Input deal assumptions, get a full investment analysis: 10-year cash flows, IRR, equity multiple, DSCR, sensitivity tables, and Excel export.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0c1322">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='a' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%235a76f6'/%3E%3Cstop offset='1' stop-color='%233a5bf0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='%230c1322'/%3E%3Crect x='16' y='40' width='32' height='7' rx='2' fill='%234a5a85'/%3E%3Crect x='16' y='29' width='32' height='7' rx='2' fill='%236b7aa3'/%3E%3Crect x='16' y='18' width='32' height='7' rx='2' fill='url(%23a)'/%3E%3C/svg%3E">
+<script>window.process={env:{NODE_ENV:'production'}};window.global=window;</script>
+<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js"></script>
+<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.js"></script>
+<script>if(!window.PropTypes){document.write('<script crossorigin="anonymous" src="https:\/\/unpkg.com\/prop-types@15.8.1\/prop-types.min.js"><\/script>');}if(!window.Recharts){document.write('<script crossorigin="anonymous" src="https:\/\/unpkg.com\/recharts@2.12.7\/umd\/Recharts.js"><\/script>');}</script>
+<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --ink:#0c1322; --ink2:#121a2e; --ink3:#1a2540;
+  --bg:#eef1f7; --bg2:#e6eaf3;
+  --surface:#ffffff; --surface2:#f7f9fd;
+  --border:#e2e6f0; --border2:#d3d9e8;
+  --accent:#3a5bf0; --accent2:#5a76f6; --accent-dk:#2742c4; --accent-tint:#eef1fe;
+  --text:#0c1322; --muted:#5a6478; --muted2:#8a93a6;
+  --pos:#0e9f6e; --neg:#e02424; --warn:#c27803; --purple:#7a5195;
+  --shadow:0 1px 2px rgba(12,19,34,.04),0 4px 16px rgba(12,19,34,.06);
+  --shadow-lg:0 8px 40px rgba(12,19,34,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sora',-apple-system,system-ui,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif;letter-spacing:-.02em}
+.mono,.num{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.grad-text{color:var(--accent)}
+.glass{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow)}
+.input-f{background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:11px 13px;color:var(--text);width:100%;transition:border-color .15s,box-shadow .15s;font-size:14px;outline:none;font-family:'Sora',sans-serif}
+.input-f:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(58,91,240,.12)}
+.input-f::placeholder{color:var(--muted2)}
+select.input-f{cursor:pointer;padding-top:0;padding-bottom:0;line-height:normal}
+.btn-p{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:11px 24px;font-weight:600;cursor:pointer;transition:all .15s;font-size:14px;font-family:'Sora',sans-serif;box-shadow:0 1px 2px rgba(58,91,240,.25)}
+.btn-p:hover:not(:disabled){background:var(--accent-dk);box-shadow:0 4px 14px rgba(58,91,240,.35);transform:translateY(-1px)}
+.btn-p:disabled{opacity:.45;cursor:not-allowed}
+.btn-s{background:var(--surface);color:var(--accent);border:1px solid var(--border2);border-radius:8px;padding:10px 22px;font-weight:600;cursor:pointer;transition:all .15s;font-size:14px;font-family:'Sora',sans-serif}
+.btn-s:hover:not(:disabled){border-color:var(--accent);background:var(--accent-tint)}
+.btn-s:disabled{opacity:.45;cursor:not-allowed;border-color:var(--border);color:var(--muted2)}
+/* segmented asset selector */
+.seg-wrap{display:flex;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:6px;box-shadow:var(--shadow)}
+.seg{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:14px 8px;border-radius:8px;cursor:pointer;transition:all .18s;border:1px solid transparent;background:transparent;min-width:0}
+.seg:hover{background:var(--surface)}
+.seg .seg-abbr{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.5px;padding:4px 9px;border-radius:6px;transition:all .18s}
+.seg .seg-label{font-size:12.5px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.seg.on{background:var(--ink);border-color:var(--ink)}
+.seg.on .seg-label{color:#fff}
+.asset-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 14px;cursor:pointer;transition:all .15s;text-align:center}
+.asset-card:hover{border-color:var(--accent);box-shadow:var(--shadow)}
+.asset-card.sel{border-color:var(--accent);background:var(--accent-tint)}
+.kpi{background:var(--surface);border:0;border-right:1px solid var(--border);border-bottom:1px solid var(--border);border-radius:0;padding:18px 12px;text-align:center;position:relative}
+.kpi:hover{background:var(--surface2)}
+.kpi .kpi-v{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+.step-dot{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;transition:all .3s;font-family:'JetBrains Mono',monospace}
+.step-dot.done{background:var(--pos);color:#fff}
+.step-dot.act{background:var(--accent);color:#fff;box-shadow:0 0 0 4px rgba(58,91,240,.15)}
+.step-dot.idle{background:var(--bg2);color:var(--muted2)}
+.step-line{flex:1;height:2px;background:var(--border2);transition:background .3s;margin:0 6px;margin-bottom:18px}
+.step-line.done{background:var(--pos)}
+.tab{padding:8px 18px;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid transparent;font-family:'Sora',sans-serif}
+.tab.on{background:var(--ink);color:#fff}
+.tab.off{background:transparent;color:var(--muted);border-color:var(--border2)}
+.tab.off:hover{background:var(--surface);color:var(--text)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{background:var(--surface2);color:var(--muted);font-weight:600;padding:11px 14px;text-align:right;white-space:nowrap;font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+.tbl th:first-child{text-align:left;border-radius:10px 0 0 0}
+.tbl td{padding:9px 14px;text-align:right;border-bottom:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;font-size:12.5px}
+.tbl td:first-child{text-align:left;font-weight:500;color:var(--muted);font-family:'Sora',sans-serif}
+.tbl tr:hover td{background:var(--surface2)}
+.tbl .sub td{background:var(--accent-tint);color:var(--text);font-weight:700}
+.tbl .sec td{background:var(--bg2);color:var(--muted);font-size:10.5px;text-align:center;letter-spacing:.08em;text-transform:uppercase;font-family:'Sora',sans-serif}
+.pos{color:var(--pos)!important}
+.neg{color:var(--neg)!important}
+.warn{color:var(--warn)!important}
+.sect-lbl{font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;margin-top:4px;display:flex;align-items:center;gap:10px;text-transform:uppercase;letter-spacing:.06em;font-family:'Space Grotesk',sans-serif}
+.sect-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
+.upload-z{border:1.5px dashed var(--border2);border-radius:12px;padding:36px;text-align:center;cursor:pointer;transition:all .15s;background:var(--surface2)}
+.upload-z:hover,.upload-z.dov{border-color:var(--accent);background:var(--accent-tint)}
+.prog{height:5px;background:var(--bg2);border-radius:3px;overflow:hidden;margin-top:28px}
+.prog-f{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;transition:width .4s}
+.sens-cell{font-weight:700;text-align:center;border-radius:6px;padding:8px 12px;font-size:13px;font-family:'JetBrains Mono',monospace}
+.tooltip-w{position:relative}
+.tt{visibility:hidden;position:absolute;bottom:115%;left:50%;transform:translateX(-50%);background:var(--ink);border-radius:8px;padding:7px 11px;font-size:11.5px;color:#fff;white-space:nowrap;z-index:200;pointer-events:none}
+.tooltip-w:hover .tt{visibility:visible}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fadeUp .3s cubic-bezier(.2,.7,.3,1)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin .8s linear infinite;display:inline-block}
+.dark-surface{background:var(--ink);color:#fff}
+.grid-bg{background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:32px 32px}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:5px}
+::-webkit-scrollbar-thumb:hover{background:var(--muted2)}
+input[type=range]{accent-color:var(--accent);width:100%}
+@media(max-width:760px){.g4{grid-template-columns:1fr 1fr!important}.g3{grid-template-columns:1fr!important}.g2{grid-template-columns:1fr!important}.seg-wrap{flex-wrap:wrap}.seg{flex:1 1 30%}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useMemo,useCallback,useRef,useEffect}=React;
+const RC=window.Recharts||{};
+const {BarChart,Bar,LineChart,Line,ComposedChart,AreaChart,Area,XAxis,YAxis,CartesianGrid,Tooltip,Legend,ResponsiveContainer}=RC;
+
+// ─── SUPABASE ─────────────────────────────────────────────────────────────
+const SUPA_URL='https://ebkfcnkoswdclwnqtwna.supabase.co';
+const SUPA_KEY='sb_publishable_6WblJ_u5DRvv-zMUAJnmnw_nlvv3TQR';
+const sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+
+// ─── FORMATTERS ───────────────────────────────────────────────────────────
+const f={
+  $:(n,compact=true)=>{if(n==null||isNaN(n))return'$—';const s=n<0;const a=Math.abs(n);if(compact){if(a>=1e9)return`${s?'-':''}$${(a/1e9).toFixed(2)}B`;if(a>=1e6)return`${s?'-':''}$${(a/1e6).toFixed(2)}M`;if(a>=1e3)return`${s?'-':''}$${(a/1e3).toFixed(0)}K`;}return`${s?'-$':'$'}${a.toLocaleString('en-US',{maximumFractionDigits:0})}`},
+  $f:(n)=>{if(n==null||isNaN(n))return'$—';return`${n<0?'-$':'$'}${Math.abs(n).toLocaleString('en-US',{maximumFractionDigits:0})}`},
+  pct:(n,d=1)=>{if(n==null||isNaN(n))return'—%';return`${(n*100).toFixed(d)}%`},
+  x:(n)=>{if(n==null||isNaN(n))return'—x';return`${n.toFixed(2)}x`},
+  n:(n,d=2)=>{if(n==null||isNaN(n))return'—';return n.toFixed(d)},
+};
+const pn=(v,fb=0)=>{const n=parseFloat(String(v||'').replace(/[$,%]/g,''));return isNaN(n)?fb:n};
+
+// ─── FINANCIAL ENGINE ─────────────────────────────────────────────────────
+function monthlyPmt(P,r_annual,yrs){
+  if(!P||P<=0)return 0;
+  if(!r_annual||r_annual<=0)return P/(yrs*12);
+  const r=r_annual/12,n=yrs*12;
+  return P*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
+}
+function loanBal(P,r_annual,yrs,months){
+  if(!P||P<=0)return 0;
+  if(!r_annual||r_annual<=0)return Math.max(0,P-(P/(yrs*12))*months);
+  const r=r_annual/12,n=yrs*12;
+  const pmt=monthlyPmt(P,r_annual,yrs);
+  return Math.max(0,P*Math.pow(1+r,months)-pmt*(Math.pow(1+r,months)-1)/r);
+}
+function calcIRR(cfs){
+  if(!cfs||cfs.length<2)return NaN;
+  const npvAt=r=>cfs.reduce((s,c,t)=>s+c/Math.pow(1+r,t),0);
+  let r=0.12,ok=false;
+  for(let i=0;i<600;i++){
+    let npv=0,d=0;
+    for(let t=0;t<cfs.length;t++){
+      const disc=Math.pow(1+r,t);
+      npv+=cfs[t]/disc;
+      d-=t*cfs[t]/(disc*(1+r));
+    }
+    if(Math.abs(d)<1e-12)break;
+    const nr=r-npv/d;
+    if(Math.abs(nr-r)<1e-8){r=nr;ok=true;break;}
+    r=Math.max(-0.99,Math.min(50,nr));
+  }
+  if(ok&&isFinite(r)&&Math.abs(npvAt(r))<1)return r;
+  let lo=-0.95,hi=10;
+  let fLo=npvAt(lo),fHi=npvAt(hi);
+  if(fLo*fHi>0)return isFinite(r)?r:NaN;
+  for(let i=0;i<200;i++){
+    const mid=(lo+hi)/2,fM=npvAt(mid);
+    if(Math.abs(fM)<1e-7)return mid;
+    if(fLo*fM<0){hi=mid;fHi=fM}else{lo=mid;fLo=fM}
+  }
+  return (lo+hi)/2;
+}
+function calcNPV(cfs,rate){
+  return cfs.reduce((s,c,t)=>s+c/Math.pow(1+rate,t),0);
+}
+
+function umGPI(m){return(m||[]).reduce((s,r)=>s+(+r.count||0)*(+r.rent||0)*12,0);}
+function rtGPI(r){return(r||[]).reduce((s,x)=>s+(+x.sf||0)*(+x.rentPerSF||0),0);}
+function getGPI(inp){
+  const t=(inp.assetType||'').toLowerCase();
+  const hasUM=inp.unitMix&&inp.unitMix.length;
+  const hasRT=inp.retailIncome&&inp.retailIncome.length;
+  const resGPI=hasUM?umGPI(inp.unitMix):(inp.numUnits||0)*(inp.avgRent||0)*12;
+  if(t==='multifamily'||t==='affordable')return resGPI;
+  if(t==='commercial')return(hasRT?rtGPI(inp.retailIncome):(inp.totalSF||0)*(inp.avgRentPerSF||0))+(inp.camIncome||0);
+  if(t==='mixed-use')return resGPI+(hasRT?rtGPI(inp.retailIncome):(inp.commercialSF||0)*(inp.commercialRentPerSF||0));
+  if(t==='development'){
+    if(hasUM)return resGPI;
+    if(inp.numUnits&&inp.avgRent)return(inp.numUnits||0)*(inp.avgRent||0)*12;
+    return(inp.stabilizedNOI||0)/0.52;
+  }
+  return 0;
+}
+function getOpEx(inp){
+  const gpi=getGPI(inp);
+  const vac=inp.vacancyRate||0;
+  const egi=gpi*(1-vac/100)+(inp.otherIncome||0);
+  return(inp.propertyTax||0)+(inp.insurance||0)+egi*(inp.managementFeePct||0)/100+(inp.maintenance||0)+(inp.utilities||0)+(inp.reserves||0)+(inp.administrative||0);
+}
+function getDevCost(inp){
+  const hard=(inp.grossBuildableSF||0)*(inp.hardCostPerSF||0);
+  const soft=hard*(inp.softCostsPct||0)/100;
+  const devFee=inp.developerFee||0;
+  return(inp.landCost||inp.purchasePrice||0)+hard+soft+devFee;
+}
+
+function calcLIHTC(inp,permLoan){
+  const land=inp.landCost||inp.purchasePrice||0;
+  const hard=(inp.grossBuildableSF||0)*(inp.hardCostPerSF||0);
+  const soft=hard*(inp.softCostsPct||0)/100;
+  const devFee=inp.developerFee||0;
+  const totalUses=land+hard+soft+devFee;
+  const ebPct=(inp.eligibleBasisPct!=null?inp.eligibleBasisPct:95)/100;
+  const eligibleBasis=(hard+soft+devFee)*ebPct;
+  const boostPct=inp.qctDda?130:100;
+  const boostedBasis=eligibleBasis*boostPct/100;
+  const af=(inp.affordablePct!=null?inp.affordablePct:100)/100;
+  const qualifiedBasis=boostedBasis*af;
+  const creditRate=(inp.creditRate!=null?inp.creditRate:(String(inp.creditType)==='4'?4:9))/100;
+  const annualCredit=qualifiedBasis*creditRate;
+  const tenYearCredits=annualCredit*10;
+  const creditPrice=inp.creditPrice!=null?inp.creditPrice:0.90;
+  const lihtcEquity=tenYearCredits*creditPrice;
+  const softSources=inp.softSources||0;
+  const beforeDefer=permLoan+lihtcEquity+softSources;
+  const gapBeforeDefer=totalUses-beforeDefer;
+  const maxDeferrable=devFee*((inp.maxDeferPct!=null?inp.maxDeferPct:100)/100);
+  const deferredFee=Math.max(0,Math.min(gapBeforeDefer,maxDeferrable));
+  const totalSources=beforeDefer+deferredFee;
+  const fundingGap=totalUses-totalSources;
+  const cashDevFee=devFee-deferredFee;
+  return{land,hard,soft,devFee,cashDevFee,totalUses,ebPct,eligibleBasis,boostPct,boostedBasis,
+    applicableFraction:af,qualifiedBasis,creditRate,annualCredit,tenYearCredits,creditPrice,
+    lihtcEquity,softSources,permLoan,gapBeforeDefer,deferredFee,maxDeferrable,totalSources,fundingGap};
+}
+
+// ─── EQUITY WATERFALL (LP / GP promote) ───────────────────────────────────
+// Standard real estate PE waterfall: return of capital + preferred return,
+// then tiered promote splits at LP IRR hurdles. Tiers are LP IRR bands; the
+// partnership cash in each band is split by the stated LP/GP share.
+function calcWaterfall(res,inp){
+  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const E=res.equity||0;
+  if(E<=0)return null;
+  const lpShare=(inp.lpSharePct!=null?inp.lpSharePct:90)/100;
+  const gpShare=1-lpShare;
+  const pref=(inp.prefRate!=null?inp.prefRate:8)/100;
+  // tiers: ascending LP IRR hurdles with LP share of cash in each band.
+  // Tier 1 = pref (pro-rata). Then promote tiers. Final tier = residual split.
+  const h2=(inp.hurdle2!=null?inp.hurdle2:12)/100;
+  const h3=(inp.hurdle3!=null?inp.hurdle3:15)/100;
+  const s1=lpShare;                                   // through pref: pro-rata
+  const s2=(inp.lpTier2!=null?inp.lpTier2:80)/100;    // pref -> h2
+  const s3=(inp.lpTier3!=null?inp.lpTier3:70)/100;    // h2 -> h3
+  const s4=(inp.lpTier4!=null?inp.lpTier4:60)/100;    // above h3
+  const tiers=[{h:pref,sL:s1},{h:h2,sL:s2},{h:h3,sL:s3}];
+  // partnership distributable cash each year (levered equity CF, positives only)
+  const cash=[];
+  for(let y=1;y<=hp;y++){
+    const r=res.rows[y-1];
+    let c=r?r.cfbt:0;
+    if(y===hp)c+=res.exit?res.exit.proceeds:0;
+    cash.push(Math.max(0,c));
+  }
+  // LP hurdle balances: amount LP must still receive to hit each hurdle.
+  const lpBal=tiers.map(()=>lpShare*E);   // LP contributed lpShare*E at t0
+  const lpDist=[], gpDist=[];
+  for(let y=0;y<hp;y++){
+    // accrue hurdle balances one year
+    for(let i=0;i<tiers.length;i++)lpBal[i]*=(1+tiers[i].h);
+    let avail=cash[y], lpY=0, gpY=0;
+    for(let i=0;i<tiers.length&&avail>1e-9;i++){
+      const room=Math.max(0,lpBal[i]);           // LP $ still needed to hit hurdle i
+      if(room<=1e-9)continue;
+      const tierCash=Math.min(avail, room/tiers[i].sL); // partnership cash; LP gets sL of it
+      const lpCut=tierCash*tiers[i].sL, gpCut=tierCash-lpCut;
+      lpY+=lpCut; gpY+=gpCut; avail-=tierCash;
+      for(let j=0;j<tiers.length;j++)lpBal[j]-=lpCut; // LP cash counts toward all hurdles
+    }
+    if(avail>1e-9){ // residual above top hurdle
+      lpY+=avail*s4; gpY+=avail*(1-s4);
+      for(let j=0;j<tiers.length;j++)lpBal[j]-=avail*s4;
+      avail=0;
+    }
+    lpDist.push(lpY); gpDist.push(gpY);
+  }
+  const lpEq=lpShare*E, gpEq=gpShare*E;
+  const lpFlows=[-lpEq,...lpDist], gpFlows=[-gpEq,...gpDist];
+  const lpTot=lpDist.reduce((a,b)=>a+b,0), gpTot=gpDist.reduce((a,b)=>a+b,0);
+  const lpIRR=calcIRR(lpFlows), gpIRR=calcIRR(gpFlows);
+  const gpPromote=gpTot-gpEq-(gpShare*(lpTot+gpTot)-gpEq); // GP take above its pro-rata share
+  return{
+    lpShare,gpShare,pref,tiers:[{label:'Preferred ('+(pref*100).toFixed(0)+'%)',sL:s1},
+      {label:(pref*100).toFixed(0)+'% to '+(h2*100).toFixed(0)+'%',sL:s2},
+      {label:(h2*100).toFixed(0)+'% to '+(h3*100).toFixed(0)+'%',sL:s3},
+      {label:'Above '+(h3*100).toFixed(0)+'%',sL:s4}],
+    lpEq,gpEq,lpTot,gpTot,lpDist,gpDist,
+    lpIRR,gpIRR,
+    lpEM:lpEq>0?lpTot/lpEq:0, gpEM:gpEq>0?gpTot/gpEq:0,
+    lpProfit:lpTot-lpEq, gpProfit:gpTot-gpEq,
+    gpPromote:Math.max(0,gpTot-gpShare*(lpTot+gpTot))
+  };
+}
+
+// ─── AFTER-TAX CASH FLOW ───────────────────────────────────────────────────
+// Depreciation shield on operating income, plus recapture and capital-gains
+// tax at sale, producing an after-tax levered IRR.
+function calcAfterTax(res,inp){
+  const t=(inp.assetType||'').toLowerCase();
+  if(t==='affordable')return null;
+  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const isDev=t==='development';
+  const costBasis=res.totalCost||0;
+  const land=isDev?(inp.landCost||inp.purchasePrice||0):((inp.purchasePrice||0)*((inp.landPct!=null?inp.landPct:20)/100));
+  const deprBasis=Math.max(0,costBasis-land);
+  const depYears=inp.depYears!=null?inp.depYears:(t==='commercial'?39:27.5);
+  const annualDep=depYears>0?deprBasis/depYears:0;
+  const taxRate=(inp.taxRate!=null?inp.taxRate:37)/100;
+  const capRate=(inp.capGainsRate!=null?inp.capGainsRate:20)/100;
+  const recRate=(inp.recaptureRate!=null?inp.recaptureRate:25)/100;
+  const loan0=Math.max(0,res.totalCost-res.equity);
+  let prevBal=loan0, accumDep=0;
+  const yrRows=[], atCF=[];
+  for(let y=1;y<=hp;y++){
+    const r=res.rows[y-1];
+    const principal=Math.max(0,prevBal-r.bal);
+    const interest=Math.max(0,r.ds-principal);
+    const dep=Math.min(annualDep, y*annualDep>deprBasis?Math.max(0,deprBasis-accumDep):annualDep);
+    accumDep+=dep;
+    const taxable=r.noi-interest-dep;
+    const tax=taxable*taxRate;
+    const atcf=r.cfbt-tax;
+    yrRows.push({yr:y,noi:r.noi,interest,dep,taxable,tax,cfbt:r.cfbt,atcf});
+    atCF.push(atcf);
+    prevBal=r.bal;
+  }
+  // sale
+  const adjBasis=costBasis-accumDep;
+  const saleGain=res.exit.netSale-adjBasis;
+  const recaptureBase=Math.max(0,Math.min(accumDep,saleGain));
+  const capGainBase=Math.max(0,saleGain-accumDep);
+  const recaptureTax=recaptureBase*recRate;
+  const capGainTax=capGainBase*capRate;
+  const saleTax=recaptureTax+capGainTax;
+  const atProceeds=res.exit.proceeds-saleTax;
+  const flows=[-res.equity,...atCF.slice(0,hp-1),atCF[hp-1]+atProceeds];
+  const atIRR=calcIRR(flows);
+  const totAT=atCF.reduce((a,b)=>a+b,0)+atProceeds;
+  return{
+    deprBasis,depYears,annualDep,accumDep,taxRate,capRate,recRate,
+    yrRows,
+    adjBasis,saleGain,recaptureTax,capGainTax,saleTax,atProceeds,
+    atIRR, atEM:res.equity>0?totAT/res.equity:0,
+    preTaxIRR:res.ret.irr, preTaxEM:res.ret.em
+  };
+}
+
+// ─── CONSTRUCTION & LEASE-UP TIMELINE ─────────────────────────────────────
+// Honest project-level IRR for ground-up deals: equity sits idle during
+// construction, income ramps through lease-up, and construction-period
+// interest is capitalized, all of which the stabilized IRR ignores.
+// Construction draw schedule with capitalized interest computed on the actual
+// outstanding balance each month (straight-line or S-curve draw pattern).
+function drawSchedule(loanAmt,months,mRate,pattern){
+  if(months<=0||loanAmt<=0)return{capInterest:0,peakBalance:0,rows:[]};
+  let weights=[];
+  if(pattern==='scurve'){
+    // bell-shaped draws, heaviest mid-construction
+    let raw=[],sum=0;
+    for(let m=1;m<=months;m++){const w=Math.sin(Math.PI*(m-0.5)/months);raw.push(w);sum+=w;}
+    weights=raw.map(w=>w/sum);
+  } else {
+    weights=Array(months).fill(1/months); // straight-line
+  }
+  let bal=0,capInt=0,peak=0;const rows=[];
+  for(let m=1;m<=months;m++){
+    const draw=loanAmt*weights[m-1];
+    bal+=draw;
+    const interest=bal*mRate;   // interest on outstanding balance, capitalized
+    bal+=interest; capInt+=interest;
+    peak=Math.max(peak,bal);
+    rows.push({month:m,draw,interest,balance:bal});
+  }
+  return{capInterest:capInt,peakBalance:peak,rows};
+}
+
+function calcProjectTimeline(res,inp){
+  const t=(inp.assetType||'').toLowerCase();
+  if(t!=='development')return null;
+  const cM=Math.max(0,Math.round(inp.constructionPeriodMonths||0));
+  const lM=Math.max(0,Math.round(inp.leaseUpMonths||0));
+  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const equity=res.equity;
+  const loan0=Math.max(0,res.totalCost-res.equity);
+  const mRate=(inp.interestRate||0)/100/12;
+  const draw=drawSchedule(loan0,cM,mRate,inp.drawPattern||'straight');
+  const capInterest=draw.capInterest; // exact, from month-by-month draw schedule
+  const cf=[-equity];
+  for(let m=1;m<=cM;m++)cf.push(0);                 // construction: no income, interest capitalized
+  const noiM=y=>res.rows[Math.min(y-1,res.rows.length-1)].noi/12;
+  const dsM=y=>res.rows[Math.min(y-1,res.rows.length-1)].ds/12;
+  for(let m=1;m<=lM;m++)cf.push(noiM(1)*(lM>0?m/lM:1)-dsM(1)); // lease-up ramp
+  const stabMonths=hp*12;
+  for(let m=1;m<=stabMonths;m++){const y=Math.ceil(m/12);cf.push(noiM(y)-dsM(y));}
+  cf[cf.length-1]+=(res.exit.proceeds-capInterest);  // exit, payoff incl. capitalized interest
+  const mIRR=calcIRR(cf);
+  const projIRR=isFinite(mIRR)?Math.pow(1+mIRR,12)-1:NaN;
+  const dist=cf.slice(1).reduce((a,b)=>a+b,0);
+  return{
+    constructionMonths:cM, leaseUpMonths:lM, totalMonths:cM+lM+stabMonths,
+    capInterest, drawPattern:inp.drawPattern||'straight', constructionLoan:loan0,
+    peakDrawBalance:draw.peakBalance, drawRows:draw.rows,
+    stabilizedIRR:res.ret.irr, projectIRR:projIRR,
+    projectEM:equity>0?(dist)/equity:0, stabilizedEM:res.ret.em
+  };
+}
+
+// ─── REFINANCE / CASH-OUT EVENT ───────────────────────────────────────────
+// Mid-hold refinance: a new loan is sized on the property's value at refi,
+// the old loan is retired, net proceeds are returned to equity, and the
+// remaining hold runs on the new debt. A pure overlay on the base result.
+function calcRefinance(res,inp){
+  const t=(inp.assetType||'').toLowerCase();
+  if(!inp.refiEnabled||t==='affordable')return null;
+  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const ry=Math.min(Math.max(Math.round(inp.refiYear||3),1),hp-1);
+  const refiCap=(inp.refiCapRate!=null?inp.refiCapRate:(inp.exitCapRate||5.5))/100;
+  const value=refiCap>0?res.rows[ry].noi/refiCap:0;
+  const refiLTV=(inp.refiLTV!=null?inp.refiLTV:70)/100;
+  const newLoan=Math.max(0,value*refiLTV);
+  const oldBal=res.rows[ry-1].bal;
+  const refiCosts=newLoan*((inp.refiCostPct!=null?inp.refiCostPct:1)/100);
+  const cashOut=newLoan-oldBal-refiCosts;
+  const newRate=(inp.refiRate!=null?inp.refiRate:(inp.interestRate||6))/100;
+  const amort=inp.amortYears||30;
+  const newDS=newLoan>0?monthlyPmt(newLoan,newRate,amort)*12:0;
+  const newBalExit=loanBal(newLoan,newRate,amort,(hp-ry)*12);
+  const equity=res.equity;
+  const cf=[-equity];
+  for(let y=1;y<=hp;y++){
+    const ds=y<=ry?res.rows[y-1].ds:newDS;
+    let c=res.rows[y-1].noi-ds;
+    if(y===ry)c+=cashOut;
+    if(y===hp)c+=(res.exit.netSale-newBalExit);
+    cf.push(c);
+  }
+  const irr=calcIRR(cf);
+  const dist=cf.slice(1).reduce((a,b)=>a+b,0);
+  return{
+    refiYear:ry,value,newLoan,oldBal,refiCosts,cashOut,newDS,newRate,amort,newBalExit,
+    refiDSCR:newDS>0?res.rows[ry].noi/newDS:null,
+    refiIRR:irr,baseIRR:res.ret.irr,refiEM:equity>0?dist/equity:0,baseEM:res.ret.em
+  };
+}
+
+// ─── SCENARIO ANALYSIS (downside / base / upside) ─────────────────────────
+// Flexes the two biggest value drivers (rent growth, exit cap) plus vacancy
+// to bracket the base case. Pure overlay: each case is a fresh buildPF.
+function calcScenarios(res,inp){
+  if((inp.assetType||'').toLowerCase()==='affordable')return null;
+  const gD=inp.scenGrowthDelta!=null?inp.scenGrowthDelta:1;
+  const cD=inp.scenCapDelta!=null?inp.scenCapDelta:0.5;
+  const vD=inp.scenVacDelta!=null?inp.scenVacDelta:2;
+  const baseG=inp.revenueGrowth||0, baseC=inp.exitCapRate||0, baseV=inp.vacancyRate||0;
+  const run=(g,c,v)=>{
+    try{const r=buildPF({...inp,revenueGrowth:g,exitCapRate:c,vacancyRate:Math.max(0,v)});
+      return{irr:r.ret.irr,em:r.ret.em,dscr:r.sum.dscr,coc:r.sum.coc,proceeds:r.exit.proceeds,g,c,v:Math.max(0,v)};}
+    catch(e){return null;}
+  };
+  return{
+    downside:run(baseG-gD,baseC+cD,baseV+vD),
+    base:run(baseG,baseC,baseV),
+    upside:run(baseG+gD,baseC-cD,baseV-vD),
+    deltas:{g:gD,c:cD,v:vD}
+  };
+}
+
+// ─── DEVELOPMENT TAX CREDITS (historic / brownfield / stacked) ────────────
+// Each credit computed on its own basis x rate x syndication price. Credit
+// equity stacks into development sources & uses as an additive overlay; the
+// LIHTC module and base engine are untouched.
+function calcDevCredits(res,inp){
+  const src=inp.devCredits||[];
+  if(!src.length)return null;
+  const rows=src.map(r=>{
+    const basis=+r.basis||0, ratePct=+r.rate||0, price=r.price!=null?+r.price:0.9;
+    const credit=basis*(ratePct/100);
+    return{type:r.type||'Other',basis,ratePct,price,credit,equity:credit*price};
+  });
+  const totalCredit=rows.reduce((a,b)=>a+b.credit,0);
+  const totalEquity=rows.reduce((a,b)=>a+b.equity,0);
+  const isAff=(inp.assetType||'').toLowerCase()==='affordable';
+  const uses=res.totalCost||0;
+  const loan=Math.max(0,(res.totalCost||0)-(res.equity||0));
+  const lihtcEq=isAff&&res.lihtc?res.lihtc.lihtcEquity:0;
+  const deferredFee=isAff&&res.lihtc?res.lihtc.deferredFee:0;
+  const softSources=isAff&&res.lihtc?res.lihtc.softSources:0;
+  const sponsorEquityBefore=isAff?Math.max(0,uses-loan-lihtcEq-deferredFee-softSources):(res.equity||0);
+  const sponsorEquityAfter=Math.max(0,sponsorEquityBefore-totalEquity);
+  let sponsorIRR=null, baseIRR=null;
+  if(!isAff){
+    baseIRR=res.ret.irr;
+    const newEq=Math.max(1,(res.equity||0)-totalEquity);
+    const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+    const cf=[-newEq];
+    for(let y=1;y<=hp;y++){let c=res.rows[y-1].cfbt;if(y===hp)c+=res.exit.proceeds;cf.push(c);}
+    sponsorIRR=calcIRR(cf);
+  }
+  return{rows,totalCredit,totalEquity,uses,loan,lihtcEq,deferredFee,softSources,sponsorEquityBefore,sponsorEquityAfter,sponsorIRR,baseIRR,isAff};
+}
+
+function buildPF(inp){
+  const gpi0=getGPI(inp);
+  const opex0=getOpEx(inp);
+  const vac=inp.vacancyRate||0;
+  const PP=inp.purchasePrice||0;
+  const acqC=PP*(inp.acquisitionCostsPct||0)/100;
+  const tEarly=(inp.assetType||'').toLowerCase();
+  const isAff=tEarly==='affordable';
+  const IRe=inp.interestRate||0, AYe=inp.amortYears||30;
+  const noi0=(gpi0*(1-vac/100)+(inp.otherIncome||0))-opex0;
+  let LA=inp.loanAmount||0;
+  let lihtc=null, debtSizing=null;
+  if(isAff){
+    const constant=monthlyPmt(1,IRe/100,AYe)*12;
+    const minDSCR=inp.minDSCR||1.15;
+    LA=constant>0?Math.max(0,(noi0/minDSCR)/constant):0;
+    lihtc=calcLIHTC(inp,LA);
+  } else if(inp.sizeDebt){
+    const constant=monthlyPmt(1,IRe/100,AYe)*12;
+    const isDev=tEarly==='development';
+    const valueBasis=isDev?getDevCost(inp):PP;
+    const cons=[];
+    if((inp.minDSCR||0)>0&&constant>0)cons.push({name:'DSCR',basis:'min '+(inp.minDSCR).toFixed(2)+'x',loan:(noi0/inp.minDSCR)/constant});
+    if((inp.minDebtYield||0)>0)cons.push({name:'Debt Yield',basis:'min '+(inp.minDebtYield).toFixed(1)+'%',loan:noi0/((inp.minDebtYield)/100)});
+    if(isDev){if((inp.maxLTC||0)>0)cons.push({name:'LTC',basis:'max '+(inp.maxLTC).toFixed(0)+'%',loan:valueBasis*(inp.maxLTC/100)});}
+    else{if((inp.maxLTV||0)>0)cons.push({name:'LTV',basis:'max '+(inp.maxLTV).toFixed(0)+'%',loan:valueBasis*(inp.maxLTV/100)});}
+    if(cons.length){
+      const binding=cons.reduce((a,b)=>b.loan<a.loan?b:a);
+      LA=Math.max(0,binding.loan);
+      debtSizing={constraints:cons.map(c=>({...c,loan:Math.max(0,c.loan),binds:c.name===binding.name})),binding:binding.name,sizedLoan:LA,valueBasis,noi0};
+    }
+  }
+  const LF=LA*(inp.loanFeesPct||0)/100;
+  const devCostEarly=(tEarly==='development'||isAff)?getDevCost(inp):0;
+  const baseCost=(tEarly==='development'||isAff)?devCostEarly:PP;
+  const capBasis=baseCost;
+  const totalCost=baseCost+acqC+LF;
+  const equity=totalCost-LA;
+  const IR=inp.interestRate||0;
+  const AY=inp.amortYears||30;
+  const IO=inp.ioPeriod||0;
+  const pmt12=monthlyPmt(LA,IR/100,AY)*12;
+  const ioAnnual=LA*(IR/100);
+  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const rg=inp.revenueGrowth||3;
+  const eg=inp.expenseGrowth||2.5;
+  const eCapR=(inp.exitCapRate||5.5)/100;
+  const sellC=(inp.sellingCostsPct||3)/100;
+  const dr=(inp.discountRate||8)/100;
+  const t=inp.assetType.toLowerCase();
+  const devCost=(t==='development'||t==='affordable')?getDevCost(inp):0;
+
+  const rows=[];
+  for(let yr=1;yr<=11;yr++){
+    const rm=Math.pow(1+rg/100,yr-1);
+    const em=Math.pow(1+eg/100,yr-1);
+    const gpi=gpi0*rm;
+    const vacL=gpi*vac/100;
+    const egi=gpi-vacL+(inp.otherIncome||0)*rm;
+    const mgmt=egi*(inp.managementFeePct||0)/100;
+    const opex=(opex0-((getGPI(inp)*(1-vac/100)+(inp.otherIncome||0))*(inp.managementFeePct||0)/100))*em+mgmt;
+    const noi=egi-opex;
+    const isIO=yr<=IO;
+    const monthsPaid=isIO?0:(yr-IO)*12;
+    const bal=loanBal(LA,IR/100,AY,monthsPaid);
+    const ds=LA>0?(isIO?ioAnnual:pmt12):0;
+    const cfbt=noi-ds;
+    const capR=capBasis>0?noi/capBasis:0;
+    const coc=equity>0?cfbt/equity:0;
+    const dscr=ds>0?noi/ds:null;
+    const expR=egi>0?opex/egi:0;
+    rows.push({yr,gpi,vacL,egi,opex,noi,ds,cfbt,capR,coc,dscr,bal,expR,mgmt});
+  }
+
+  const ex=rows[hp-1];
+  const exitNOI=rows[hp].noi;
+  const grossSale=eCapR>0?exitNOI/eCapR:0;
+  const sellAmt=grossSale*sellC;
+  const netSale=grossSale-sellAmt;
+  const payoff=ex.bal;
+  const proceeds=netSale-payoff;
+  const totalCF=rows.slice(0,hp).reduce((s,r)=>s+r.cfbt,0);
+  const profit=totalCF+proceeds-equity;
+  const em2=equity>0?(totalCF+proceeds)/equity:0;
+  const irrFlows=[-equity,...rows.slice(0,hp-1).map(r=>r.cfbt),rows[hp-1].cfbt+proceeds];
+  const irr=calcIRR(irrFlows);
+  const npv=calcNPV(irrFlows,dr);
+  const y1=rows[0];
+  const beOcc=y1.gpi>0?Math.max(0,(y1.opex+y1.ds)/y1.gpi):0;
+  const retOnCost=devCost>0?y1.noi/devCost:0;
+
+  return{inp,equity,totalCost,acqC,LF,rows,
+    exit:{grossSale,sellAmt,netSale,payoff,proceeds},
+    ret:{irr,em:em2,npv,profit,totalCF,retOnCost},
+    sum:{capR:y1.capR,coc:y1.coc,dscr:y1.dscr,noi:y1.noi,cf:y1.cfbt,beOcc,devCost},lihtc,debtSizing};
+}
+
+// ─── EXCEL EXPORT ────────────────────────────────────────────────────────
+async function buildWorkbook(res,inp,withResults=true){
+  const E=window.ExcelJS;
+  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const t=(inp.assetType||'').toLowerCase();
+  const isDev=t==='development';
+  const name=inp.propertyName||'Untitled Property';
+  const wb=new E.Workbook();
+  wb.creator='CapStack';wb.created=new Date();
+
+  const NAVY='FF1F3864',NAVY2='FF2E4F87',HDR='FFD9E1F2',BAND='FFF7F7F7',WHITE='FFFFFFFF',FWDBG='FFF0F0EE';
+  const GREENBG='FFE2EFDA',AMBERBG='FFFFF2CC',REDBG='FFFBE0DE';
+  const thin={style:'thin',color:{argb:'FFD0D0D0'}};
+  const box={top:thin,left:thin,bottom:thin,right:thin};
+  const boxT={top:{style:'thin',color:{argb:'FF1F3864'}},left:thin,bottom:thin,right:thin};
+  const F$='$#,##0';const F$N='$#,##0;($#,##0)';const FP='0.0%';const FP2='0.00%';const FX='0.00"x"';const FN='#,##0';
+  const fill=c=>({type:'pattern',pattern:'solid',fgColor:{argb:c}});
+  const lblF={name:'Calibri',size:10,color:{argb:'FF333333'}};
+  const inpF={name:'Calibri',size:10,bold:true,color:{argb:'FF0070C0'}};
+  const fmlF={name:'Calibri',size:10,bold:true,color:{argb:'FF1F1F1F'}};
+  const CL=i=>String.fromCharCode(64+i);
+  const fml=(f,r)=>withResults&&isFinite(r)?{formula:f,result:r}:{formula:f};
+
+  const banner=(ws,row,c1,c2,text,sub)=>{
+    ws.mergeCells(row,c1,row,c2);
+    Object.assign(ws.getCell(row,c1),{value:text,font:{name:'Calibri',size:14,bold:true,color:{argb:WHITE}},fill:fill(NAVY),alignment:{vertical:'middle',horizontal:'left',indent:1}});
+    ws.getRow(row).height=27;
+    ws.mergeCells(row+1,c1,row+1,c2);
+    Object.assign(ws.getCell(row+1,c1),{value:sub,font:{name:'Calibri',size:9.5,italic:true,color:{argb:WHITE}},fill:fill(NAVY2),alignment:{vertical:'middle',horizontal:'left',indent:1}});
+    ws.getRow(row+1).height=16;
+  };
+
+  // ============ SUMMARY ============
+  const ws=wb.addWorksheet('Summary',{views:[{showGridLines:false}]});
+  ws.columns=[{width:2},{width:28},{width:15},{width:2.5},{width:28},{width:15},{width:2}];
+  banner(ws,2,2,6,name.toUpperCase(),`${inp.assetType} Investment Analysis  |  ${hp}-Year Hold  |  Blue cells are inputs, black cells are live formulas  |  Prepared ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}`);
+
+  let rL=5,rR=5;
+  const refs={};
+  // entry: [key|null, label, value|{f,r}, fmt, isInput]
+  const block=(side,title,entries)=>{
+    const c1=side==='L'?2:5,c2=c1+1;
+    let r=side==='L'?rL:rR;
+    ws.mergeCells(r,c1,r,c2);
+    Object.assign(ws.getCell(r,c1),{value:title,font:{name:'Calibri',size:10,bold:true,color:{argb:'FF1F3864'}},fill:fill(HDR),alignment:{vertical:'middle',indent:1},border:box});
+    ws.getRow(r).height=17;r++;
+    entries.forEach((e,i)=>{
+      const[key,label,val,fm,isInput]=e;
+      const cl=ws.getCell(r,c1),cv=ws.getCell(r,c2);
+      cl.value=label;cl.font=lblF;cl.border=box;cl.alignment={indent:1};
+      if(val&&typeof val==='object'&&val.f!==undefined){cv.value=fml(val.f,val.r);}else{cv.value=val;}
+      cv.font=isInput?inpF:fmlF;cv.border=box;cv.alignment={horizontal:'right'};
+      if(fm)cv.numFmt=fm;
+      if(i%2===1){cl.fill=fill(BAND);cv.fill=fill(BAND);}
+      if(key)refs[key]='Summary!$'+CL(c2)+'$'+r;
+      r++;
+    });
+    r++;
+    if(side==='L')rL=r;else rR=r;
+  };
+
+  // engine-derived values for caching
+  const R0=res.rows[0];
+  const gpi1=R0.gpi, oth1=R0.egi-(R0.gpi-R0.vacL);
+  const baseExM=R0.opex-R0.mgmt;
+  const basisVal=isDev?getDevCost(inp):(inp.purchasePrice||0);
+  const LA=inp.loanAmount||0, IR=(inp.interestRate||0)/100, AY=inp.amortYears||30, IO=inp.ioPeriod||0;
+  const ltvVal=basisVal>0?LA/basisVal:0;
+  const sizeLine=isDev?[null,'Gross Buildable SF',inp.grossBuildableSF||0,FN,true]:(t==='commercial'?[null,'Total SF',inp.totalSF||0,FN,true]:[null,'Units',inp.numUnits||0,FN,true]);
+
+  const pdRows=[
+    [null,'Asset Type',inp.assetType,null,true],sizeLine,
+    ['price',isDev?'Land Cost':'Purchase Price',inp.purchasePrice||0,F$,true],
+  ];
+  if(isDev)pdRows.push(['basis','Total Development Cost (incl. land)',basisVal,F$,true]);
+  block('L','PROPERTY & DEAL',pdRows.concat([
+    ['acq','Acquisition Costs',{f:'0',r:0},F$,false],
+    ['fees','Loan Fees',{f:'X',r:0},F$,false],
+    ['tcap','Total Capitalization',{f:'X',r:res.totalCost},F$,false],
+    ['hold','Holding Period (Years)',hp,FN,true],
+    ['ecap','Exit Cap Rate',(inp.exitCapRate||0)/100,FP2,true],
+    ['sell','Selling Costs',(inp.sellingCostsPct||0)/100,FP,true],
+  ]));
+  if(!isDev)refs.basis=refs.price;
+  block('L','FINANCING',[
+    ['loan','Loan Amount',LA,F$,true],
+    ['ltv',isDev?'Loan-to-Cost':'Loan-to-Value',{f:'X',r:ltvVal},FP,false],
+    ['rate','Interest Rate',IR,FP2,true],
+    ['amort','Amortization (Years)',AY,FN,true],
+    ['io','Interest-Only Period (Years)',IO,FN,true],
+    ['eq','Equity Required',{f:'X',r:res.equity},F$,false],
+  ]);
+  block('L','MODEL ASSUMPTIONS',[
+    ['gpi1','Gross Potential Income (Yr 1)',Math.round(gpi1),F$,true],
+    ['oth1','Other Income (Yr 1)',Math.round(oth1),F$,true],
+    ['vac','Vacancy & Credit Loss',(inp.vacancyRate||0)/100,FP,true],
+    ['exm','OpEx excl. Mgmt (Yr 1)',Math.round(baseExM),F$,true],
+    ['mgmt','Management Fee (% of EGI)',(inp.managementFeePct||0)/100,FP,true],
+    ['rg','Revenue Growth (Annual)',(inp.revenueGrowth||0)/100,FP,true],
+    ['eg','Expense Growth (Annual)',(inp.expenseGrowth||0)/100,FP,true],
+    ['acqp','Acquisition Costs (% of Price)',(inp.acquisitionCostsPct||0)/100,FP,true],
+    ['feep','Loan Fees (% of Loan)',(inp.loanFeesPct||0)/100,FP,true],
+    ['disc','Discount Rate (NPV)',(inp.discountRate||0)/100,FP,true],
+  ]);
+  // wire left-side formulas now that refs exist
+  const setRef=(key,f,r,fmt)=>{const a=refs[key].replace('Summary!','').replace(/\$/g,'');const c=ws.getCell(a);c.value=fml(f,r);if(fmt)c.numFmt=fmt;};
+  setRef('acq',`${refs.price}*${refs.acqp}`,res.acqC);
+  setRef('fees',`${refs.loan}*${refs.feep}`,res.LF);
+  setRef('tcap',`${refs.basis}+${refs.acq}+${refs.fees}`,res.totalCost);
+  setRef('ltv',`IF(${refs.basis}=0,0,${refs.loan}/${refs.basis})`,ltvVal);
+  setRef('eq',`${refs.tcap}-${refs.loan}`,res.equity);
+
+  // ============ ANNUAL PRO FORMA (formula-driven) ============
+  const pf=wb.addWorksheet('Annual Pro Forma',{views:[{showGridLines:false,state:'frozen',xSplit:2,ySplit:3}]});
+  const fwdC=4+hp; // col index of forward year
+  pf.columns=[{width:2},{width:30},{width:12}].concat(Array.from({length:hp+1},()=>({width:13})));
+  pf.mergeCells(2,2,2,fwdC);
+  Object.assign(pf.getCell(2,2),{value:name.toUpperCase()+'  |  '+hp+'-YEAR OPERATING PRO FORMA (LIVE FORMULAS)',font:{name:'Calibri',size:12,bold:true,color:{argb:WHITE}},fill:fill(NAVY),alignment:{vertical:'middle',indent:1}});
+  pf.getRow(2).height=24;
+  const hr=pf.getRow(3);
+  for(let c=2;c<=fwdC;c++){
+    const cell=hr.getCell(c);
+    cell.value=c===2?'':(c===3?'Year 0':(c===fwdC?`Yr ${hp+1} (Fwd)`:'Year '+(c-3)));
+    cell.font={name:'Calibri',size:10,bold:true,color:{argb:WHITE}};
+    cell.fill=fill(NAVY2);cell.border=box;cell.alignment={horizontal:c===2?'left':'right'};
+  }
+  hr.height=17;
+  let pr=4;
+  const rowIdx={};
+  const sect=ttl=>{
+    pf.mergeCells(pr,2,pr,fwdC);
+    Object.assign(pf.getCell(pr,2),{value:ttl,font:{name:'Calibri',size:9.5,bold:true,color:{argb:'FF1F3864'}},fill:fill(HDR),alignment:{indent:1},border:box});
+    pf.getRow(pr).height=16;pr++;
+  };
+  // cells: array over columns 3..fwdC; entry null=blank, number=value, {f,r}=formula
+  const line=(key,label,cells,fm,opts)=>{
+    opts=opts||{};
+    const row=pf.getRow(pr);
+    const cl=row.getCell(2);
+    cl.value=label;cl.border=opts.total?boxT:box;cl.alignment={indent:opts.total?1:2};
+    cl.font={name:'Calibri',size:10,bold:!!opts.total,color:{argb:opts.total?'FF1F3864':'FF333333'}};
+    cells.forEach((v,i)=>{
+      const c=row.getCell(3+i);
+      c.border=opts.total?boxT:box;c.alignment={horizontal:'right'};
+      c.font={name:'Calibri',size:10,bold:!!opts.total,color:{argb:opts.total?'FF1F3864':'FF333333'}};
+      if(3+i===fwdC&&!opts.noFwdShade)c.fill=fill(FWDBG);
+      if(v===null||v===undefined)return;
+      if(typeof v==='object'){c.value=fml(v.f,v.r);}else{c.value=v;}
+      if(fm)c.numFmt=fm;
+    });
+    if(key)rowIdx[key]=pr;
+    pr++;
+  };
+  const ER=res.rows; // engine rows, 11 entries
+  // helper builders: yr = 1..hp+1 maps to col 3+yr; prev col letter
+  const yrs=Array.from({length:hp+1},(_,i)=>i+1); // includes forward year
+  const colOf=yr=>CL(3+yr);
+  const opsRow=(key,label,firstF,firstR,growF,vals,fm,opts)=>{
+    const cells=[null].concat(yrs.map(yr=>{
+      if(yr===1)return{f:firstF,r:firstR};
+      const p=colOf(yr-1)+rowIdx_pending(key);
+      return{f:growF(yr,p),r:vals(yr)};
+    }));
+    line(key,label,cells,fm,opts);
+  };
+  // since rowIdx[key] not known until line() called, we compute target row = pr at call time:
+  function rowIdx_pending(){return pr;}
+
+  sect('REVENUE');
+  opsRow('gpi','Gross Potential Income',`${refs.gpi1}`,gpi1,(yr,p)=>`${p}*(1+${refs.rg})`,yr=>ER[yr-1].gpi,F$);
+  line('vac','Less: Vacancy & Credit Loss',[null].concat(yrs.map(yr=>({f:`-${colOf(yr)}${rowIdx.gpi}*${refs.vac}`,r:-ER[yr-1].vacL}))),F$N);
+  opsRow('oth','Plus: Other Income',`${refs.oth1}`,oth1,(yr,p)=>`${p}*(1+${refs.rg})`,yr=>oth1*Math.pow(1+(inp.revenueGrowth||0)/100,yr-1),F$);
+  line('egi','Effective Gross Income',[null].concat(yrs.map(yr=>({f:`${colOf(yr)}${rowIdx.gpi}+${colOf(yr)}${rowIdx.vac}+${colOf(yr)}${rowIdx.oth}`,r:ER[yr-1].egi}))),F$,{total:true});
+  sect('OPERATING EXPENSES');
+  opsRow('exm','OpEx excl. Management',`-${refs.exm}`,-baseExM,(yr,p)=>`${p}*(1+${refs.eg})`,yr=>-(baseExM*Math.pow(1+(inp.expenseGrowth||0)/100,yr-1)),F$N);
+  line('mgmt','Management Fee',[null].concat(yrs.map(yr=>({f:`-${colOf(yr)}${rowIdx.egi}*${refs.mgmt}`,r:-ER[yr-1].mgmt}))),F$N);
+  line('opx','Total Operating Expenses',[null].concat(yrs.map(yr=>({f:`${colOf(yr)}${rowIdx.exm}+${colOf(yr)}${rowIdx.mgmt}`,r:-ER[yr-1].opex}))),F$N,{total:true});
+  line('noi','Net Operating Income',[null].concat(yrs.map(yr=>({f:`${colOf(yr)}${rowIdx.egi}+${colOf(yr)}${rowIdx.opx}`,r:ER[yr-1].noi}))),F$,{total:true});
+  sect('DEBT SERVICE');
+  const dsF=yr=>`-IF(${refs.loan}=0,0,IF(${yr}<=${refs.io},${refs.loan}*${refs.rate},IF(${refs.rate}=0,${refs.loan}/${refs.amort},${refs.loan}*${refs.rate}/12/(1-(1+${refs.rate}/12)^(-${refs.amort}*12))*12)))`;
+  line('ds','Annual Debt Service',[null].concat(yrs.map(yr=>yr<=hp?{f:dsF(yr),r:-ER[yr-1].ds}:null)),F$N);
+  line('cfbt','Cash Flow Before Tax',[null].concat(yrs.map(yr=>yr<=hp?{f:`${colOf(yr)}${rowIdx.noi}+${colOf(yr)}${rowIdx.ds}`,r:ER[yr-1].cfbt}:null)),F$,{total:true});
+  sect('RATIOS & BALANCES');
+  line('cap','Cap Rate',[null].concat(yrs.map(yr=>yr<=hp?{f:`${colOf(yr)}${rowIdx.noi}/${refs.basis}`,r:ER[yr-1].capR}:null)),FP2);
+  line('coc','Cash-on-Cash Return',[null].concat(yrs.map(yr=>yr<=hp?{f:`IF(${refs.eq}=0,0,${colOf(yr)}${rowIdx.cfbt}/${refs.eq})`,r:ER[yr-1].coc}:null)),FP2);
+  line('dscr','DSCR',[null].concat(yrs.map(yr=>yr<=hp?{f:`IF(${colOf(yr)}${rowIdx.ds}=0,"N/A",${colOf(yr)}${rowIdx.noi}/(-${colOf(yr)}${rowIdx.ds}))`,r:ER[yr-1].dscr||NaN}:null)),FX);
+  const balF=yr=>`IF(${refs.loan}=0,0,IF(${yr}<=${refs.io},${refs.loan},IF(${refs.rate}=0,MAX(0,${refs.loan}-${refs.loan}/(${refs.amort}*12)*((${yr}-${refs.io})*12)),MAX(0,${refs.loan}*(1+${refs.rate}/12)^((${yr}-${refs.io})*12)-(${refs.loan}*${refs.rate}/12/(1-(1+${refs.rate}/12)^(-${refs.amort}*12)))*((1+${refs.rate}/12)^((${yr}-${refs.io})*12)-1)/(${refs.rate}/12)))))`;
+  line('bal','Ending Loan Balance',[null].concat(yrs.map(yr=>yr<=hp?{f:balF(yr),r:ER[yr-1].bal}:null)),F$);
+  sect('LEVERED INVESTMENT CASH FLOWS');
+  line('init','Initial Equity Investment',[{f:`-${refs.eq}`,r:-res.equity}].concat(yrs.map(()=>null)),F$N);
+  line('opcf','Operating Cash Flow',[null].concat(yrs.map(yr=>yr<=hp?{f:`${colOf(yr)}${rowIdx.cfbt}`,r:ER[yr-1].cfbt}:null)),F$N);
+  line('sale','Net Sale Proceeds',[null].concat(yrs.map(yr=>yr<hp?0:(yr===hp?{f:'X',r:res.exit.proceeds}:null))),F$N);
+  line('net','Levered Net Cash Flow',[{f:`C${rowIdx.init}`,r:-res.equity}].concat(yrs.map(yr=>yr<=hp?{f:`${colOf(yr)}${rowIdx.opcf}+${colOf(yr)}${rowIdx.sale}`,r:ER[yr-1].cfbt+(yr===hp?res.exit.proceeds:0)}:null)),F$N,{total:true});
+
+  const PFQ="'Annual Pro Forma'!";
+  const lastYr=colOf(hp), fwdL=CL(fwdC);
+
+  // ============ SUMMARY right-side blocks (live formulas) ============
+  block('R','RETURN SUMMARY',[
+    [null,'Levered IRR',{f:`IRR(${PFQ}$C$${rowIdx.net}:$${lastYr}$${rowIdx.net})`,r:res.ret.irr},FP,false],
+    [null,'Equity Multiple',{f:`IF(${refs.eq}=0,0,SUM(${PFQ}$D$${rowIdx.net}:$${lastYr}$${rowIdx.net})/${refs.eq})`,r:res.ret.em},FX,false],
+    [null,'Net Present Value',{f:`${PFQ}$C$${rowIdx.net}+NPV(${refs.disc},${PFQ}$D$${rowIdx.net}:$${lastYr}$${rowIdx.net})`,r:res.ret.npv},F$N,false],
+    [null,'Total Profit',{f:`SUM(${PFQ}$C$${rowIdx.net}:$${lastYr}$${rowIdx.net})`,r:res.ret.profit},F$N,false],
+    [null,'Year 1 Cash-on-Cash',{f:`${PFQ}$D$${rowIdx.coc}`,r:res.sum.coc},FP,false],
+    [null,'Year 1 Cap Rate',{f:`${PFQ}$D$${rowIdx.cap}`,r:res.sum.capR},FP2,false],
+    [null,'Year 1 DSCR',{f:`${PFQ}$D$${rowIdx.dscr}`,r:res.sum.dscr||NaN},FX,false],
+    [null,'Break-Even Occupancy',{f:`IF(${PFQ}$D$${rowIdx.gpi}=0,0,(-${PFQ}$D$${rowIdx.opx}-${PFQ}$D$${rowIdx.ds})/${PFQ}$D$${rowIdx.gpi})`,r:res.sum.beOcc},FP,false],
+  ]);
+  block('R','EXIT ANALYSIS (YEAR '+hp+')',[
+    ['fnoi','Forward NOI (Year '+(hp+1)+')',{f:`${PFQ}$${fwdL}$${rowIdx.noi}`,r:res.rows[hp].noi},F$,false],
+    ['gross','Gross Sale Price',{f:'X',r:res.exit.grossSale},F$,false],
+    ['scost','Selling Costs',{f:'X',r:-res.exit.sellAmt},F$N,false],
+    ['nsale','Net Sale Price',{f:'X',r:res.exit.netSale},F$,false],
+    ['poff','Loan Payoff',{f:`-${PFQ}$${lastYr}$${rowIdx.bal}`,r:-res.exit.payoff},F$N,false],
+    ['proc','Net Sale Proceeds',{f:'X',r:res.exit.proceeds},F$,false],
+  ]);
+  setRef('gross',`IF(${refs.ecap}=0,0,${refs.fnoi}/${refs.ecap})`,res.exit.grossSale);
+  setRef('scost',`-${refs.gross}*${refs.sell}`,-res.exit.sellAmt);
+  setRef('nsale',`${refs.gross}+${refs.scost}`,res.exit.netSale);
+  setRef('proc',`${refs.nsale}+${refs.poff}`,res.exit.proceeds);
+  block('R','SOURCES & USES',[
+    [null,'Senior Loan',{f:`${refs.loan}`,r:LA},F$,false],
+    [null,'Sponsor Equity',{f:`${refs.eq}`,r:res.equity},F$,false],
+    [null,'Total Sources',{f:`${refs.loan}+${refs.eq}`,r:res.totalCost},F$,false],
+    [null,basisLblTxt(isDev),{f:`${refs.basis}`,r:basisVal},F$,false],
+    [null,'Closing Costs & Fees',{f:`${refs.acq}+${refs.fees}`,r:res.acqC+res.LF},F$,false],
+    [null,'Total Uses',{f:`${refs.tcap}`,r:res.totalCost},F$,false],
+  ]);
+  function basisLblTxt(d){return d?'Total Development Cost':'Purchase Price';}
+  // wire the PF sale cell to Summary proceeds now that ref exists
+  pf.getCell(rowIdx.sale,3+hp).value=fml(`${refs.proc}`,res.exit.proceeds);
+  pf.getCell(rowIdx.sale,3+hp).numFmt=F$N;
+
+  const fr=Math.max(rL,rR)+1;
+  ws.mergeCells(fr,2,fr,6);
+  Object.assign(ws.getCell(fr,2),{value:'Prepared with CapStack. All outputs above are live Excel formulas; change any blue input cell and the model recalculates. Projections are estimates for informational purposes only and do not constitute investment advice.',font:{name:'Calibri',size:8.5,italic:true,color:{argb:'FF808080'}}});
+
+  // ============ SENSITIVITY ============
+  const sn=wb.addWorksheet('Sensitivity',{views:[{showGridLines:false}]});
+  const growths=[1,2,3,4,5],caps=[4.5,5.0,5.5,6.0,6.5,7.0];
+  const nC=caps.length, lastCol=2+nC;
+  sn.columns=[{width:2},{width:22}].concat(caps.map(()=>({width:11})));
+  banner(sn,2,2,lastCol,'LEVERED IRR SENSITIVITY','How the deal\'s levered IRR moves with revenue growth and exit cap rate. All other inputs held constant.');
+
+  // Column-axis label band: EXIT CAP RATE -> spanning the cap columns
+  sn.mergeCells(4,3,4,lastCol);
+  Object.assign(sn.getCell(4,3),{value:'EXIT CAP RATE \u2192',font:{name:'Calibri',size:9.5,bold:true,color:{argb:'FF1F3864'}},fill:fill(HDR),alignment:{horizontal:'center'},border:box});
+  sn.getCell(4,2).border=box; sn.getCell(4,2).fill=fill(HDR);
+
+  // Header row: corner label + editable cap values
+  const sh=sn.getRow(5);
+  Object.assign(sh.getCell(2),{value:'Rev Growth \u2193  /  Exit Cap \u2192',font:{name:'Calibri',size:9,bold:true,italic:true,color:{argb:WHITE}},fill:fill(NAVY2),border:box,alignment:{horizontal:'center',wrapText:true}});
+  caps.forEach((c,i)=>{
+    const cc=sh.getCell(3+i);
+    cc.value=c/100;cc.numFmt=FP2;
+    Object.assign(cc,{font:{name:'Calibri',size:11,bold:true,color:{argb:'FF0070C0'}},fill:fill('FFEAF1FB'),border:box,alignment:{horizontal:'center'}});
+  });
+  sh.height=26;
+
+  // Live IRR sensitivity: each grid cell is a real =IRR() over a hidden
+  // per-scenario cash flow built from the editable axis cells + Summary inputs.
+  const lr=6+growths.length+1;
+  const CB=lr+4;                 // first row of the hidden calc block
+  const noiF=(G,k)=>`(((${refs.gpi1}*(1-${refs.vac})+${refs.oth1})*(1+${G})^${k-1})*(1-${refs.mgmt})-${refs.exm}*(1+${refs.eg})^${k-1})`;
+  const dsRef=k=>`'Annual Pro Forma'!${CL(3+k)}${rowIdx.ds}`;
+  const balRef=`'Annual Pro Forma'!${CL(3+hp)}${rowIdx.bal}`;
+
+  growths.forEach((g,gi)=>{
+    const row=sn.getRow(6+gi);
+    const lc=row.getCell(2);
+    lc.value=g/100;lc.numFmt=FP;
+    Object.assign(lc,{font:{name:'Calibri',size:11,bold:true,color:{argb:'FF0070C0'}},fill:fill('FFEAF1FB'),border:box,alignment:{horizontal:'center'}});
+    const G=`$B$${6+gi}`;
+    caps.forEach((c,ci)=>{
+      const C=`${CL(3+ci)}$5`;
+      const calcRow=CB+gi*nC+ci;
+      sn.getCell(calcRow,2).value={formula:`-${refs.eq}`};
+      sn.getCell(calcRow,2).numFmt=F$N;
+      for(let k=1;k<=hp;k++){
+        let fla=`${noiF(G,k)}+${dsRef(k)}`;
+        if(k===hp){
+          const sale=`(${noiF(G,hp+1)})/${C}*(1-${refs.sell})-${balRef}`;
+          fla=`${fla}+(${sale})`;
+        }
+        const cc=sn.getCell(calcRow,2+k);
+        cc.value={formula:fla}; cc.numFmt=F$N;
+      }
+      const irrSnap=buildPF(Object.assign({},inp,{revenueGrowth:g,exitCapRate:c})).ret.irr;
+      const rng=`B${calcRow}:${CL(2+hp)}${calcRow}`;
+      const cell=row.getCell(3+ci);
+      cell.value=isFinite(irrSnap)?{formula:`IRR(${rng})`,result:irrSnap}:{formula:`IRR(${rng})`};
+      cell.numFmt=FP;cell.border=box;cell.alignment={horizontal:'center'};
+      const bg=irrSnap>0.15?GREENBG:irrSnap>0.10?AMBERBG:REDBG;
+      const fc=irrSnap>0.15?'FF1A7F37':irrSnap>0.10?'FF9A6700':'FFB42318';
+      cell.fill=fill(bg);cell.font={name:'Calibri',size:10.5,bold:true,color:{argb:fc}};
+    });
+  });
+
+  // hidden calc block label
+  Object.assign(sn.getCell(CB-1,2),{value:'Sensitivity calculation \u2014 live scenario cash flows (auto-generated, do not edit)',font:{name:'Calibri',size:8,italic:true,color:{argb:'FFB0B0B0'}}});
+  for(let si=0;si<growths.length*nC;si++)sn.getRow(CB+si).hidden=true;
+
+  // ============ EXTRA ANALYSIS SHEETS ============
+  const FPx='0%';
+  const simpleSheet=(nm,title,sub,sections)=>{
+    const sh=wb.addWorksheet(nm,{views:[{showGridLines:false}]});
+    sh.columns=[{width:2},{width:36},{width:20},{width:2}];
+    banner(sh,2,2,3,title,sub);
+    let r=5;
+    sections.forEach(sec=>{
+      sh.mergeCells(r,2,r,3);
+      Object.assign(sh.getCell(r,2),{value:sec.title,font:{name:'Calibri',size:10,bold:true,color:{argb:'FF1F3864'}},fill:fill(HDR),border:box,alignment:{indent:1,vertical:'middle'}});
+      sh.getRow(r).height=16;r++;
+      sec.rows.forEach(rw=>{
+        const[label,val,fm,bold]=rw;
+        Object.assign(sh.getCell(r,2),{value:label,font:{name:'Calibri',size:10,bold:!!bold},border:box,alignment:{indent:1}});
+        const c=sh.getCell(r,3);c.value=val;if(fm)c.numFmt=fm;
+        Object.assign(c,{font:{name:'Calibri',size:10,bold:!!bold},border:box,alignment:{horizontal:'right'}});
+        r++;
+      });
+      r++;
+    });
+    return sh;
+  };
+
+  if(res.lihtc){const L=res.lihtc;
+    simpleSheet('LIHTC Analysis','LIHTC & SYNDICATION','Tax-credit equity, sources and uses',[
+      {title:'TAX CREDIT CALCULATION',rows:[
+        ['Eligible basis ('+(L.ebPct*100).toFixed(0)+'% of hard+soft+fee)',L.eligibleBasis,F$],
+        ['Basis boost (QCT/DDA)',L.boostPct/100,FPx],
+        ['Boosted eligible basis',L.boostedBasis,F$],
+        ['Applicable fraction',L.applicableFraction,FPx],
+        ['Qualified basis',L.qualifiedBasis,F$,true],
+        ['Credit rate',L.creditRate,FP2],
+        ['Annual credit',L.annualCredit,F$],
+        ['10-year credits',L.tenYearCredits,F$],
+        ['Credit price (per $1)',L.creditPrice,'$0.000'],
+        ['LIHTC equity',L.lihtcEquity,F$,true],
+      ]},
+      {title:'SOURCES',rows:[
+        ['Permanent loan (DSCR-sized)',L.permLoan,F$],
+        ['LIHTC equity',L.lihtcEquity,F$],
+        ['Soft sources / subsidy',L.softSources,F$],
+        ['Deferred developer fee',L.deferredFee,F$],
+        ['Total sources',L.totalSources,F$,true],
+      ]},
+      {title:'USES',rows:[
+        ['Land',L.land,F$],['Hard costs',L.hard,F$],['Soft costs',L.soft,F$],
+        ['Developer fee',L.devFee,F$],['Total uses',L.totalUses,F$,true],
+        ['Funding gap',L.fundingGap,F$N,true],['Developer fee paid in cash',L.cashDevFee,F$],
+      ]},
+    ]);
+  } else {
+    const W=calcWaterfall(res,inp);
+    if(W){
+      simpleSheet('Equity Waterfall','EQUITY WATERFALL','LP / GP promote distribution',[
+        {title:'STRUCTURE',rows:[
+          ['LP equity share',W.lpShare,FPx],['GP equity share',W.gpShare,FPx],
+          ['Preferred return',W.pref,FPx],
+        ]},
+        {title:'LIMITED PARTNER',rows:[
+          ['Equity contributed',W.lpEq,F$],['Total distributions',W.lpTot,F$],
+          ['Net profit',W.lpProfit,F$],['IRR',W.lpIRR,FP],['Equity multiple',W.lpEM,FX,true],
+        ]},
+        {title:'SPONSOR (GP)',rows:[
+          ['Equity contributed',W.gpEq,F$],['Total distributions',W.gpTot,F$],
+          ['Net profit',W.gpProfit,F$],['IRR',W.gpIRR,FP],['Equity multiple',W.gpEM,FX,true],
+          ['GP promote (above pro-rata)',W.gpPromote,F$,true],
+        ]},
+      ]);
+    }
+    if(inp.afterTax){
+      const A=calcAfterTax(res,inp);
+      if(A)simpleSheet('After-Tax','AFTER-TAX ANALYSIS','Depreciation shield, recapture, capital gains',[
+        {title:'RETURNS',rows:[
+          ['Pre-tax IRR',A.preTaxIRR,FP],['After-tax IRR',A.atIRR,FP,true],
+          ['Pre-tax equity multiple',A.preTaxEM,FX],['After-tax equity multiple',A.atEM,FX,true],
+        ]},
+        {title:'DEPRECIATION',rows:[
+          ['Depreciable basis',A.deprBasis,F$],['Depreciation period (yrs)',A.depYears,'0.0'],
+          ['Annual depreciation',A.annualDep,F$],['Accumulated at exit',A.accumDep,F$],
+          ['Ordinary tax rate',A.taxRate,FPx],
+        ]},
+        {title:'TAX ON SALE',rows:[
+          ['Adjusted basis at sale',A.adjBasis,F$],['Total gain',A.saleGain,F$],
+          ['Depreciation recapture tax',A.recaptureTax,F$],['Capital gains tax',A.capGainTax,F$],
+          ['Total tax on sale',A.saleTax,F$,true],['After-tax sale proceeds',A.atProceeds,F$,true],
+        ]},
+      ]);
+    }
+  }
+
+  // Legend + note
+  sn.mergeCells(lr,2,lr,lastCol);
+  Object.assign(sn.getCell(lr,2),{value:'Color scale:  green > 15%      amber 10-15%      red < 10%   (levered IRR)',font:{name:'Calibri',size:9,bold:true,color:{argb:'FF555555'}}});
+  sn.mergeCells(lr+1,2,lr+2,lastCol);
+  Object.assign(sn.getCell(lr+1,2),{value:'Each cell is a live IRR formula over a full scenario cash flow held in hidden rows below. Change any blue axis value \u2014 revenue growth down the side, exit cap across the top \u2014 and the grid recalculates in Excel.',font:{name:'Calibri',size:8.5,italic:true,color:{argb:'FF808080'}},alignment:{wrapText:true,vertical:'top'}});
+
+  return wb;
+}
+
+async function exportXLSX(res,inp){
+  if(!window.ExcelJS)return alert('Excel library not loaded');
+  const wb=await buildWorkbook(res,inp);
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=(inp.propertyName||'CapStack').replace(/\s+/g,'_')+'_CapStack.xlsx';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+
+// ─── FILE PARSE ───────────────────────────────────────────────────────────
+function parseFile(file,cb){
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(ext==='csv'){
+    Papa.parse(file,{header:true,skipEmptyLines:true,complete:r=>cb({data:r.data,headers:r.meta.fields||[]})});
+  }else{
+    const rd=new FileReader();
+    rd.onload=e=>{
+      const wb=XLSX.read(e.target.result,{type:'binary'});
+      const sh=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(sh,{defval:''});
+      cb({data,headers:data.length?Object.keys(data[0]):[]});
+    };
+    rd.readAsBinaryString(file);
+  }
+}
+function extractFields(data){
+  if(!data||!data.length)return{};
+  const out={};
+  const r=data[0];
+  const keys=Object.keys(r);
+  const find=(pats)=>{for(const p of pats){const k=keys.find(k=>k.toLowerCase().replace(/[\s_-]/g,'').includes(p));if(k){const v=pn(r[k]);if(v>0)return v;}}return null;};
+  const pp=find(['purchaseprice','saleprice','acquisitionprice','price']);if(pp)out.purchasePrice=pp;
+  const la=find(['loanamount','debtamount','mortgage']);if(la)out.loanAmount=la;
+  const units=find(['units','unitcount','numberofunits','totalunits']);if(units)out.numUnits=units;
+  const rent=find(['avgrent','averagerent','monthlyrent','rentperunit']);if(rent)out.avgRent=rent;
+  const noi=find(['noi','netoperatingincome']);if(noi)out.stabilizedNOI=noi;
+  const sf=find(['totalsf','totalsqft','rentablesf','grossleasablesf','gla','rsf']);if(sf)out.totalSF=sf;
+  const rsf=find(['rentsf','ratepersfrent','rentpersf']);if(rsf)out.avgRentPerSF=rsf;
+  const taxes=find(['propertytax','taxes','realestatetax']);if(taxes)out.propertyTax=taxes;
+  const ins=find(['insurance','insur']);if(ins)out.insurance=ins;
+  return out;
+}
+
+function normalizeUnitType(raw){
+  const v=String(raw||'').toLowerCase().replace(/[\s_]/g,'');
+  if(/studio|^eff|^0(br|bd|bed)?$/.test(v))return{type:'Studio'};
+  const m=v.match(/([0-4])\s*(br|bd|bed|x|\/)/);
+  const n=m?m[1]:(v.match(/^([0-4])$/)||[])[1];
+  if(n==='0')return{type:'Studio'};
+  if(n==='1')return{type:'1BR'};
+  if(n==='2')return{type:'2BR'};
+  if(n==='3')return{type:'3BR'};
+  if(n==='4')return{type:'4BR'};
+  return{type:'Other',label:String(raw||'Unit').trim()};
+}
+
+// Parse a rent roll into a unit mix: detects unit-type + rent (+ optional count) columns.
+function extractRentRoll(data){
+  if(!data||data.length<2)return null;
+  const keys=Object.keys(data[0]);
+  const matchCol=pats=>keys.find(k=>{const kl=k.toLowerCase().replace(/[\s_-]/g,'');return pats.some(p=>kl.includes(p));});
+  const typeCol=matchCol(['unittype','floorplan','plantype','bedroom','beds','bedbath','unitclass','plan','type']);
+  const rentCol=matchCol(['marketrent','askingrent','currentrent','monthlyrent','scheduledrent','rent','rate']);
+  if(!typeCol||!rentCol)return null;
+  const countCol=matchCol(['unitcount','numunits','ofunits','quantity','count','units']);
+  const groups={};
+  let total=0;
+  data.forEach(row=>{
+    const rawType=row[typeCol]; if(rawType===''||rawType==null)return;
+    const rent=pn(row[rentCol]); if(rent<=0)return;
+    const cnt=countCol?Math.max(1,pn(row[countCol])||1):1;
+    const norm=normalizeUnitType(rawType);
+    const key=norm.label||norm.type;
+    if(!groups[key])groups[key]={type:norm.type,label:norm.label,count:0,rentSum:0};
+    groups[key].count+=cnt;
+    groups[key].rentSum+=rent*cnt;
+    total+=cnt;
+  });
+  const order={Studio:0,'1BR':1,'2BR':2,'3BR':3,'4BR':4,Other:5};
+  const mix=Object.values(groups).map(g=>{
+    const row={type:g.type,count:g.count,rent:Math.round(g.rentSum/g.count)};
+    if(g.label&&g.type==='Other')row.label=g.label;
+    return row;
+  }).sort((a,b)=>(order[a.type]??9)-(order[b.type]??9));
+  if(!mix.length||total<1)return null;
+  const annual=mix.reduce((s,r)=>s+r.count*r.rent*12,0);
+  return{unitMix:mix,numUnits:total,avgRent:total?Math.round(annual/total/12):0};
+}
+
+// ─── DEFAULTS ─────────────────────────────────────────────────────────────
+const DEFS={
+  multifamily:{assetType:'Multifamily',propertyName:'',address:'',purchasePrice:7750000,acquisitionCostsPct:1.5,numUnits:40,avgRent:1650,unitMix:[{type:'1BR',count:24,rent:1500},{type:'2BR',count:16,rent:1875}],vacancyRate:5,otherIncome:12000,propertyTax:95000,insurance:28000,managementFeePct:8,maintenance:60000,utilities:25000,reserves:20000,administrative:10000,loanAmount:4850000,interestRate:6.5,amortYears:30,ioPeriod:0,loanFeesPct:1,revenueGrowth:3,expenseGrowth:2.5,holdingPeriod:7,exitCapRate:5.75,sellingCostsPct:3,discountRate:8,lpSharePct:90,prefRate:8,hurdle2:12,lpTier2:80,hurdle3:15,lpTier3:70,lpTier4:60,sizeDebt:false,minDSCR:1.25,maxLTV:75,maxLTC:65,minDebtYield:8},
+  commercial:{assetType:'Commercial',propertyName:'',address:'',purchasePrice:5850000,acquisitionCostsPct:1.5,totalSF:25000,occupiedSF:22500,avgRentPerSF:28,retailIncome:[{name:'Anchor Tenant',sf:15000,rentPerSF:28},{name:'In-Line Retail',sf:10000,rentPerSF:28}],camIncome:50000,vacancyRate:10,otherIncome:15000,propertyTax:95000,insurance:28000,managementFeePct:5,maintenance:55000,utilities:45000,reserves:25000,administrative:12000,loanAmount:3500000,interestRate:6.75,amortYears:25,ioPeriod:2,loanFeesPct:1,revenueGrowth:2.5,expenseGrowth:2.5,holdingPeriod:7,exitCapRate:7,sellingCostsPct:3,discountRate:9,lpSharePct:90,prefRate:8,hurdle2:12,lpTier2:80,hurdle3:15,lpTier3:70,lpTier4:60,sizeDebt:false,minDSCR:1.25,maxLTV:75,maxLTC:65,minDebtYield:8},
+  'mixed-use':{assetType:'Mixed-Use',propertyName:'',address:'',purchasePrice:3650000,acquisitionCostsPct:1.5,numUnits:20,avgRent:1400,unitMix:[{type:'1BR',count:12,rent:1300},{type:'2BR',count:8,rent:1550}],commercialSF:5000,commercialRentPerSF:24,retailIncome:[{name:'Ground Floor Retail',sf:5000,rentPerSF:24}],vacancyRate:7,otherIncome:10000,propertyTax:68000,insurance:24000,managementFeePct:7,maintenance:42000,utilities:22000,reserves:18000,administrative:10000,loanAmount:2350000,interestRate:6.5,amortYears:30,ioPeriod:0,loanFeesPct:1,revenueGrowth:3,expenseGrowth:2.5,holdingPeriod:7,exitCapRate:6.25,sellingCostsPct:3,discountRate:8.5,lpSharePct:90,prefRate:8,hurdle2:12,lpTier2:80,hurdle3:15,lpTier3:70,lpTier4:60,sizeDebt:false,minDSCR:1.25,maxLTV:75,maxLTC:65,minDebtYield:8},
+  development:{assetType:'Development',propertyName:'',address:'',purchasePrice:1200000,landCost:1200000,grossBuildableSF:30000,hardCostPerSF:185,softCostsPct:18,acquisitionCostsPct:1,numUnits:24,avgRent:2600,unitMix:[{type:'1BR',count:14,rent:2400},{type:'2BR',count:10,rent:2880}],stabilizedNOI:0,vacancyRate:5,otherIncome:0,propertyTax:65000,insurance:22000,managementFeePct:8,maintenance:35000,utilities:12000,reserves:20000,administrative:8000,constructionPeriodMonths:18,leaseUpMonths:12,loanAmount:0,interestRate:6.5,amortYears:30,ioPeriod:2,loanFeesPct:1.5,revenueGrowth:3,expenseGrowth:2.5,holdingPeriod:5,exitCapRate:5.25,sellingCostsPct:3,discountRate:10,lpSharePct:90,prefRate:8,hurdle2:12,lpTier2:80,hurdle3:15,lpTier3:70,lpTier4:60,sizeDebt:false,minDSCR:1.25,maxLTV:75,maxLTC:65,minDebtYield:8},
+  affordable:{assetType:'Affordable',propertyName:'',address:'',landCost:1500000,grossBuildableSF:60000,hardCostPerSF:250,softCostsPct:25,developerFee:2500000,numUnits:60,avgRent:1250,unitMix:[{type:'1BR',count:36,rent:1150},{type:'2BR',count:24,rent:1400}],vacancyRate:5,otherIncome:0,propertyTax:60000,insurance:90000,managementFeePct:8,maintenance:90000,utilities:60000,reserves:30000,administrative:60000,constructionPeriodMonths:20,leaseUpMonths:12,creditType:'9',creditRate:9,creditPrice:0.90,eligibleBasisPct:95,qctDda:false,affordablePct:100,minDSCR:1.15,softSources:0,maxDeferPct:100,interestRate:6,amortYears:35,ioPeriod:2,loanFeesPct:1.5,revenueGrowth:2,expenseGrowth:3,holdingPeriod:10,exitCapRate:6,sellingCostsPct:3,discountRate:7,loanAmount:0},
+};
+
+// ─── SMALL COMPONENTS ─────────────────────────────────────────────────────
+function Fld({label,hint,value,onChange,prefix,suffix,disabled,type='text'}){
+  const [txt,setTxt]=useState(value==null?'':String(value));
+  const [foc,setFoc]=useState(false);
+  useEffect(()=>{if(!foc)setTxt(value==null?'':String(value))},[value,foc]);
+  return(
+    <div style={{marginBottom:14}}>
+      <label style={{display:'block',fontSize:12.5,color:'#5f5f5f',marginBottom:5,fontWeight:600}}>
+        {label}{hint&&<span style={{fontWeight:400,color:'#737373',fontSize:11}}> ({hint})</span>}
+      </label>
+      <div style={{position:'relative',display:'flex',alignItems:'center'}}>
+        {prefix&&<span style={{position:'absolute',left:11,color:'#666666',fontSize:13,pointerEvents:'none'}}>{prefix}</span>}
+        <input type={type} className="input-f" value={foc?txt:(value==null?'':String(value))} disabled={disabled}
+          onFocus={()=>{setFoc(true);setTxt(value==null?'':String(value))}}
+          onChange={e=>{setTxt(e.target.value);onChange(e.target.value)}}
+          onBlur={()=>setFoc(false)}
+          style={{paddingLeft:prefix?27:13,paddingRight:suffix?34:13}}/>
+        {suffix&&<span style={{position:'absolute',right:11,color:'#666666',fontSize:13,pointerEvents:'none'}}>{suffix}</span>}
+      </div>
+    </div>
+  );
+}
+
+function Slider({label,min,max,step,value,onChange,fmt2}){
+  return(
+    <div style={{marginBottom:14}}>
+      <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
+        <label style={{fontSize:12.5,color:'#5f5f5f',fontWeight:600}}>{label}</label>
+        <span style={{fontSize:13,color:'#3a5bf0',fontWeight:700}}>{fmt2?fmt2(value):value}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(parseFloat(e.target.value))}/>
+      <div style={{display:'flex',justifyContent:'space-between',fontSize:10.5,color:'#8c8c8c',marginTop:3}}>
+        <span>{fmt2?fmt2(min):min}</span><span>{fmt2?fmt2(max):max}</span>
+      </div>
+    </div>
+  );
+}
+
+function SecHdr({icon,children}){
+  return(
+    <div className="sect-lbl" style={{marginTop:20}}>
+      {icon&&<span>{icon}</span>}{children}
+    </div>
+  );
+}
+
+function Chip({color,children}){
+  return<span style={{fontSize:11,padding:'3px 10px',borderRadius:20,background:`${color}22`,color,fontWeight:700,letterSpacing:.3}}>{children}</span>;
+}
+
+// ─── STEP 1 ASSET TYPE ────────────────────────────────────────────────────
+const ASSETS=[
+  {id:'multifamily',abbr:'MF',label:'Multifamily',sub:'Apartments, condos, townhomes',c:'#3a5bf0'},
+  {id:'commercial',abbr:'CRE',label:'Commercial',sub:'Office, retail, industrial NNN',c:'#56687a'},
+  {id:'mixed-use',abbr:'MXU',label:'Mixed-Use',sub:'Residential + commercial floors',c:'#1a7f37'},
+  {id:'development',abbr:'DEV',label:'Development',sub:'Ground-up construction / value-add',c:'#b54708'},
+  {id:'affordable',abbr:'LIHTC',label:'Affordable / LIHTC',sub:'Tax-credit & syndication underwriting',c:'#7a5195'},
+];
+
+const ASSET_DESC={
+  multifamily:{
+    what:'Apartment and rental-housing acquisitions, underwritten on stabilized operations.',
+    models:'You build a unit-mix rent roll, set vacancy and operating expenses, and the model runs a ten-year levered return with exit at your cap rate.'
+  },
+  commercial:{
+    what:'Office, retail, and industrial properties driven by tenant and NNN income.',
+    models:'You enter income by tenant or space plus CAM recovery, and the model carries it through to returns driven by lease income and the exit cap.'
+  },
+  'mixed-use':{
+    what:'Combined residential and commercial assets under a single capital stack.',
+    models:'You model an apartment unit mix and ground-floor retail as separate income streams, and the model blends them into one set of returns.'
+  },
+  development:{
+    what:'Ground-up construction and heavier value-add projects.',
+    models:'You enter land, hard and soft costs, and a developer fee, and the model bases returns on total development cost rather than a purchase price.'
+  },
+  affordable:{
+    what:'Low-Income Housing Tax Credit deals and tax-credit syndication.',
+    models:'The model runs the full credit calculation, sizes a loan to your minimum DSCR, raises syndication equity, and fills the gap with a deferred developer fee.'
+  }
+};
+function Step1({val,onChange}){
+  const cur=ASSETS.find(a=>a.id===val)||ASSETS[0];
+  const d=ASSET_DESC[cur.id]||{};
+  return(
+    <div className="fu">
+      <h2 style={{fontSize:23,fontWeight:700,marginBottom:6}}>What are you underwriting?</h2>
+      <p style={{color:'var(--muted)',marginBottom:26,fontSize:14}}>Pick the asset type and the model adapts its inputs and outputs to match.</p>
+
+      <label style={{display:'block',fontSize:12,fontWeight:600,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>Asset type</label>
+      <div style={{position:'relative',maxWidth:440}}>
+        <span style={{position:'absolute',left:16,top:'50%',transform:'translateY(-50%)',width:11,height:11,borderRadius:3,background:cur.c,pointerEvents:'none'}}/>
+        <select value={cur.id} onChange={e=>onChange(e.target.value)}
+          style={{width:'100%',appearance:'none',WebkitAppearance:'none',background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:10,padding:'15px 44px 15px 38px',fontSize:16,fontWeight:600,color:'var(--text)',fontFamily:"'Sora',sans-serif",cursor:'pointer',boxShadow:'var(--shadow)',outline:'none'}}>
+          {ASSETS.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}
+        </select>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2.5" style={{position:'absolute',right:18,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}}><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+
+      <div style={{marginTop:24,maxWidth:560}}>
+        <div style={{height:3,width:38,background:cur.c,borderRadius:2,marginBottom:16}}/>
+        <div style={{fontSize:18,fontWeight:600,fontFamily:"'Space Grotesk',sans-serif",marginBottom:10}}>{cur.label}</div>
+        <p style={{fontSize:15,color:'var(--text)',lineHeight:1.6,marginBottom:12}}>{d.what}</p>
+        <p style={{fontSize:14,color:'var(--muted)',lineHeight:1.65}}>{d.models}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── RENT ROLL EDITORS ──────────────────────────────────────────────────
+const UNIT_TYPES=['Studio','1BR','2BR','3BR','4BR','Penthouse','Other'];
+const CREDIT_TYPES=[
+  {id:'Historic',rate:20,price:0.90,note:'20% of qualified rehab expenditures (federal HTC), claimed over 5 years'},
+  {id:'Brownfield',rate:10,price:1.00,note:'state-specific; set your rate and basis (remediation / eligible costs)'},
+  {id:'LIHTC (est.)',rate:9,price:0.90,note:'rough estimate only; use the Affordable asset type for the full LIHTC calculation'},
+  {id:'New Markets',rate:39,price:0.80,note:'NMTC, 39% of qualified investment over 7 years'},
+  {id:'Solar / ITC',rate:30,price:0.90,note:'energy investment tax credit on eligible solar/energy basis'},
+  {id:'Other',rate:0,price:1.00,note:'custom credit'},
+];
+function CreditEditor({rows,onChange}){
+  rows=rows||[];
+  const set=(i,p)=>onChange(rows.map((r,j)=>j===i?{...r,...p}:r));
+  const add=()=>{const t=CREDIT_TYPES[0];onChange([...rows,{type:t.id,basis:0,rate:t.rate,price:t.price}]);};
+  const del=i=>onChange(rows.filter((_,j)=>j!==i));
+  const pickType=(i,id)=>{const t=CREDIT_TYPES.find(c=>c.id===id)||CREDIT_TYPES[0];set(i,{type:id,rate:t.rate,price:t.price});};
+  const eq=r=>(+r.basis||0)*((+r.rate||0)/100)*(r.price!=null?+r.price:0.9);
+  const tot=rows.reduce((s,r)=>s+eq(r),0);
+  const C='1.3fr 1.2fr .7fr .7fr 1fr 30px';
+  return(
+    <div style={{marginBottom:14}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+        <label style={{fontSize:13,fontWeight:600,color:'#3f3f3f'}}>Tax Credits (historic, brownfield, affordable)</label>
+        <span style={{fontSize:12,color:'#8c8c8c'}}>{rows.length} credit{rows.length!==1?'s':''} &middot; {f.$(tot)} equity</span>
+      </div>
+      {rows.length>0&&<div style={{display:'grid',gridTemplateColumns:C,gap:8,padding:'0 2px 6px',fontSize:11,fontWeight:700,color:'#8c8c8c'}}>
+        <div>Type</div><div>Eligible Basis</div><div>Rate %</div><div>Price</div><div>Equity</div><div></div>
+      </div>}
+      {rows.map((r,i)=>{
+        const ct=CREDIT_TYPES.find(c=>c.id===r.type);
+        return(
+        <div key={i} style={{marginBottom:8}}>
+          <div style={{display:'grid',gridTemplateColumns:C,gap:8,alignItems:'center'}}>
+            <select className="input-f" value={r.type||'Historic'} onChange={e=>pickType(i,e.target.value)} style={{height:38}}>
+              {CREDIT_TYPES.map(c=><option key={c.id} value={c.id}>{c.id}</option>)}
+            </select>
+            <div style={{position:'relative'}}>
+              <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'#8c8c8c',fontSize:13}}>$</span>
+              <input className="input-f" value={r.basis||''} onChange={e=>set(i,{basis:pn(e.target.value)})} placeholder="0" style={{paddingLeft:24}}/>
+            </div>
+            <input className="input-f" value={r.rate!=null?r.rate:''} onChange={e=>set(i,{rate:parseFloat(e.target.value)||0})} placeholder="0"/>
+            <input className="input-f" value={r.price!=null?r.price:''} onChange={e=>set(i,{price:parseFloat(e.target.value)||0})} placeholder="0.90"/>
+            <div className="mono" style={{fontSize:13,fontWeight:700,color:'#7a5195',paddingLeft:2}}>{f.$((+r.basis||0)*((+r.rate||0)/100)*(r.price!=null?+r.price:0.9))}</div>
+            <button onClick={()=>del(i)} title="Remove" style={{background:'none',border:'1px solid #e2e6f0',borderRadius:3,color:'#b42318',cursor:'pointer',width:30,height:30,fontSize:15,lineHeight:1}}>&times;</button>
+          </div>
+          {ct&&<div style={{fontSize:11,color:'#9a8aae',marginTop:3,marginLeft:2}}>{ct.note}</div>}
+        </div>
+        );
+      })}
+      <button onClick={add} className="btn-s" style={{padding:'7px 14px',fontSize:13,marginTop:2}}>+ Add credit</button>
+    </div>
+  );
+}
+function delBtn(onClick){return(
+  <button onClick={onClick} title="Remove" style={{background:'none',border:'1px solid #e2e6f0',borderRadius:3,color:'#b42318',cursor:'pointer',width:30,height:30,fontSize:15,lineHeight:1,flexShrink:0}}>&times;</button>
+);}
+function UnitMixEditor({rows,onChange}){
+  rows=rows||[];
+  const set=(i,p)=>onChange(rows.map((r,j)=>j===i?{...r,...p}:r));
+  const add=()=>onChange([...rows,{type:'1BR',count:0,rent:0}]);
+  const del=i=>onChange(rows.filter((_,j)=>j!==i));
+  const tU=rows.reduce((s,r)=>s+(+r.count||0),0);
+  const tA=rows.reduce((s,r)=>s+(+r.count||0)*(+r.rent||0)*12,0);
+  const C='1.4fr 1fr 1.2fr 30px';
+  return(
+    <div style={{marginBottom:14}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+        <label style={{fontSize:13,fontWeight:600,color:'#3f3f3f'}}>Unit Mix / Floor Plans</label>
+        <span style={{fontSize:12,color:'#8c8c8c'}}>{tU} units &middot; {f.$(tA)}/yr</span>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:C,gap:8,padding:'0 2px 6px',fontSize:11,fontWeight:700,color:'#8c8c8c'}}>
+        <div>Type</div><div># Units</div><div>Rent / Mo</div><div></div>
+      </div>
+      {rows.map((r,i)=>(
+        <div key={i}>
+          <div style={{display:'grid',gridTemplateColumns:C,gap:8,marginBottom:r.type==='Other'?4:8,alignItems:'center'}}>
+            <select className="input-f" value={r.type||'1BR'} onChange={e=>set(i,{type:e.target.value})} style={{height:38}}>
+              {UNIT_TYPES.map(u=><option key={u} value={u}>{u}</option>)}
+            </select>
+            <input className="input-f" value={r.count||''} onChange={e=>set(i,{count:pn(e.target.value)})} placeholder="0"/>
+            <div style={{position:'relative'}}>
+              <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'#8c8c8c',fontSize:13}}>$</span>
+              <input className="input-f" value={r.rent||''} onChange={e=>set(i,{rent:pn(e.target.value)})} placeholder="0" style={{paddingLeft:24}}/>
+            </div>
+            <button onClick={()=>del(i)} title="Remove" style={{background:'none',border:'1px solid #e2e6f0',borderRadius:3,color:'#b42318',cursor:'pointer',width:30,height:30,fontSize:15,lineHeight:1}}>&times;</button>
+          </div>
+          {r.type==='Other'&&<input className="input-f" value={r.label||''} onChange={e=>set(i,{label:e.target.value})} placeholder="Name this floor plan (e.g. Live/Work Loft, Garden 2BR)" style={{marginBottom:8,fontSize:13}}/>}
+        </div>
+      ))}
+      <button className="btn-s" style={{padding:'7px 14px',fontSize:13,marginTop:2}} onClick={add}>+ Add unit type</button>
+    </div>
+  );
+}
+function RetailEditor({rows,onChange,label}){
+  rows=rows||[];
+  const set=(i,p)=>onChange(rows.map((r,j)=>j===i?{...r,...p}:r));
+  const add=()=>onChange([...rows,{name:'Retail Space',sf:0,rentPerSF:0}]);
+  const del=i=>onChange(rows.filter((_,j)=>j!==i));
+  const tSF=rows.reduce((s,r)=>s+(+r.sf||0),0);
+  const tA=rows.reduce((s,r)=>s+(+r.sf||0)*(+r.rentPerSF||0),0);
+  const C='1.6fr 1fr 1fr 30px';
+  return(
+    <div style={{marginBottom:14}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+        <label style={{fontSize:13,fontWeight:600,color:'#3f3f3f'}}>{label||'Commercial / Retail Income'}</label>
+        <span style={{fontSize:12,color:'#8c8c8c'}}>{tSF.toLocaleString()} SF &middot; {f.$(tA)}/yr</span>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:C,gap:8,padding:'0 2px 6px',fontSize:11,fontWeight:700,color:'#8c8c8c'}}>
+        <div>Tenant / Space</div><div>SF</div><div>Rent / SF</div><div></div>
+      </div>
+      {rows.map((r,i)=>(
+        <div key={i} style={{display:'grid',gridTemplateColumns:C,gap:8,marginBottom:8,alignItems:'center'}}>
+          <input className="input-f" value={r.name||''} onChange={e=>set(i,{name:e.target.value})} placeholder="Tenant name"/>
+          <input className="input-f" value={r.sf||''} onChange={e=>set(i,{sf:pn(e.target.value)})} placeholder="0"/>
+          <div style={{position:'relative'}}>
+            <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'#8c8c8c',fontSize:13}}>$</span>
+            <input className="input-f" value={r.rentPerSF||''} onChange={e=>set(i,{rentPerSF:pn(e.target.value)})} placeholder="0" style={{paddingLeft:24}}/>
+          </div>
+          <button onClick={()=>del(i)} title="Remove" style={{background:'none',border:'1px solid #e2e6f0',borderRadius:3,color:'#b42318',cursor:'pointer',width:30,height:30,fontSize:15,lineHeight:1}}>&times;</button>
+        </div>
+      ))}
+      <button className="btn-s" style={{padding:'7px 14px',fontSize:13,marginTop:2}} onClick={add}>+ Add retail space</button>
+    </div>
+  );
+}
+
+// ─── STEP 2 PROPERTY + UPLOAD ─────────────────────────────────────────────
+function Step2({inp,onChange,assetType}){
+  const [dov,setDov]=useState(false);
+  const [parsed,setParsed]=useState(null);
+  const ref=useRef();
+  const [rollInfo,setRollInfo]=useState(null);
+  const handleFile=f2=>{
+    if(!f2)return;
+    parseFile(f2,res=>{
+      setParsed(res);
+      const ex=extractFields(res.data);
+      const roll=extractRentRoll(res.data);
+      if(roll){ex.unitMix=roll.unitMix;ex.numUnits=roll.numUnits;ex.avgRent=roll.avgRent;setRollInfo(roll);}
+      else setRollInfo(null);
+      if(Object.keys(ex).length)onChange(ex);
+    });
+  };
+  const t=assetType.toLowerCase();
+  return(
+    <div className="fu">
+      <h2 style={{fontSize:22,fontWeight:800,marginBottom:6}}>Property Details</h2>
+      <p style={{color:'#737373',marginBottom:24,fontSize:14}}>Enter manually or upload a file to auto-populate</p>
+      <div className={`upload-z${dov?' dov':''}`} style={{marginBottom:24}}
+        onDragOver={e=>{e.preventDefault();setDov(true)}} onDragLeave={()=>setDov(false)}
+        onDrop={e=>{e.preventDefault();setDov(false);handleFile(e.dataTransfer.files[0])}}
+        onClick={()=>ref.current?.click()}>
+        <input ref={ref} type="file" accept=".csv,.xlsx,.xls" style={{display:'none'}} onChange={e=>handleFile(e.target.files[0])}/>
+        <div style={{marginBottom:8}}>{parsed?
+          <span style={{color:'#1a7f37',fontSize:24,fontWeight:800}}>&#10003;</span>:
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#666666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign:'middle'}}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
+        </div>
+        <div style={{fontSize:14,fontWeight:700,color:'#3f3f3f',marginBottom:3}}>
+          {parsed?`${parsed.data.length} rows imported, fields auto-populated`:'Drop a file or click to upload'}
+        </div>
+        <div style={{fontSize:12,color:'#737373'}}>
+          {parsed?`${parsed.headers.length} columns detected`:'Accepts .csv, .xlsx, .xls (rent rolls, OM financials, lease abstracts)'}
+        </div>
+        {rollInfo&&<div style={{marginTop:10,padding:'8px 14px',background:'#e6f4ea',border:'1px solid #b8e0c4',borderRadius:4,fontSize:12.5,color:'#1a7f37',display:'inline-block'}}>
+          Rent roll detected: {rollInfo.numUnits} units across {rollInfo.unitMix.length} floor plan{rollInfo.unitMix.length!==1?'s':''} loaded into the unit mix below.
+        </div>}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}} className="g2">
+        <Fld label="Property Name" value={inp.propertyName||''} onChange={v=>onChange({propertyName:v})}/>
+        <Fld label="Address / Market" value={inp.address||''} onChange={v=>onChange({address:v})}/>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}} className="g2">
+        <Fld label="Purchase Price" prefix="$" value={inp.purchasePrice} onChange={v=>onChange({purchasePrice:pn(v)})}/>
+        <Fld label="Acquisition Costs / Fees" suffix="%" hint={`closing, legal, title, acquisition fee = ${f.$((inp.purchasePrice||0)*(inp.acquisitionCostsPct||0)/100)}`} value={inp.acquisitionCostsPct} onChange={v=>onChange({acquisitionCostsPct:pn(v)})}/>
+      </div>
+      {(t==='multifamily')&&<UnitMixEditor rows={inp.unitMix} onChange={mix=>{const u=mix.reduce((a,r)=>a+(+r.count||0),0);const an=mix.reduce((a,r)=>a+(+r.count||0)*(+r.rent||0)*12,0);onChange({unitMix:mix,numUnits:u,avgRent:u?Math.round(an/u/12):0});}}/>}
+      {(t==='commercial')&&<>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:6}} className="g2">
+          <Fld label="Total Rentable SF" value={inp.totalSF} onChange={v=>onChange({totalSF:pn(v)})}/>
+          <Fld label="CAM / NNN Income" prefix="$" value={inp.camIncome||0} onChange={v=>onChange({camIncome:pn(v)})}/>
+        </div>
+        <RetailEditor rows={inp.retailIncome} onChange={r=>onChange({retailIncome:r})}/>
+      </>}
+      {(t==='mixed-use')&&<>
+        <UnitMixEditor rows={inp.unitMix} onChange={mix=>{const u=mix.reduce((a,r)=>a+(+r.count||0),0);const an=mix.reduce((a,r)=>a+(+r.count||0)*(+r.rent||0)*12,0);onChange({unitMix:mix,numUnits:u,avgRent:u?Math.round(an/u/12):0});}}/>
+        <RetailEditor rows={inp.retailIncome} onChange={r=>{const sf=r.reduce((a,x)=>a+(+x.sf||0),0);onChange({retailIncome:r,commercialSF:sf});}}/>
+      </>}
+      {(t==='development')&&<>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}} className="g2">
+          <Fld label="Land / Site Cost" prefix="$" value={inp.landCost||inp.purchasePrice} onChange={v=>onChange({landCost:pn(v),purchasePrice:pn(v)})}/>
+          <Fld label="Gross Buildable SF" value={inp.grossBuildableSF} onChange={v=>onChange({grossBuildableSF:pn(v)})}/>
+          <Fld label="Hard Cost / SF" prefix="$" value={inp.hardCostPerSF} onChange={v=>onChange({hardCostPerSF:pn(v)})}/>
+          <Fld label="Soft Costs" suffix="%" hint="% of hard costs" value={inp.softCostsPct} onChange={v=>onChange({softCostsPct:pn(v)})}/>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:6}} className="g3">
+          <Fld label="Construction Period" suffix="mos" value={inp.constructionPeriodMonths} onChange={v=>onChange({constructionPeriodMonths:pn(v)})}/>
+          <Fld label="Lease-Up Period" suffix="mos" value={inp.leaseUpMonths} onChange={v=>onChange({leaseUpMonths:pn(v)})}/>
+          <div>
+            <label style={{fontSize:13,fontWeight:600,color:'#3f3f3f',display:'block',marginBottom:6}}>Draw Pattern</label>
+            <select className="input-f" value={inp.drawPattern||'straight'} onChange={e=>onChange({drawPattern:e.target.value})} style={{height:42}}>
+              <option value="straight">Straight-line</option>
+              <option value="scurve">S-curve</option>
+            </select>
+          </div>
+        </div>
+        <div style={{fontSize:12,color:'#8c8c8c',marginBottom:8,marginTop:4}}>Stabilized unit mix</div>
+        <UnitMixEditor rows={inp.unitMix} onChange={mix=>{const u=mix.reduce((a,r)=>a+(+r.count||0),0);const an=mix.reduce((a,r)=>a+(+r.count||0)*(+r.rent||0)*12,0);onChange({unitMix:mix,numUnits:u,avgRent:u?Math.round(an/u/12):0});}}/>
+        <div style={{height:6}}/>
+        <CreditEditor rows={inp.devCredits} onChange={c=>onChange({devCredits:c})}/>
+      </>}
+
+      {(t==='affordable')&&<>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}} className="g2">
+          <Fld label="Land / Site Cost" prefix="$" value={inp.landCost} onChange={v=>onChange({landCost:pn(v),purchasePrice:pn(v)})}/>
+          <Fld label="Gross Buildable SF" value={inp.grossBuildableSF} onChange={v=>onChange({grossBuildableSF:pn(v)})}/>
+          <Fld label="Hard Cost / SF" prefix="$" value={inp.hardCostPerSF} onChange={v=>onChange({hardCostPerSF:pn(v)})}/>
+          <Fld label="Soft Costs" suffix="%" hint="% of hard costs" value={inp.softCostsPct} onChange={v=>onChange({softCostsPct:pn(v)})}/>
+          <Fld label="Developer Fee" prefix="$" value={inp.developerFee} onChange={v=>onChange({developerFee:pn(v)})}/>
+          <Fld label="Soft Sources / Subsidy" prefix="$" hint="soft loans, grants" value={inp.softSources} onChange={v=>onChange({softSources:pn(v)})}/>
+        </div>
+        <div style={{fontSize:12,color:'#8c8c8c',marginBottom:8,marginTop:8,fontWeight:700,letterSpacing:'.3px'}}>TAX CREDIT ASSUMPTIONS</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}} className="g3">
+          <div>
+            <label style={{fontSize:13,fontWeight:600,color:'#3f3f3f',display:'block',marginBottom:6}}>Credit Type</label>
+            <select className="input-f" value={inp.creditType||'9'} onChange={e=>{const v=e.target.value;onChange({creditType:v,creditRate:v==='4'?4:9});}} style={{height:40,marginBottom:14}}>
+              <option value="9">9% (new construction)</option>
+              <option value="4">4% (acq/rehab, bonds)</option>
+            </select>
+          </div>
+          <Fld label="Credit Rate" suffix="%" value={inp.creditRate} onChange={v=>onChange({creditRate:pn(v)})}/>
+          <Fld label="Credit Price" prefix="$" hint="per $1 of credit" value={inp.creditPrice} onChange={v=>onChange({creditPrice:parseFloat(v)||0})}/>
+          <Fld label="Eligible Basis" suffix="%" hint="% of hard+soft+fee" value={inp.eligibleBasisPct} onChange={v=>onChange({eligibleBasisPct:pn(v)})}/>
+          <Fld label="Affordable Units" suffix="%" hint="applicable fraction" value={inp.affordablePct} onChange={v=>onChange({affordablePct:pn(v)})}/>
+          <Fld label="Min DSCR" hint="sizes the loan" value={inp.minDSCR} onChange={v=>onChange({minDSCR:parseFloat(v)||0})}/>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:10,margin:'4px 0 16px',padding:'10px 14px',background:'#f4f0f8',border:'1px solid #e0d8ec',borderRadius:4}}>
+          <input type="checkbox" checked={!!inp.qctDda} onChange={e=>onChange({qctDda:e.target.checked})} style={{width:16,height:16,accentColor:'#7a5195'}}/>
+          <span style={{fontSize:13,color:'#3f3f3f'}}>Located in a QCT or DDA (130% basis boost)</span>
+        </div>
+        <div style={{fontSize:12,color:'#8c8c8c',marginBottom:8,marginTop:4}}>Restricted unit mix (rents at AMI limits)</div>
+        <UnitMixEditor rows={inp.unitMix} onChange={mix=>{const u=mix.reduce((a,r)=>a+(+r.count||0),0);const an=mix.reduce((a,r)=>a+(+r.count||0)*(+r.rent||0)*12,0);onChange({unitMix:mix,numUnits:u,avgRent:u?Math.round(an/u/12):0});}}/>
+        <p style={{fontSize:12,color:'#7a5195',marginTop:4,marginBottom:10}}>The permanent loan is sized automatically to your minimum DSCR. LIHTC equity, soft sources, and deferred developer fee fill the remaining gap.</p>
+        <CreditEditor rows={inp.devCredits} onChange={c=>onChange({devCredits:c})}/>
+      </>}
+    </div>
+  );
+}
+
+// ─── STEP 3 INCOME & EXPENSES ─────────────────────────────────────────────
+function Step3({inp,onChange}){
+  const t=inp.assetType.toLowerCase();
+  const gpi=getGPI(inp);
+  const vac=gpi*(inp.vacancyRate||0)/100;
+  const egi=gpi-vac+(inp.otherIncome||0);
+  const mgmt=egi*(inp.managementFeePct||0)/100;
+  const opex=(inp.propertyTax||0)+(inp.insurance||0)+mgmt+(inp.maintenance||0)+(inp.utilities||0)+(inp.reserves||0)+(inp.administrative||0);
+  const noi=egi-opex;
+  const er=egi>0?opex/egi:0;
+  const capBasis=t==='development'?getDevCost(inp):(inp.purchasePrice||0);
+  const capR=capBasis>0?noi/capBasis:0;
+  return(
+    <div className="fu">
+      <h2 style={{fontSize:22,fontWeight:800,marginBottom:6}}>Income & Expenses</h2>
+      <p style={{color:'#737373',marginBottom:20,fontSize:14}}>Year 1 operating assumptions with live preview as you type</p>
+      <div className="glass g4" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',marginBottom:24,overflow:'hidden'}}>
+        {[
+          {l:'Gross Income',v:f.$(gpi),c:'#3a5bf0'},
+          {l:'Eff. Gross Income',v:f.$(egi),c:'#56687a'},
+          {l:'NOI',v:f.$(noi),c:noi>0?'#1a7f37':'#b42318'},
+          {l:'Expense Ratio',v:`${(er*100).toFixed(1)}%`,c:er>0.6?'#b42318':er>0.45?'#9a6700':'#1a7f37'},
+        ].map(i=>(
+          <div key={i.l} style={{padding:'12px 14px',textAlign:'center',borderRight:'1px solid #ececec'}}>
+            <div style={{fontSize:17,fontWeight:800,color:i.c}}>{i.v}</div>
+            <div style={{fontSize:11,color:'#737373',marginTop:3}}>{i.l}</div>
+          </div>
+        ))}
+      </div>
+      <SecHdr>Revenue</SecHdr>
+      <Slider label="Physical Vacancy + Credit Loss" min={0} max={25} step={0.5} value={inp.vacancyRate||0} onChange={v=>onChange({vacancyRate:v})} fmt2={v=>`${v}%`}/>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}} className="g2">
+        {t==='multifamily'&&<><Fld label="Units" value={inp.numUnits} onChange={v=>onChange({numUnits:pn(v)})}/><Fld label="Avg Monthly Rent" prefix="$" value={inp.avgRent} onChange={v=>onChange({avgRent:pn(v)})}/></>}
+        {t==='commercial'&&<><Fld label="Total SF" value={inp.totalSF} onChange={v=>onChange({totalSF:pn(v)})}/><Fld label="Base Rent / SF" prefix="$" value={inp.avgRentPerSF} onChange={v=>onChange({avgRentPerSF:pn(v)})}/><Fld label="CAM / NNN Income" prefix="$" value={inp.camIncome||0} onChange={v=>onChange({camIncome:pn(v)})}/></>}
+        {t==='mixed-use'&&<><Fld label="Residential Units" value={inp.numUnits} onChange={v=>onChange({numUnits:pn(v)})}/><Fld label="Avg Monthly Rent" prefix="$" value={inp.avgRent} onChange={v=>onChange({avgRent:pn(v)})}/><Fld label="Commercial SF" value={inp.commercialSF||0} onChange={v=>onChange({commercialSF:pn(v)})}/><Fld label="Commercial Rent / SF" prefix="$" value={inp.commercialRentPerSF||0} onChange={v=>onChange({commercialRentPerSF:pn(v)})}/></>}
+        {t==='development'&&<><Fld label="Stabilized Units" value={inp.numUnits} onChange={v=>onChange({numUnits:pn(v)})}/><Fld label="Avg Monthly Rent" prefix="$" value={inp.avgRent} onChange={v=>onChange({avgRent:pn(v)})}/></>}
+        <Fld label="Other Income (Annual)" prefix="$" hint="laundry, parking, fees" value={inp.otherIncome||0} onChange={v=>onChange({otherIncome:pn(v)})}/>
+      </div>
+      <SecHdr>Operating Expenses</SecHdr>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}} className="g2">
+        <Fld label="Property Taxes" prefix="$" hint="annual" value={inp.propertyTax||0} onChange={v=>onChange({propertyTax:pn(v)})}/>
+        <Fld label="Insurance" prefix="$" hint="annual" value={inp.insurance||0} onChange={v=>onChange({insurance:pn(v)})}/>
+        <Fld label="Property Management Fee" suffix="%" hint="% of EGI" value={inp.managementFeePct||0} onChange={v=>onChange({managementFeePct:pn(v)})}/>
+        <Fld label="Repairs & Maintenance" prefix="$" hint="annual" value={inp.maintenance||0} onChange={v=>onChange({maintenance:pn(v)})}/>
+        <Fld label="Utilities" prefix="$" hint="annual" value={inp.utilities||0} onChange={v=>onChange({utilities:pn(v)})}/>
+        <Fld label="Capital Reserves" prefix="$" hint="annual" value={inp.reserves||0} onChange={v=>onChange({reserves:pn(v)})}/>
+        <Fld label="Administrative" prefix="$" hint="annual" value={inp.administrative||0} onChange={v=>onChange({administrative:pn(v)})}/>
+      </div>
+      <div style={{background:'#eef1fe',borderRadius:10,padding:'12px 16px',marginTop:8,fontSize:13}}>
+        <span style={{color:'#666666'}}>Implied Cap Rate: </span>
+        <span style={{fontWeight:700,color:capR>0.07?'#1a7f37':capR>0.05?'#9a6700':'#b42318'}}>{f.pct(capR,2)}</span>
+        <span style={{color:'#8c8c8c',marginLeft:16}}>NOI: </span>
+        <span style={{fontWeight:700,color:'#191919'}}>{f.$f(noi)}</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── STEP 4 FINANCING ─────────────────────────────────────────────────────
+function SizedDebtPreview({inp}){
+  let ds=null; try{ds=buildPF(inp).debtSizing;}catch(e){}
+  if(!ds)return null;
+  return(
+    <div style={{margin:'4px 0 8px',padding:'14px 16px',background:'var(--surface2)',border:'1px solid var(--border)',borderRadius:9}}>
+      <div style={{fontSize:11,fontWeight:700,color:'var(--muted)',letterSpacing:'.5px',marginBottom:10}}>SIZING TEST &mdash; LOAN IS THE LESSER OF</div>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+        {ds.constraints.map((c,i)=>(
+          <div key={i} style={{flex:1,minWidth:120,padding:'10px 12px',borderRadius:8,background:c.binds?'var(--ink)':'var(--surface)',border:'1px solid '+(c.binds?'var(--ink)':'var(--border)')}}>
+            <div style={{fontSize:11,color:c.binds?'#aab3c9':'var(--muted)'}}>{c.name} <span style={{opacity:.7}}>({c.basis})</span></div>
+            <div className="mono" style={{fontSize:14.5,fontWeight:700,color:c.binds?'#fff':'var(--text)',marginTop:2}}>{f.$(c.loan)}</div>
+            {c.binds&&<div style={{fontSize:9.5,color:'#7d93ff',fontWeight:700,letterSpacing:'.5px',marginTop:2}}>BINDING</div>}
+          </div>
+        ))}
+      </div>
+      <div style={{marginTop:10,fontSize:13,color:'var(--muted)'}}>Sized loan: <span className="mono" style={{fontWeight:700,color:'var(--accent)'}}>{f.$(ds.sizedLoan)}</span> &middot; {ds.binding} constraint binds</div>
+    </div>
+  );
+}
+function Step4({inp,onChange}){
+  const pp=inp.purchasePrice||0;
+  const la=inp.loanAmount||0;
+  const ltv=pp>0?la/pp*100:0;
+  const acqC=pp*(inp.acquisitionCostsPct||0)/100;
+  const lf=la*(inp.loanFeesPct||0)/100;
+  const t=inp.assetType.toLowerCase();
+  const devCost=t==='development'?getDevCost(inp):0;
+  const eq=(t==='development'?devCost:pp)+acqC+lf-la;
+  const ds=monthlyPmt(la,(inp.interestRate||0)/100,inp.amortYears||30)*12;
+  const noi=getGPI(inp)*(1-(inp.vacancyRate||0)/100)+(inp.otherIncome||0)-getOpEx(inp);
+  const dscr=ds>0?noi/ds:null;
+  return(
+    <div className="fu">
+      <h2 style={{fontSize:22,fontWeight:800,marginBottom:6}}>Financing & Assumptions</h2>
+      <p style={{color:'#737373',marginBottom:20,fontSize:14}}>Debt structure, growth rates, and exit strategy</p>
+      <div className="glass g4" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',marginBottom:24,overflow:'hidden'}}>
+        {[
+          {l:t==='development'?'LTC':'LTV',v:`${(t==='development'&&devCost>0?la/devCost*100:ltv).toFixed(1)}%`,c:(t==='development'&&devCost>0?la/devCost*100:ltv)>90?'#b42318':(t==='development'&&devCost>0?la/devCost*100:ltv)>80?'#9a6700':'#1a7f37'},
+          {l:'Equity Required',v:f.$(eq),c:'#3a5bf0'},
+          {l:'Ann. Debt Service',v:f.$(ds),c:'#56687a'},
+          {l:'DSCR',v:dscr?`${dscr.toFixed(2)}x`:'—',c:!dscr?'#666666':dscr<1.2?'#b42318':dscr<1.4?'#9a6700':'#1a7f37'},
+        ].map(i=>(
+          <div key={i.l} style={{padding:'12px 14px',textAlign:'center',borderRight:'1px solid #ececec'}}>
+            <div style={{fontSize:17,fontWeight:800,color:i.c}}>{i.v}</div>
+            <div style={{fontSize:11,color:'#737373',marginTop:3}}>{i.l}</div>
+          </div>
+        ))}
+      </div>
+      {t==='development'&&(
+        <div style={{background:'#fff8eb',border:'1px solid rgba(245,158,11,.2)',borderRadius:10,padding:'12px 16px',marginBottom:20,fontSize:13}}>
+          <span style={{color:'#5f5f5f'}}>Total Development Cost: </span>
+          <span style={{fontWeight:800,color:'#9a6700'}}>{f.$f(devCost)}</span>
+          <span style={{color:'#666666',marginLeft:16}}>Return on Cost (Y1): </span>
+          <span style={{fontWeight:700,color:'#9a6700'}}>{devCost>0?f.pct(noi/devCost,2):'—'}</span>
+        </div>
+      )}
+      <SecHdr>Loan Terms</SecHdr>
+      <label style={{display:'flex',alignItems:'center',gap:11,cursor:'pointer',marginBottom:16,padding:'12px 15px',background:inp.sizeDebt?'var(--accent-tint)':'var(--surface2)',border:'1px solid '+(inp.sizeDebt?'#c9d4fb':'var(--border)'),borderRadius:9}}>
+        <input type="checkbox" checked={!!inp.sizeDebt} onChange={e=>onChange({sizeDebt:e.target.checked})} style={{width:16,height:16,accentColor:'var(--accent)'}}/>
+        <span style={{fontSize:13.5,fontWeight:600}}>Size the loan automatically &mdash; lesser of DSCR, {t==='development'?'LTC':'LTV'}, and debt yield</span>
+      </label>
+      {!inp.sizeDebt?(
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}} className="g2">
+          <Fld label="Loan Amount" prefix="$" value={inp.loanAmount} onChange={v=>onChange({loanAmount:pn(v)})}/>
+          <div>
+            <Fld label={t==='development'?'Loan-to-Cost':'Loan-to-Value'} suffix="%" hint="type any value, sets loan amount" value={+((t==='development'&&devCost>0?la/devCost*100:ltv)).toFixed(1)} onChange={v=>onChange({loanAmount:Math.round((t==='development'?devCost:pp)*pn(v)/100)})}/>
+            <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:-6,marginBottom:14}}>
+              {[50,60,65,70,75,80,85,90].map(p=>(
+                <button key={p} className="btn-s" style={{padding:'4px 10px',fontSize:12}} onClick={()=>onChange({loanAmount:Math.round((t==='development'?devCost:pp)*p/100)})}>{p}%</button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ):(
+        <>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}} className="g3">
+            <Fld label="Min DSCR" hint="stabilized coverage" value={inp.minDSCR} onChange={v=>onChange({minDSCR:parseFloat(v)||0})}/>
+            <Fld label={t==='development'?'Max LTC':'Max LTV'} suffix="%" value={t==='development'?inp.maxLTC:inp.maxLTV} onChange={v=>onChange(t==='development'?{maxLTC:pn(v)}:{maxLTV:pn(v)})}/>
+            <Fld label="Min Debt Yield" suffix="%" value={inp.minDebtYield} onChange={v=>onChange({minDebtYield:parseFloat(v)||0})}/>
+          </div>
+          <SizedDebtPreview inp={inp}/>
+        </>
+      )}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:14}} className="g2">
+        <Fld label="Interest Rate" suffix="%" value={inp.interestRate} onChange={v=>onChange({interestRate:pn(v)})}/>
+        <Fld label="Amortization" suffix="yrs" value={inp.amortYears} onChange={v=>onChange({amortYears:pn(v)})}/>
+        <Fld label="Interest-Only Period" suffix="yrs" hint="0 = none" value={inp.ioPeriod} onChange={v=>onChange({ioPeriod:pn(v)})}/>
+        <Fld label="Origination / Loan Fee" suffix="%" value={inp.loanFeesPct} onChange={v=>onChange({loanFeesPct:pn(v)})}/>
+      </div>
+      <SecHdr>Hold & Exit Assumptions</SecHdr>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}} className="g2">
+        <Slider label="Revenue Growth Rate" min={0} max={8} step={0.25} value={inp.revenueGrowth||3} onChange={v=>onChange({revenueGrowth:v})} fmt2={v=>`${v}% / yr`}/>
+        <Slider label="Expense Growth Rate" min={0} max={8} step={0.25} value={inp.expenseGrowth||2.5} onChange={v=>onChange({expenseGrowth:v})} fmt2={v=>`${v}% / yr`}/>
+        <Slider label="Holding Period" min={3} max={10} step={1} value={inp.holdingPeriod||7} onChange={v=>onChange({holdingPeriod:v})} fmt2={v=>`${v} yrs`}/>
+        <Slider label="Exit Cap Rate" min={3.5} max={10} step={0.25} value={inp.exitCapRate||5.5} onChange={v=>onChange({exitCapRate:v})} fmt2={v=>`${v}%`}/>
+        <Slider label="Selling Costs" min={1} max={6} step={0.25} value={inp.sellingCostsPct||3} onChange={v=>onChange({sellingCostsPct:v})} fmt2={v=>`${v}%`}/>
+        <Slider label="Discount Rate (NPV)" min={4} max={15} step={0.25} value={inp.discountRate||8} onChange={v=>onChange({discountRate:v})} fmt2={v=>`${v}%`}/>
+      </div>
+
+      {t!=='affordable'?(<>
+        <SecHdr>Equity Waterfall (LP / GP Promote)</SecHdr>
+        <p style={{fontSize:12.5,color:'#737373',marginTop:-6,marginBottom:14}}>Splits the levered cash flow between a limited partner and the sponsor. Return of capital and preferred return first, then tiered promote above each LP IRR hurdle.</p>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}} className="g3">
+          <Fld label="LP Equity Share" suffix="%" hint="sponsor co-invests the rest" value={inp.lpSharePct!=null?inp.lpSharePct:90} onChange={v=>onChange({lpSharePct:pn(v)})}/>
+          <Fld label="Preferred Return" suffix="%" hint="LP IRR before promote" value={inp.prefRate!=null?inp.prefRate:8} onChange={v=>onChange({prefRate:parseFloat(v)||0})}/>
+          <div/>
+          <Fld label="Hurdle 2 (LP IRR)" suffix="%" value={inp.hurdle2!=null?inp.hurdle2:12} onChange={v=>onChange({hurdle2:parseFloat(v)||0})}/>
+          <Fld label="LP Share, Pref to H2" suffix="%" value={inp.lpTier2!=null?inp.lpTier2:80} onChange={v=>onChange({lpTier2:pn(v)})}/>
+          <div/>
+          <Fld label="Hurdle 3 (LP IRR)" suffix="%" value={inp.hurdle3!=null?inp.hurdle3:15} onChange={v=>onChange({hurdle3:parseFloat(v)||0})}/>
+          <Fld label="LP Share, H2 to H3" suffix="%" value={inp.lpTier3!=null?inp.lpTier3:70} onChange={v=>onChange({lpTier3:pn(v)})}/>
+          <Fld label="LP Share, Above H3" suffix="%" value={inp.lpTier4!=null?inp.lpTier4:60} onChange={v=>onChange({lpTier4:pn(v)})}/>
+        </div>
+
+        <SecHdr>After-Tax Analysis</SecHdr>
+        <label style={{display:'flex',alignItems:'center',gap:11,cursor:'pointer',marginBottom:14,padding:'12px 15px',background:inp.afterTax?'var(--accent-tint)':'var(--surface2)',border:'1px solid '+(inp.afterTax?'#c9d4fb':'var(--border)'),borderRadius:9}}>
+          <input type="checkbox" checked={!!inp.afterTax} onChange={e=>onChange({afterTax:e.target.checked})} style={{width:16,height:16,accentColor:'var(--accent)'}}/>
+          <span style={{fontSize:13.5,fontWeight:600}}>Add after-tax analysis &mdash; depreciation shield, recapture, and capital gains</span>
+        </label>
+        {inp.afterTax&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}} className="g3">
+          {t!=='development'&&<Fld label="Land (non-depreciable)" suffix="%" hint="% of cost" value={inp.landPct!=null?inp.landPct:20} onChange={v=>onChange({landPct:pn(v)})}/>}
+          <Fld label="Depreciation Period" suffix="yrs" hint="27.5 resi / 39 comm" value={inp.depYears!=null?inp.depYears:(t==='commercial'?39:27.5)} onChange={v=>onChange({depYears:parseFloat(v)||0})}/>
+          <Fld label="Ordinary Tax Rate" suffix="%" value={inp.taxRate!=null?inp.taxRate:37} onChange={v=>onChange({taxRate:parseFloat(v)||0})}/>
+          <Fld label="Capital Gains Rate" suffix="%" value={inp.capGainsRate!=null?inp.capGainsRate:20} onChange={v=>onChange({capGainsRate:parseFloat(v)||0})}/>
+          <Fld label="Depr. Recapture Rate" suffix="%" value={inp.recaptureRate!=null?inp.recaptureRate:25} onChange={v=>onChange({recaptureRate:parseFloat(v)||0})}/>
+        </div>}
+
+        <SecHdr>Refinance / Cash-Out</SecHdr>
+        <label style={{display:'flex',alignItems:'center',gap:11,cursor:'pointer',marginBottom:14,padding:'12px 15px',background:inp.refiEnabled?'var(--accent-tint)':'var(--surface2)',border:'1px solid '+(inp.refiEnabled?'#c9d4fb':'var(--border)'),borderRadius:9}}>
+          <input type="checkbox" checked={!!inp.refiEnabled} onChange={e=>onChange({refiEnabled:e.target.checked})} style={{width:16,height:16,accentColor:'var(--accent)'}}/>
+          <span style={{fontSize:13.5,fontWeight:600}}>Model a mid-hold refinance &mdash; pull equity out and re-lever</span>
+        </label>
+        {inp.refiEnabled&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}} className="g3">
+          <Fld label="Refinance in Year" value={inp.refiYear!=null?inp.refiYear:3} onChange={v=>onChange({refiYear:pn(v)})}/>
+          <Fld label="Refi LTV" suffix="%" value={inp.refiLTV!=null?inp.refiLTV:70} onChange={v=>onChange({refiLTV:pn(v)})}/>
+          <Fld label="Refi Cap Rate" suffix="%" hint="values the property" value={inp.refiCapRate!=null?inp.refiCapRate:(inp.exitCapRate||5.5)} onChange={v=>onChange({refiCapRate:parseFloat(v)||0})}/>
+          <Fld label="New Interest Rate" suffix="%" value={inp.refiRate!=null?inp.refiRate:(inp.interestRate||6)} onChange={v=>onChange({refiRate:parseFloat(v)||0})}/>
+          <Fld label="Refi Costs" suffix="%" hint="% of new loan" value={inp.refiCostPct!=null?inp.refiCostPct:1} onChange={v=>onChange({refiCostPct:parseFloat(v)||0})}/>
+        </div>}
+      </>):(
+        <div style={{marginTop:18,padding:'14px 16px',background:'#f4f0f8',border:'1px solid #e0d8ec',borderRadius:4,fontSize:13,color:'#7a5195'}}>
+          The LP/GP promote waterfall is not applied to affordable / LIHTC deals. Tax-credit partnership economics are driven by credit delivery and are shown in the LIHTC analysis instead.
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── RESULTS CHARTS ────────────────────────────────────────────────────────
+function ChartTip({active,payload,label}){
+  if(!active||!payload||!payload.length)return null;
+  return(
+    <div style={{background:'#ffffff',border:'1px solid #e0e0e0',borderRadius:9,padding:'10px 14px'}}>
+      <p style={{fontWeight:700,marginBottom:6,color:'#191919',fontSize:13}}>{label}</p>
+      {payload.map(p=>(
+        <p key={p.name} style={{color:p.color,fontSize:12.5,marginBottom:2}}>
+          {p.name}: {typeof p.value==='number'?(/rate|return|coc/i.test(p.name)?`${p.value.toFixed(2)}%`:f.$(p.value,false)):p.value}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+// ─── PROFORMA TABLE ────────────────────────────────────────────────────────
+function PFTable({rows,hp}){
+  const visible=rows.slice(0,hp);
+  const defs=[
+    {l:'Gross Potential Income',k:'gpi',fmt:f.$f,type:'income'},
+    {l:'  Less: Vacancy Loss',k:'vacL',fmt:v=>`(${f.$f(v)})`,type:'deduct'},
+    {l:'Effective Gross Income',k:'egi',fmt:f.$f,type:'sub'},
+    {l:'  Less: Operating Expenses',k:'opex',fmt:v=>`(${f.$f(v)})`,type:'deduct'},
+    {l:'Net Operating Income',k:'noi',fmt:f.$f,type:'hl'},
+    {l:'  Less: Debt Service',k:'ds',fmt:v=>`(${f.$f(v)})`,type:'deduct'},
+    {l:'Cash Flow Before Tax',k:'cfbt',fmt:f.$f,type:'hl'},
+    {l:'RATIOS & METRICS',k:null,type:'sec'},
+    {l:'Cap Rate',k:'capR',fmt:v=>f.pct(v,2),type:'metric'},
+    {l:'Cash-on-Cash Return',k:'coc',fmt:v=>f.pct(v,2),type:'metric'},
+    {l:'DSCR',k:'dscr',fmt:v=>v?`${v.toFixed(2)}x`:'N/A',type:'metric'},
+    {l:'Expense Ratio',k:'expR',fmt:v=>f.pct(v,1),type:'metric'},
+    {l:'Loan Balance (EOY)',k:'bal',fmt:f.$f,type:'metric'},
+  ];
+  return(
+    <div style={{overflowX:'auto'}}>
+      <table className="tbl">
+        <thead>
+          <tr>
+            <th style={{textAlign:'left',minWidth:190}}>Line Item</th>
+            {visible.map(r=><th key={r.yr}>Year {r.yr}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {defs.map((d,i)=>{
+            if(d.type==='sec')return(
+              <tr key={i} className="sec"><td colSpan={visible.length+1}>{d.l}</td></tr>
+            );
+            return(
+              <tr key={i} className={d.type==='hl'?'sub':''}>
+                <td>{d.l}</td>
+                {visible.map(r=>{
+                  const v=d.k?r[d.k]:null;
+                  const str=v!=null?d.fmt(v):'—';
+                  const isPos=d.k==='cfbt'&&v>0;
+                  const isNeg=d.k==='cfbt'&&v<0;
+                  return<td key={r.yr} className={isPos?'pos':isNeg?'neg':''}>{str}</td>;
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── SENSITIVITY TABLE ─────────────────────────────────────────────────────
+function SensTable({inp}){
+  const [caps,setCaps]=useState([4.5,5.0,5.5,6.0,6.5,7.0]);
+  const [growths,setGrowths]=useState([1,2,3,4,5]);
+  const getIRR=(rg,ec)=>buildPF({...inp,revenueGrowth:rg,exitCapRate:ec}).ret.irr;
+  const setCap=(i,v)=>setCaps(caps.map((c,j)=>j===i?(parseFloat(v)||0):c));
+  const setGr=(i,v)=>setGrowths(growths.map((g,j)=>j===i?(parseFloat(v)||0):g));
+  const axIn={width:'100%',border:'none',background:'transparent',color:'#fff',fontWeight:700,fontSize:12,textAlign:'center',outline:'none',fontFamily:'inherit'};
+  const axInL={width:46,border:'1px solid #c7c5c0',borderRadius:3,background:'#fff',color:'#1f3864',fontWeight:700,fontSize:12,textAlign:'center',outline:'none',fontFamily:'inherit',padding:'3px 2px'};
+  return(
+    <div>
+      <div className="sect-lbl" style={{marginBottom:6}}>Levered IRR Sensitivity</div>
+      <p style={{fontSize:12,color:'#737373',marginBottom:6}}>Each cell is the deal's levered IRR at that revenue growth and exit cap. Edit any axis value below and the grid recalculates live. All other inputs held constant.</p>
+      <p style={{fontSize:12,color:'#737373',marginBottom:14}}><span style={{color:'#1a7f37'}}>&#9632; &gt;15%</span>  <span style={{color:'#9a6700',marginLeft:8}}>&#9632; 10-15%</span>  <span style={{color:'#b42318',marginLeft:8}}>&#9632; &lt;10%</span></p>
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+        <span style={{fontSize:11,fontWeight:700,color:'#8c8c8c',letterSpacing:'.5px'}}>EXIT CAP RATE &rarr; (columns, editable)</span>
+      </div>
+      <div style={{overflowX:'auto'}}>
+        <table className="tbl">
+          <thead><tr>
+            <th style={{textAlign:'left',minWidth:140}}>Revenue Growth &darr;<br/><span style={{fontWeight:400,color:'#8c9bb5'}}>vs. Exit Cap &rarr;</span></th>
+            {caps.map((c,i)=><th key={i}><input value={c} onChange={e=>setCap(i,e.target.value)} style={axIn} inputMode="decimal"/></th>)}
+          </tr></thead>
+          <tbody>{growths.map((g,gi)=>(
+            <tr key={gi}>
+              <td style={{fontWeight:700,color:'#5f5f5f'}}>
+                <input value={g} onChange={e=>setGr(gi,e.target.value)} style={axInL} inputMode="decimal"/> <span style={{color:'#8c8c8c'}}>% / yr</span>
+              </td>
+              {caps.map((c,ci)=>{
+                const irr=getIRR(g,c);
+                const col=irr>0.15?'#1a7f37':irr>0.10?'#9a6700':'#b42318';
+                const bg=irr>0.15?'#e6f4ea':irr>0.10?'#fbf3da':'#fdecea';
+                return<td key={ci} style={{background:bg,color:col,fontWeight:700,textAlign:'center',borderRadius:3}}>{f.pct(irr,1)}</td>;
+              })}
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── ANALYST NOTES (auto-generated) ───────────────────────────────────────
+function analystNotes(res,inp){
+  const{rows,ret,sum,exit,equity}=res;
+  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const notes=[];
+  notes.push(`This deal projects a ${f.pct(ret.irr,1)} levered IRR and a ${f.x(ret.em)} equity multiple over a ${hp}-year hold, returning ${f.$f(ret.totalCF+exit.proceeds)} on ${f.$f(equity)} of invested equity.`);
+  if(sum.dscr!=null){
+    if(sum.dscr<1.20)notes.push(`Year 1 DSCR of ${sum.dscr.toFixed(2)}x is below the 1.20x to 1.25x minimum most lenders require. As structured, this loan amount is unlikely to be financeable without more income or less leverage.`);
+    else if(sum.dscr<1.40)notes.push(`Year 1 DSCR of ${sum.dscr.toFixed(2)}x clears typical lender minimums but leaves a thin cushion. A modest income shortfall or expense overrun would pressure coverage.`);
+    else notes.push(`Year 1 DSCR of ${sum.dscr.toFixed(2)}x provides healthy debt coverage with room to absorb underperformance.`);
+  }
+  const totalRet=ret.totalCF+exit.proceeds;
+  if(totalRet>0){
+    const saleShare=exit.proceeds/totalRet;
+    if(saleShare>0.7)notes.push(`${f.pct(saleShare,0)} of total capital returned comes from the exit sale, so the headline IRR is highly sensitive to the ${inp.exitCapRate}% exit cap assumption. Review the sensitivity table before relying on it.`);
+    else if(saleShare>0)notes.push(`Returns are reasonably balanced between operating cash flow (${f.pct(1-saleShare,0)}) and exit proceeds (${f.pct(saleShare,0)}), which reduces dependence on the exit cap assumption.`);
+  }
+  const occCushion=1-sum.beOcc-(inp.vacancyRate||0)/100;
+  if(sum.beOcc>0){
+    if(occCushion<0.05)notes.push(`Break-even occupancy of ${f.pct(sum.beOcc,1)} leaves very little margin versus the ${inp.vacancyRate}% vacancy assumption. Small leasing setbacks would turn cash flow negative.`);
+    else notes.push(`Break-even occupancy of ${f.pct(sum.beOcc,1)} leaves a comfortable cushion against the underwritten ${inp.vacancyRate}% vacancy.`);
+  }
+  const y1=rows[0];
+  if(y1&&y1.expR>0.55)notes.push(`A ${f.pct(y1.expR,0)} expense ratio is high for this profile. Verify the tax, insurance, and maintenance inputs reflect actuals rather than placeholders.`);
+  return notes;
+}
+
+// ─── RESULTS DASHBOARD ────────────────────────────────────────────────────
+function DevCreditsPanel({D}){
+  if(!D)return null;
+  const PUR='#7a5195';
+  const su=(label,val,bold)=>(
+    <div style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid #ececec',fontSize:13.5}}>
+      <span style={{color:bold?'var(--text)':'var(--muted)',fontWeight:bold?700:400}}>{label}</span>
+      <span className="mono" style={{fontWeight:bold?800:600}}>{val}</span>
+    </div>
+  );
+  return(
+    <div className="glass" style={{padding:'22px 24px',marginBottom:22,borderTop:'3px solid '+PUR}}>
+      <div className="sect-lbl" style={{color:PUR}}>Tax Credit Equity</div>
+      <div style={{overflow:'hidden',borderRadius:8,border:'1px solid var(--border)',marginBottom:16}}>
+        <table className="tbl">
+          <thead><tr><th style={{textAlign:'left'}}>Credit</th><th>Eligible Basis</th><th>Rate</th><th>Price</th><th>Credit</th><th>Equity</th></tr></thead>
+          <tbody>
+            {D.rows.map((r,i)=>(
+              <tr key={i}>
+                <td style={{fontWeight:600,color:'var(--text)'}}>{r.type}</td>
+                <td>{f.$(r.basis)}</td><td>{r.ratePct.toFixed(0)}%</td><td>{'$'+r.price.toFixed(2)}</td>
+                <td>{f.$(r.credit)}</td><td style={{fontWeight:700,color:PUR}}>{f.$(r.equity)}</td>
+              </tr>
+            ))}
+            <tr className="sub"><td>Total credit equity</td><td colSpan={4}></td><td style={{fontWeight:800,color:PUR}}>{f.$(D.totalEquity)}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:24}} className="g2">
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:PUR,letterSpacing:'.5px',marginBottom:6}}>SOURCES &amp; USES</div>
+          {su('Total development cost',f.$(D.uses),true)}
+          {su('Permanent loan',f.$(D.loan))}
+          {D.isAff&&su('LIHTC equity',f.$(D.lihtcEq))}
+          {D.isAff&&D.softSources>0&&su('Soft sources',f.$(D.softSources))}
+          {D.isAff&&D.deferredFee>0&&su('Deferred developer fee',f.$(D.deferredFee))}
+          {su('Tax credit equity (these)',f.$(D.totalEquity))}
+          {su('Sponsor equity required',f.$(D.sponsorEquityAfter),true)}
+        </div>
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:PUR,letterSpacing:'.5px',marginBottom:6}}>IMPACT</div>
+          {su('Sponsor equity before credits',f.$(D.sponsorEquityBefore))}
+          {su('Covered by credit equity',f.$(Math.min(D.totalEquity,D.sponsorEquityBefore)))}
+          {su('Credit equity as % of cost',D.uses>0?(D.totalEquity/D.uses*100).toFixed(1)+'%':'0%')}
+          {!D.isAff&&D.sponsorIRR!=null&&su('Sponsor IRR with credits',f.pct(D.sponsorIRR,1),true)}
+          {!D.isAff&&D.baseIRR!=null&&su('Levered IRR before credits',f.pct(D.baseIRR,1))}
+        </div>
+      </div>
+      <p style={{fontSize:12,color:'var(--muted)',marginTop:14,lineHeight:1.5}}>Each credit is computed on its own basis, rate, and syndication price, then stacked as a source against development cost. {D.isAff?'These stack on top of the LIHTC equity from the affordable module.':'The sponsor IRR with credits assumes the sponsor retains operating cash flow while credit investors take the credits; it is indicative.'}</p>
+    </div>
+  );
+}
+
+function ScenarioPanel({S}){
+  if(!S||!S.base)return null;
+  const cols=[['Downside',S.downside,'#b42318'],['Base',S.base,'var(--accent)'],['Upside',S.upside,'#0e7c5a']];
+  const row=(label,fn)=>(
+    <tr>
+      <td style={{fontWeight:600,color:'var(--muted)'}}>{label}</td>
+      {cols.map((c,i)=><td key={i} style={{textAlign:'right',fontWeight:700}}>{c[1]?fn(c[1]):'n/a'}</td>)}
+    </tr>
+  );
+  return(
+    <div className="glass" style={{padding:'22px 24px',marginBottom:22,borderTop:'3px solid var(--accent)'}}>
+      <div className="sect-lbl">Scenario Analysis</div>
+      <div style={{overflow:'hidden',borderRadius:8,border:'1px solid var(--border)'}}>
+        <table className="tbl">
+          <thead><tr>
+            <th style={{textAlign:'left'}}>Metric</th>
+            {cols.map((c,i)=><th key={i} style={{textAlign:'right',color:c[2]}}>{c[0]}</th>)}
+          </tr></thead>
+          <tbody>
+            {row('Levered IRR',d=>f.pct(d.irr,1))}
+            {row('Equity Multiple',d=>f.x(d.em))}
+            {row('Year 1 DSCR',d=>d.dscr?d.dscr.toFixed(2)+'x':'n/a')}
+            {row('Year 1 Cash-on-Cash',d=>f.pct(d.coc,1))}
+            {row('Net Sale Proceeds',d=>f.$(d.proceeds))}
+            <tr className="sec"><td colSpan={4}>assumptions</td></tr>
+            {row('Revenue Growth',d=>d.g.toFixed(1)+'%')}
+            {row('Exit Cap Rate',d=>d.c.toFixed(2)+'%')}
+            {row('Vacancy',d=>d.v.toFixed(1)+'%')}
+          </tbody>
+        </table>
+      </div>
+      <p style={{fontSize:12,color:'var(--muted)',marginTop:12,lineHeight:1.5}}>Downside and upside flex rent growth by &plusmn;{S.deltas.g}pt, exit cap by &plusmn;{S.deltas.c}pt, and vacancy by &plusmn;{S.deltas.v}pt around your base case, recomputed end to end.</p>
+    </div>
+  );
+}
+
+function RefinancePanel({R}){
+  if(!R)return null;
+  const C='#0e7c5a';
+  const lift=R.refiIRR-R.baseIRR;
+  return(
+    <div className="glass" style={{padding:'22px 24px',marginBottom:22,borderTop:'3px solid '+C}}>
+      <div className="sect-lbl" style={{color:C}}>Refinance &amp; Cash-Out (Year {R.refiYear})</div>
+      <div style={{display:'flex',gap:14,flexWrap:'wrap',marginBottom:16}}>
+        <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
+          <div style={{fontSize:11,color:'var(--muted)'}}>Cash Out to Equity</div>
+          <div className="mono" style={{fontSize:21,fontWeight:800,color:R.cashOut>=0?C:'var(--neg)'}}>{f.$(R.cashOut)}</div>
+          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>year {R.refiYear} distribution</div>
+        </div>
+        <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
+          <div style={{fontSize:11,color:'var(--muted)'}}>IRR with Refi</div>
+          <div className="mono" style={{fontSize:21,fontWeight:800,color:C}}>{f.pct(R.refiIRR,1)}</div>
+          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>base {f.pct(R.baseIRR,1)}</div>
+        </div>
+        <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
+          <div style={{fontSize:11,color:'var(--muted)'}}>IRR Impact</div>
+          <div className="mono" style={{fontSize:21,fontWeight:800,color:lift>=0?C:'var(--warn)'}}>{lift>=0?'+':''}{f.pct(lift,1)}</div>
+          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>multiple {f.x(R.refiEM)} vs {f.x(R.baseEM)}</div>
+        </div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:24}} className="g2">
+        <div>
+          {[['Refinanced value',f.$(R.value)],['New loan',f.$(R.newLoan)],['Old loan retired',f.$(R.oldBal)]].map((r,i)=>(
+            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid #ececec',fontSize:13}}>
+              <span style={{color:'var(--muted)'}}>{r[0]}</span><span className="mono" style={{fontWeight:600}}>{r[1]}</span>
+            </div>
+          ))}
+        </div>
+        <div>
+          {[['Refi costs',f.$(R.refiCosts)],['New debt service',f.$(R.newDS)],['DSCR at refi',R.refiDSCR?R.refiDSCR.toFixed(2)+'x':'n/a']].map((r,i)=>(
+            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid #ececec',fontSize:13}}>
+              <span style={{color:'var(--muted)'}}>{r[0]}</span><span className="mono" style={{fontWeight:600}}>{r[1]}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <p style={{fontSize:12,color:'var(--muted)',marginTop:14,lineHeight:1.5}}>The property is valued at a {((R.newLoan/(R.value||1))*100).toFixed(0)}% LTV refinance in year {R.refiYear}, returning {f.$(R.cashOut)} of tax-free proceeds to equity. The remaining hold runs on the new loan, and exit proceeds reflect its payoff.</p>
+    </div>
+  );
+}
+
+function ProjectTimelinePanel({P}){
+  if(!P)return null;
+  const C='#b54708';
+  const drag=P.stabilizedIRR-P.projectIRR;
+  return(
+    <div className="glass" style={{padding:'22px 24px',marginBottom:22,borderTop:'3px solid '+C}}>
+      <div className="sect-lbl" style={{color:C}}>Construction &amp; Lease-Up Timeline</div>
+      <div style={{display:'flex',gap:14,flexWrap:'wrap',marginBottom:16}}>
+        <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
+          <div style={{fontSize:11,color:'var(--muted)'}}>Project IRR</div>
+          <div className="mono" style={{fontSize:21,fontWeight:800,color:C}}>{f.pct(P.projectIRR,1)}</div>
+          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>includes build + lease-up</div>
+        </div>
+        <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
+          <div style={{fontSize:11,color:'var(--muted)'}}>Stabilized IRR</div>
+          <div className="mono" style={{fontSize:21,fontWeight:800,color:'var(--muted)'}}>{f.pct(P.stabilizedIRR,1)}</div>
+          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>operations only</div>
+        </div>
+        <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
+          <div style={{fontSize:11,color:'var(--muted)'}}>Timing Drag</div>
+          <div className="mono" style={{fontSize:21,fontWeight:800,color:'var(--warn)'}}>{f.pct(drag,1)}</div>
+          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>cost of the build</div>
+        </div>
+      </div>
+      <div style={{display:'flex',gap:8,marginBottom:12}}>
+        <div style={{flex:P.constructionMonths||1,padding:'8px 10px',background:'#fbeee0',borderRadius:'6px 0 0 6px',textAlign:'center'}}>
+          <div className="mono" style={{fontSize:13,fontWeight:700,color:C}}>{P.constructionMonths}mo</div>
+          <div style={{fontSize:10,color:'var(--muted)'}}>Construction</div>
+        </div>
+        <div style={{flex:P.leaseUpMonths||1,padding:'8px 10px',background:'#fdf6e3',textAlign:'center'}}>
+          <div className="mono" style={{fontSize:13,fontWeight:700,color:'#9a6700'}}>{P.leaseUpMonths}mo</div>
+          <div style={{fontSize:10,color:'var(--muted)'}}>Lease-Up</div>
+        </div>
+        <div style={{flex:6,padding:'8px 10px',background:'#e6f4ea',borderRadius:'0 6px 6px 0',textAlign:'center'}}>
+          <div className="mono" style={{fontSize:13,fontWeight:700,color:'#1a7f37'}}>Stabilized Hold &rarr; Exit</div>
+          <div style={{fontSize:10,color:'var(--muted)'}}>{Math.round(P.totalMonths/12*10)/10} yrs total</div>
+        </div>
+      </div>
+      {P.constructionLoan>0&&<div style={{display:'flex',gap:14,flexWrap:'wrap',marginBottom:12}}>
+        <div style={{flex:1,minWidth:140,padding:'11px 14px',background:'var(--surface2)',borderRadius:8,border:'1px solid var(--border)'}}>
+          <div style={{fontSize:11,color:'var(--muted)'}}>Capitalized Interest</div>
+          <div className="mono" style={{fontSize:15,fontWeight:700,color:C}}>{f.$(P.capInterest)}</div>
+          <div style={{fontSize:10,color:'var(--muted2)',marginTop:1}}>{P.drawPattern==='scurve'?'S-curve':'straight-line'} draws, exact monthly accrual</div>
+        </div>
+        <div style={{flex:1,minWidth:140,padding:'11px 14px',background:'var(--surface2)',borderRadius:8,border:'1px solid var(--border)'}}>
+          <div style={{fontSize:11,color:'var(--muted)'}}>Peak Loan Draw</div>
+          <div className="mono" style={{fontSize:15,fontWeight:700,color:'var(--text)'}}>{f.$(P.peakDrawBalance)}</div>
+          <div style={{fontSize:10,color:'var(--muted2)',marginTop:1}}>on a {f.$(P.constructionLoan)} construction loan</div>
+        </div>
+      </div>}
+      <p style={{fontSize:12,color:'var(--muted)',lineHeight:1.5}}>The project IRR holds equity through {P.constructionMonths} months of construction with no income, ramps revenue over a {P.leaseUpMonths}-month lease-up, and capitalizes {f.$(P.capInterest)} of construction-period interest{P.constructionLoan>0?' computed month-by-month on the actual outstanding draw balance':''}. This is the honest return; the stabilized IRR above assumes operations begin on day one.</p>
+    </div>
+  );
+}
+
+function AfterTaxPanel({A}){
+  if(!A)return null;
+  const G='#0e7c5a';
+  const drop=A.preTaxIRR-A.atIRR;
+  return(
+    <div className="glass" style={{padding:'22px 24px',marginBottom:22,borderTop:'3px solid '+G}}>
+      <div className="sect-lbl" style={{color:G}}>After-Tax Returns</div>
+      <div style={{display:'flex',gap:14,flexWrap:'wrap',marginBottom:16}}>
+        <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
+          <div style={{fontSize:11,color:'var(--muted)'}}>After-Tax IRR</div>
+          <div className="mono" style={{fontSize:21,fontWeight:800,color:G}}>{f.pct(A.atIRR,1)}</div>
+          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>pre-tax {f.pct(A.preTaxIRR,1)}</div>
+        </div>
+        <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
+          <div style={{fontSize:11,color:'var(--muted)'}}>After-Tax Multiple</div>
+          <div className="mono" style={{fontSize:21,fontWeight:800,color:'var(--text)'}}>{f.x(A.atEM)}</div>
+          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>pre-tax {f.x(A.preTaxEM)}</div>
+        </div>
+        <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
+          <div style={{fontSize:11,color:'var(--muted)'}}>Tax Drag on IRR</div>
+          <div className="mono" style={{fontSize:21,fontWeight:800,color:'var(--warn)'}}>{f.pct(drop,1)}</div>
+          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>{(A.depYears).toFixed(1)}-yr depreciation</div>
+        </div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:24}} className="g2">
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:G,letterSpacing:'.5px',marginBottom:6}}>SALE TAX</div>
+          {[['Adjusted basis at sale',f.$(A.adjBasis)],['Total gain',f.$(A.saleGain)],['Depreciation recapture tax',f.$(A.recaptureTax)],['Capital gains tax',f.$(A.capGainTax)],['Total tax on sale',f.$(A.saleTax)],['After-tax sale proceeds',f.$(A.atProceeds)]].map((r,i)=>(
+            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid #ececec',fontSize:13}}>
+              <span style={{color:'var(--muted)'}}>{r[0]}</span><span className="mono" style={{fontWeight:600}}>{r[1]}</span>
+            </div>
+          ))}
+        </div>
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:G,letterSpacing:'.5px',marginBottom:6}}>ANNUAL DEPRECIATION SHIELD</div>
+          {[['Depreciable basis',f.$(A.deprBasis)],['Annual depreciation',f.$(A.annualDep)],['Accumulated at exit',f.$(A.accumDep)],['Ordinary tax rate',(A.taxRate*100).toFixed(0)+'%']].map((r,i)=>(
+            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid #ececec',fontSize:13}}>
+              <span style={{color:'var(--muted)'}}>{r[0]}</span><span className="mono" style={{fontWeight:600}}>{r[1]}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <p style={{fontSize:12,color:'var(--muted)',marginTop:14,lineHeight:1.5}}>Depreciation shelters operating income each year; at sale, that depreciation is recaptured at {(A.recRate*100).toFixed(0)}% and remaining gain taxed at {(A.capRate*100).toFixed(0)}%. Passive-loss limitations are simplified.</p>
+    </div>
+  );
+}
+
+function WaterfallPanel({W}){
+  if(!W)return null;
+  const GP='#3a5bf0', LPc='#56687a';
+  const f0=f.$;
+  const box=(label,lp,gp)=>(
+    <div style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid #ececec',fontSize:13.5}}>
+      <span style={{color:'#5f5f5f'}}>{label}</span>
+      <span style={{display:'flex',gap:24}}>
+        <span style={{width:92,textAlign:'right',color:'#3f3f3f',fontWeight:600}}>{lp}</span>
+        <span style={{width:92,textAlign:'right',color:'#3f3f3f',fontWeight:600}}>{gp}</span>
+      </span>
+    </div>
+  );
+  return(
+    <div className="glass" style={{padding:'22px 24px',marginBottom:22,borderTop:'3px solid '+GP}}>
+      <div className="sect-lbl" style={{color:GP}}>Equity Waterfall &mdash; LP / GP Returns</div>
+      <div style={{display:'flex',justifyContent:'flex-end',gap:24,fontSize:11,fontWeight:700,letterSpacing:'.5px',color:'#8c8c8c',marginBottom:4,marginTop:2}}>
+        <span style={{width:92,textAlign:'right'}}>LIMITED PARTNER</span>
+        <span style={{width:92,textAlign:'right'}}>SPONSOR (GP)</span>
+      </div>
+      {box('Equity contributed',f0(W.lpEq),f0(W.gpEq))}
+      {box('Total distributions',f0(W.lpTot),f0(W.gpTot))}
+      {box('Net profit',f0(W.lpProfit),f0(W.gpProfit))}
+      {box('IRR',f.pct(W.lpIRR,1),f.pct(W.gpIRR,1))}
+      {box('Equity multiple',f.x(W.lpEM),f.x(W.gpEM))}
+      <div style={{display:'flex',gap:14,marginTop:16,flexWrap:'wrap'}}>
+        <div style={{flex:1,minWidth:150,padding:'12px 16px',background:'#eef1fe',borderRadius:4,border:'1px solid #d6e3f0'}}>
+          <div style={{fontSize:11,color:'#8c8c8c',marginBottom:3}}>GP Promote (above pro-rata)</div>
+          <div style={{fontSize:18,fontWeight:800,color:GP}}>{f0(W.gpPromote)}</div>
+        </div>
+        <div style={{flex:1,minWidth:150,padding:'12px 16px',background:'#eef1fe',borderRadius:4,border:'1px solid #d6e3f0'}}>
+          <div style={{fontSize:11,color:'#8c8c8c',marginBottom:3}}>Structure</div>
+          <div style={{fontSize:14,fontWeight:700,color:'#191919'}}>{(W.lpShare*100).toFixed(0)}/{(W.gpShare*100).toFixed(0)} equity &middot; {(W.pref*100).toFixed(0)}% pref</div>
+        </div>
+      </div>
+      <div style={{marginTop:14}}>
+        <div style={{fontSize:11,fontWeight:700,color:GP,letterSpacing:'.5px',marginBottom:6}}>PROMOTE TIERS (LP SHARE OF CASH)</div>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+          {W.tiers.map((t,i)=>(
+            <div key={i} style={{flex:1,minWidth:120,padding:'8px 10px',background:'#f7f7f7',borderRadius:4,textAlign:'center'}}>
+              <div style={{fontSize:11,color:'#8c8c8c'}}>{t.label}</div>
+              <div style={{fontSize:14,fontWeight:700,color:'#191919'}}>{(t.sL*100).toFixed(0)} / {(100-t.sL*100).toFixed(0)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <p style={{fontSize:12,color:'#737373',marginTop:14,lineHeight:1.5}}>Return of capital and the preferred return are paid first; the sponsor earns its promote on cash flow above each LP IRR hurdle. LP and GP figures are computed from the deal's levered cash flows.</p>
+    </div>
+  );
+}
+
+function LihtcPanel({L,res}){
+  const PUR='#7a5195';
+  const row=(label,val,opts={})=>(
+    <div style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid #ececec',fontSize:13.5}}>
+      <span style={{color:opts.bold?'#191919':'#5f5f5f',fontWeight:opts.bold?700:400,paddingLeft:opts.indent?14:0}}>{label}</span>
+      <span style={{color:opts.color||(opts.bold?'#191919':'#3f3f3f'),fontWeight:opts.bold?700:600}}>{val}</span>
+    </div>
+  );
+  const gap=L.fundingGap;
+  const gapColor=Math.abs(gap)<1?'#1a7f37':(gap>0?'#b42318':'#9a6700');
+  const gapLabel=Math.abs(gap)<1?'Balanced':(gap>0?'Funding shortfall':'Surplus');
+  return(
+    <div className="glass" style={{padding:'22px 24px',marginBottom:22,borderTop:'3px solid '+PUR}}>
+      <div className="sect-lbl" style={{color:PUR}}>LIHTC &amp; Syndication Analysis</div>
+      <div className="g2" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:28,marginTop:4}}>
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:PUR,letterSpacing:'.5px',marginBottom:6}}>TAX CREDIT CALCULATION</div>
+          {row('Eligible basis ('+(L.ebPct*100).toFixed(0)+'%)',f.$(L.eligibleBasis))}
+          {row('Basis boost',L.boostPct+'%')}
+          {row('Boosted eligible basis',f.$(L.boostedBasis))}
+          {row('Applicable fraction',(L.applicableFraction*100).toFixed(0)+'%')}
+          {row('Qualified basis',f.$(L.qualifiedBasis),{bold:true})}
+          {row('Credit rate',(L.creditRate*100).toFixed(2)+'%')}
+          {row('Annual credit',f.$(L.annualCredit))}
+          {row('10-year credits',f.$(L.tenYearCredits))}
+          {row('Credit price','$'+L.creditPrice.toFixed(3))}
+          {row('LIHTC equity',f.$(L.lihtcEquity),{bold:true,color:PUR})}
+        </div>
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:PUR,letterSpacing:'.5px',marginBottom:6}}>SOURCES &amp; USES</div>
+          {row('Permanent loan (DSCR-sized)',f.$(L.permLoan))}
+          {row('LIHTC equity',f.$(L.lihtcEquity))}
+          {row('Soft sources / subsidy',f.$(L.softSources))}
+          {row('Deferred developer fee',f.$(L.deferredFee))}
+          {row('Total sources',f.$(L.totalSources),{bold:true})}
+          <div style={{height:8}}/>
+          {row('Land',f.$(L.land))}
+          {row('Hard costs',f.$(L.hard))}
+          {row('Soft costs',f.$(L.soft))}
+          {row('Developer fee',f.$(L.devFee))}
+          {row('Total uses',f.$(L.totalUses),{bold:true})}
+        </div>
+      </div>
+      <div style={{display:'flex',gap:14,marginTop:16,flexWrap:'wrap'}}>
+        <div style={{flex:1,minWidth:160,padding:'12px 16px',background:'#f4f0f8',borderRadius:4,border:'1px solid #e0d8ec'}}>
+          <div style={{fontSize:11,color:'#8c8c8c',marginBottom:3}}>Financing Gap</div>
+          <div style={{fontSize:18,fontWeight:800,color:gapColor}}>{f.$(Math.abs(gap))} <span style={{fontSize:12,fontWeight:600}}>{gapLabel}</span></div>
+        </div>
+        <div style={{flex:1,minWidth:160,padding:'12px 16px',background:'#f4f0f8',borderRadius:4,border:'1px solid #e0d8ec'}}>
+          <div style={{fontSize:11,color:'#8c8c8c',marginBottom:3}}>Developer Fee Paid in Cash</div>
+          <div style={{fontSize:18,fontWeight:800,color:'#191919'}}>{f.$(L.cashDevFee)}</div>
+        </div>
+        <div style={{flex:1,minWidth:160,padding:'12px 16px',background:'#f4f0f8',borderRadius:4,border:'1px solid #e0d8ec'}}>
+          <div style={{fontSize:11,color:'#8c8c8c',marginBottom:3}}>Equity as % of Total Uses</div>
+          <div style={{fontSize:18,fontWeight:800,color:PUR}}>{L.totalUses>0?(L.lihtcEquity/L.totalUses*100).toFixed(1):0}%</div>
+        </div>
+      </div>
+      <p style={{fontSize:12,color:'#7a5195',marginTop:14,lineHeight:1.5}}>The permanent loan is sized to your minimum DSCR on stabilized NOI. This analysis covers the credit calculation and capital stack; the operating metrics below reflect stabilized cash flow. Full LP and GP partnership returns with credit delivery are a separate analysis.</p>
+    </div>
+  );
+}
+
+function Dashboard({res,inp,onExport,onBack,onSave}){
+  const [saved,setSaved]=useState(false);
+  const [tab,setTab]=useState('charts');
+  const hp=inp.holdingPeriod||7;
+  const {rows,ret,sum,exit,equity,totalCost,acqC,LF}=res;
+  const t=inp.assetType.toLowerCase();
+  const y1=rows[0];
+  const irrC=ret.irr>0.18?'#1a7f37':ret.irr>0.12?'#9a6700':'#b42318';
+  const cocC=sum.coc>0.08?'#1a7f37':sum.coc>0.05?'#9a6700':'#b42318';
+  const dscrC=!sum.dscr?'#666666':sum.dscr>1.4?'#1a7f37':sum.dscr>1.2?'#9a6700':'#b42318';
+  const capC=sum.capR>0.07?'#1a7f37':sum.capR>0.05?'#9a6700':'#b42318';
+  const npvC=ret.npv>0?'#1a7f37':'#b42318';
+  const chartData=rows.slice(0,hp).map(r=>({yr:`Yr ${r.yr}`,NOI:Math.round(r.noi),'Cash Flow':Math.round(r.cfbt)}));
+  const ratesData=rows.slice(0,hp).map(r=>({yr:`Yr ${r.yr}`,'Cap Rate':+(r.capR*100).toFixed(2),'CoC Return':+(r.coc*100).toFixed(2)}));
+  const balData=rows.slice(0,hp).map(r=>({yr:`Yr ${r.yr}`,'Loan Balance':Math.round(r.bal/1000)*1000,'NOI':Math.round(r.noi)}));
+  const KPIS=[
+    {l:'IRR',v:f.pct(ret.irr,1),sub:`${hp}-yr hold`,c:irrC,tt:'Internal Rate of Return on invested equity'},
+    {l:'Equity Multiple',v:f.x(ret.em),sub:f.$(ret.profit)+' profit',c:'#56687a',tt:'Total equity returned ÷ equity invested'},
+    {l:'Year 1 Cap Rate',v:f.pct(sum.capR,2),sub:t==='development'?'NOI / Total Dev Cost':'NOI / Purchase Price',c:capC,tt:'Unlevered return based on Year 1 NOI'},
+    {l:'Cash-on-Cash Yr 1',v:f.pct(sum.coc,2),sub:f.$(sum.cf)+' cash flow',c:cocC,tt:'Yr 1 cash flow ÷ equity invested'},
+    {l:'DSCR Yr 1',v:sum.dscr?`${sum.dscr.toFixed(2)}x`:'N/A',sub:'NOI / Debt Service',c:dscrC,tt:'Lenders typically require > 1.25x'},
+    {l:'NPV',v:f.$(ret.npv),sub:`@ ${inp.discountRate}% discount`,c:npvC,tt:'Net present value at your target return'},
+    {l:'Break-Even Occ.',v:f.pct(sum.beOcc,1),sub:'Min occupancy for +CF',c:'#9a6700',tt:'Occupancy needed to cover all cash outflows'},
+    {l:'Net Sale Proceeds',v:f.$(exit.proceeds),sub:`Exit at ${inp.exitCapRate}% cap`,c:'#3a5bf0',tt:'Net proceeds after selling costs & loan payoff'},
+    ...(t==='development'?[{l:'Return on Cost',v:f.pct(y1.noi/(sum.devCost||1),2),sub:'Stabilized NOI / TDC',c:'#b54708',tt:'Stabilized NOI over total development cost (development yield)'}]:[]),
+  ];
+  return(
+    <div className="fu">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:24,flexWrap:'wrap',gap:12}}>
+        <div>
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6,flexWrap:'wrap'}}>
+            <button onClick={onBack} style={{background:'#efeeec',border:'none',borderRadius:8,padding:'5px 13px',color:'#5f5f5f',cursor:'pointer',fontSize:12}}>← Edit</button>
+            <Chip color='#3a5bf0'>{inp.assetType}</Chip>
+            <Chip color='#56687a'>{hp}-Year Hold</Chip>
+            {inp.address&&<Chip color='#737373'>{inp.address}</Chip>}
+          </div>
+          <h2 style={{fontSize:22,fontWeight:800}}>{inp.propertyName||'Pro Forma Analysis'}</h2>
+        </div>
+        <div style={{display:'flex',gap:10,flexShrink:0}}>
+          <button className="btn-s" onClick={()=>{onSave();setSaved(true);setTimeout(()=>setSaved(false),2000);}}>
+            {saved?'Saved ✓':'Save deal'}
+          </button>
+          <button className="btn-s" onClick={()=>openMemo(res,inp)}>Deal Memo</button>
+          <button className="btn-s" onClick={()=>downloadMemo(res,inp)}>Memo .md</button>
+          <button className="btn-p" onClick={onExport}>Export Excel</button>
+        </div>
+      </div>
+
+      <div className="glass g4" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',marginBottom:24,overflow:'hidden'}}>
+        {KPIS.map(k=>(
+          <div key={k.l} className="kpi tooltip-w">
+            <div className="tt">{k.tt}</div>
+            <div style={{fontSize:20,fontWeight:800,color:k.c}}>{k.v}</div>
+            <div style={{fontSize:11.5,color:'#666666',marginTop:4,fontWeight:600}}>{k.l}</div>
+            {k.sub&&<div style={{fontSize:10.5,color:'#8c8c8c',marginTop:2}}>{k.sub}</div>}
+          </div>
+        ))}
+      </div>
+
+      {res.lihtc&&<LihtcPanel L={res.lihtc} res={res}/>}
+      {calcProjectTimeline(res,inp)&&<ProjectTimelinePanel P={calcProjectTimeline(res,inp)}/>}
+      {!res.lihtc&&<ScenarioPanel S={calcScenarios(res,inp)}/>}
+      {calcDevCredits(res,inp)&&<DevCreditsPanel D={calcDevCredits(res,inp)}/>}
+      {!res.lihtc&&inp.refiEnabled&&<RefinancePanel R={calcRefinance(res,inp)}/>}
+      {res.debtSizing&&<div className="glass" style={{padding:'16px 22px',marginBottom:22,borderTop:'3px solid var(--accent)'}}>
+        <div className="sect-lbl">Debt Sizing &mdash; Lesser-of Test</div>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+          {res.debtSizing.constraints.map((c,i)=>(
+            <div key={i} style={{flex:1,minWidth:130,padding:'12px 14px',borderRadius:9,background:c.binds?'var(--ink)':'var(--surface2)',border:'1px solid '+(c.binds?'var(--ink)':'var(--border)')}}>
+              <div style={{fontSize:11,color:c.binds?'#aab3c9':'var(--muted)'}}>{c.name} <span style={{opacity:.7}}>({c.basis})</span></div>
+              <div className="mono" style={{fontSize:16,fontWeight:700,color:c.binds?'#fff':'var(--text)',marginTop:3}}>{f.$(c.loan)}</div>
+              {c.binds&&<div style={{fontSize:9.5,color:'#7d93ff',fontWeight:700,letterSpacing:'.5px',marginTop:3}}>BINDING CONSTRAINT</div>}
+            </div>
+          ))}
+        </div>
+        <p style={{fontSize:12.5,color:'var(--muted)',marginTop:12,lineHeight:1.5}}>The loan is sized to <span style={{fontWeight:700,color:'var(--text)'}}>{f.$(res.debtSizing.sizedLoan)}</span>, set by the {res.debtSizing.binding} constraint &mdash; the most restrictive of the three. Lowering it would loosen leverage; this is the maximum supportable loan under your limits.</p>
+      </div>}
+      {!res.lihtc&&<WaterfallPanel W={calcWaterfall(res,inp)}/>}
+      {!res.lihtc&&inp.afterTax&&<AfterTaxPanel A={calcAfterTax(res,inp)}/>}
+
+      <div className="glass" style={{padding:'20px 24px',marginBottom:22}}>
+        <div className="sect-lbl">Analyst Notes<span style={{fontWeight:400,letterSpacing:0,textTransform:'none',fontSize:10.5,color:'#737373'}}>auto-generated from your inputs</span></div>
+        {analystNotes(res,inp).map((n,i)=>(
+          <p key={i} style={{fontSize:13.5,color:'#3f3f3f',lineHeight:1.65,marginBottom:i===analystNotes(res,inp).length-1?0:9}}>{n}</p>
+        ))}
+        {t==='development'&&<p style={{fontSize:12,color:'#9a6700',marginTop:10,lineHeight:1.5}}>Note: the headline IRR is the stabilized-operations return. See the Construction &amp; Lease-Up panel for the project-level IRR that accounts for the build period, lease-up ramp, and capitalized interest.</p>}
+      </div>
+
+      <div style={{display:'flex',gap:7,marginBottom:22,flexWrap:'wrap'}}>
+        {[{id:'charts',l:'Charts'},{id:'proforma',l:'Pro Forma Table'},{id:'returns',l:'Returns'},{id:'sensitivity',l:'Sensitivity'}].map(tb=>(
+          <button key={tb.id} className={`tab ${tab===tb.id?'on':'off'}`} onClick={()=>setTab(tb.id)}>{tb.l}</button>
+        ))}
+      </div>
+
+      {tab==='charts'&&(
+        <div className="fu g2" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:18,alignItems:'start'}}>
+          <div className="glass" style={{padding:22}}>
+            <div className="sect-lbl">Annual NOI & Cash Flow: {hp}-Year Projection</div>
+            {ResponsiveContainer?<ResponsiveContainer width="100%" height={260}>
+              <ComposedChart data={chartData} margin={{top:4,right:10,left:0,bottom:0}}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e8e6e1"/>
+                <XAxis dataKey="yr" tick={{fill:'#666666',fontSize:12}}/>
+                <YAxis tick={{fill:'#666666',fontSize:11}} tickFormatter={v=>f.$(v)}/>
+                <Tooltip content={<ChartTip/>}/>
+                <Legend wrapperStyle={{fontSize:13,color:'#5f5f5f'}}/>
+                <Bar dataKey="NOI" fill="#3a5bf0" opacity={0.85} radius={[4,4,0,0]}/>
+                <Bar dataKey="Cash Flow" fill="#1a7f37" opacity={0.85} radius={[4,4,0,0]}/>
+              </ComposedChart>
+            </ResponsiveContainer>:<p style={{color:'#b42318',fontSize:13}}>Chart library failed to load. Refresh the page to retry.</p>}
+          </div>
+          <div className="glass" style={{padding:22}}>
+            <div className="sect-lbl">Cap Rate & Cash-on-Cash Trend</div>
+            {ResponsiveContainer&&<ResponsiveContainer width="100%" height={210}>
+              <LineChart data={ratesData} margin={{top:4,right:10,left:0,bottom:0}}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e8e6e1"/>
+                <XAxis dataKey="yr" tick={{fill:'#666666',fontSize:12}}/>
+                <YAxis tick={{fill:'#666666',fontSize:11}} tickFormatter={v=>`${v}%`}/>
+                <Tooltip content={<ChartTip/>}/>
+                <Legend wrapperStyle={{fontSize:13,color:'#5f5f5f'}}/>
+                <Line type="monotone" dataKey="Cap Rate" stroke="#56687a" strokeWidth={2.5} dot={{fill:'#56687a',r:3.5}}/>
+                <Line type="monotone" dataKey="CoC Return" stroke="#1a7f37" strokeWidth={2.5} dot={{fill:'#1a7f37',r:3.5}}/>
+              </LineChart>
+            </ResponsiveContainer>}
+          </div>
+        </div>
+      )}
+
+      {tab==='proforma'&&(
+        <div className="fu glass" style={{padding:22}}>
+          <div className="sect-lbl">{hp}-Year Pro Forma</div>
+          <PFTable rows={rows} hp={hp}/>
+        </div>
+      )}
+
+      {tab==='returns'&&(
+        <div className="fu">
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:18,marginBottom:18}} className="g2">
+            <div className="glass" style={{padding:22}}>
+              <div className="sect-lbl">Capital Stack</div>
+              {[
+                {l:'Purchase Price',v:inp.purchasePrice},
+                {l:'Acquisition Costs',v:acqC},
+                ...(LF>0?[{l:'Loan Fees',v:LF}]:[]),
+                {l:'Total All-In Cost',v:totalCost,bold:true},
+                {l:'  Debt (Loan)',v:inp.loanAmount,c:'#b42318'},
+                {l:'  Equity',v:equity,c:'#1a7f37',bold:true},
+              ].map((r,i)=>(
+                <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid #ececec',fontSize:13.5}}>
+                  <span style={{color:r.bold?'#191919':'#666666',fontWeight:r.bold?700:400}}>{r.l}</span>
+                  <span style={{color:r.c||(r.bold?'#191919':'#3f3f3f'),fontWeight:r.bold?700:400}}>{f.$f(r.v)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="glass" style={{padding:22}}>
+              <div className="sect-lbl">Exit Analysis (Year {hp})</div>
+              {[
+                {l:`Forward NOI (Year ${hp+1})`,v:f.$f(rows[hp]?.noi)},
+                {l:'÷ Exit Cap Rate',v:`${inp.exitCapRate}%`},
+                {l:'= Gross Sale Price',v:f.$f(exit.grossSale),bold:true},
+                {l:'  Less: Selling Costs',v:`(${f.$f(exit.sellAmt)})`},
+                {l:'Net Sale Price',v:f.$f(exit.netSale)},
+                {l:'  Less: Loan Payoff',v:`(${f.$f(exit.payoff)})`},
+                {l:'Net Proceeds to Equity',v:f.$f(exit.proceeds),bold:true,c:'#1a7f37'},
+              ].map((r,i)=>(
+                <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid #ececec',fontSize:13.5}}>
+                  <span style={{color:r.bold?'#191919':'#666666',fontWeight:r.bold?700:400}}>{r.l}</span>
+                  <span style={{color:r.c||(r.bold?'#191919':'#3f3f3f'),fontWeight:r.bold?700:400}}>{r.v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="glass" style={{padding:22}}>
+            <div className="sect-lbl">Total Returns Summary</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}} className="g3">
+              {[
+                {l:'Equity Invested',v:f.$f(equity),c:'#3a5bf0'},
+                {l:'Total Cash Distributions',v:f.$f(ret.totalCF),c:'#56687a'},
+                {l:'Net Sale Proceeds',v:f.$f(exit.proceeds),c:'#1a7f37'},
+                {l:'Total Capital Returned',v:f.$f(ret.totalCF+exit.proceeds),c:'#9a6700'},
+                {l:'Net Profit',v:f.$f(ret.profit),c:ret.profit>0?'#1a7f37':'#b42318'},
+                {l:'Equity Multiple',v:f.x(ret.em),c:'#56687a'},
+              ].map((i,k)=>(
+                <div key={k} style={{textAlign:'center',padding:'16px 12px',background:'#f9f9f8',borderRadius:3}}>
+                  <div style={{fontSize:19,fontWeight:800,color:i.c}}>{i.v}</div>
+                  <div style={{fontSize:11.5,color:'#737373',marginTop:4}}>{i.l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab==='sensitivity'&&(
+        <div className="fu glass" style={{padding:22}}>
+          <SensTable inp={inp}/>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── LANDING PAGE ─────────────────────────────────────────────────────────
+function Landing({onStart,onSample}){
+  const r=buildPF(DEFS.multifamily);
+  const yrs=r.rows.slice(0,5);
+  const maxNOI=Math.max(...yrs.map(x=>x.noi));
+  return(
+    <div className="fu">
+      <div className="dark-surface grid-bg" style={{position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',top:'-30%',right:'-10%',width:560,height:560,background:'radial-gradient(circle,rgba(58,91,240,.28),transparent 70%)',pointerEvents:'none'}}/>
+        <div className="g2" style={{position:'relative',maxWidth:1140,margin:'0 auto',padding:'72px 24px 64px',display:'grid',gridTemplateColumns:'1.05fr .95fr',gap:56,alignItems:'center'}}>
+          <div>
+            <div className="mono" style={{fontSize:11.5,fontWeight:600,letterSpacing:'3px',color:'#7d93ff',marginBottom:20,display:'flex',alignItems:'center',gap:10}}>
+              <span style={{width:7,height:7,borderRadius:2,background:'#3a5bf0',boxShadow:'0 0 10px #3a5bf0'}}/>PROFORMA
+            </div>
+            <h1 style={{fontSize:48,fontWeight:600,lineHeight:1.1,color:'#fff',marginBottom:20}}>Underwrite any deal like an institution.</h1>
+            <p style={{fontSize:17,color:'#aab3c9',lineHeight:1.6,marginBottom:30,maxWidth:520}}>Enter your assumptions. Get a full ten-year discounted cash flow, levered returns, an equity waterfall, sensitivity analysis, and a lender-ready Excel model in under two minutes.</p>
+            <div style={{display:'flex',gap:12,flexWrap:'wrap',marginBottom:24}}>
+              <button className="btn-p" style={{padding:'13px 30px',fontSize:15}} onClick={onStart}>Start an analysis</button>
+              <button style={{padding:'12px 26px',fontSize:15,background:'rgba(255,255,255,.06)',color:'#fff',border:'1px solid rgba(255,255,255,.18)',borderRadius:8,fontWeight:600,cursor:'pointer',fontFamily:"'Sora',sans-serif"}} onClick={onSample}>Download sample model</button>
+            </div>
+            <div className="mono" style={{fontSize:11.5,color:'#6b7593',letterSpacing:'.5px'}}>MULTIFAMILY / COMMERCIAL / MIXED-USE / DEVELOPMENT / LIHTC</div>
+          </div>
+          <div style={{borderRadius:14,overflow:'hidden',border:'1px solid rgba(255,255,255,.12)',background:'rgba(18,26,46,.7)',backdropFilter:'blur(8px)',boxShadow:'0 24px 60px rgba(0,0,0,.45)'}}>
+            <div style={{borderBottom:'1px solid rgba(255,255,255,.08)',padding:'13px 18px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>40-Unit Multifamily Acquisition</span>
+              <span className="mono" style={{fontSize:11,color:'#6b7593'}}>7-YR HOLD</span>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',borderBottom:'1px solid rgba(255,255,255,.08)'}}>
+              {[{l:'LEVERED IRR',v:f.pct(r.ret.irr,1)},{l:'EQUITY MULT.',v:f.x(r.ret.em)},{l:'YR-1 DSCR',v:r.sum.dscr.toFixed(2)+'x'}].map((k,i)=>(
+                <div key={k.l} style={{padding:'16px 12px',textAlign:'center',borderRight:i<2?'1px solid rgba(255,255,255,.08)':'none'}}>
+                  <div className="mono" style={{fontSize:21,fontWeight:700,color:'#7d93ff'}}>{k.v}</div>
+                  <div className="mono" style={{fontSize:9.5,color:'#6b7593',marginTop:4,letterSpacing:'.5px'}}>{k.l}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{padding:'17px 18px'}}>
+              <div className="mono" style={{fontSize:10,fontWeight:600,color:'#6b7593',marginBottom:12,letterSpacing:'1px'}}>NET OPERATING INCOME</div>
+              <div style={{display:'flex',alignItems:'flex-end',gap:8,height:84}}>
+                {yrs.map(x=>(
+                  <div key={x.yr} style={{flex:1,textAlign:'center'}}>
+                    <div style={{background:'linear-gradient(180deg,#5a76f6,#3a5bf0)',borderRadius:'3px 3px 0 0',height:`${Math.round(x.noi/maxNOI*64)}px`,boxShadow:'0 0 12px rgba(58,91,240,.4)'}}/>
+                    <div className="mono" style={{fontSize:9.5,color:'#6b7593',marginTop:6}}>Y{x.yr}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{display:'flex',justifyContent:'space-between',marginTop:14,paddingTop:13,borderTop:'1px solid rgba(255,255,255,.08)',fontSize:12.5}}>
+                <span style={{color:'#aab3c9'}}>Exit at {DEFS.multifamily.exitCapRate}% cap</span>
+                <span className="mono" style={{fontWeight:700,color:'#3ddc97'}}>{f.$(r.exit.proceeds)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="g4" style={{maxWidth:1140,margin:'0 auto',padding:'42px 24px 10px',display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:28}}>
+        {[
+          {t:'10-Year DCF Engine',d:'Full income, expense, and debt service projection with growth assumptions and interest-only periods.'},
+          {t:'Returns & Exit Analysis',d:'Levered IRR, equity multiple, NPV, cash-on-cash, and a complete exit breakdown at your cap rate.'},
+          {t:'IRR Sensitivity Matrix',d:'Returns across revenue growth and exit cap scenarios, so you can see exactly where the deal breaks.'},
+          {t:'Equity Waterfall & LIHTC',d:'Model LP/GP promote structures and full tax-credit syndication, alongside a lender-ready Excel export.'},
+        ].map(x=>(
+          <div key={x.t} style={{borderTop:'2px solid var(--accent)',paddingTop:14}}>
+            <div style={{fontSize:14.5,fontWeight:700,color:'var(--text)',marginBottom:7,fontFamily:"'Space Grotesk',sans-serif"}}>{x.t}</div>
+            <div style={{fontSize:13,color:'#5f5f5f',lineHeight:1.55}}>{x.d}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── DEAL MEMO GENERATOR ──────────────────────────────────────────────────
+function generateMemo(res,inp){
+  const t=(inp.assetType||'').toLowerCase();
+  const isAff=t==='affordable';
+  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const name=inp.propertyName||'the Property';
+  const $=f.$; const pct=(n,d=1)=>f.pct(n,d);
+  const units=inp.numUnits||0;
+  const S=[];
+  // Executive Summary
+  if(isAff){
+    const L=res.lihtc;
+    S.push(['Executive Summary',
+      `This memorandum presents an underwriting summary for ${name}, a ${units?units+'-unit ':''}affordable housing development structured around Low-Income Housing Tax Credits. Total development cost is ${$(L.totalUses)}, funded through a permanent loan of ${$(L.permLoan)} sized to a minimum debt service coverage of ${(inp.minDSCR||1.15).toFixed(2)}x, ${$(L.lihtcEquity)} of tax-credit equity, and the balance from soft sources and a deferred developer fee. The ${(L.creditRate*100).toFixed(0)}% credit generates an annual allocation of ${$(L.annualCredit)} over a ten-year period.`]);
+  }else{
+    S.push(['Executive Summary',
+      `This memorandum presents an investment underwriting summary for ${name}${inp.address?', located at '+inp.address:''}, a ${inp.assetType.toLowerCase()} opportunity. The analysis assumes a ${hp}-year hold and projects a levered internal rate of return of ${pct(res.ret.irr,1)} and an equity multiple of ${f.x(res.ret.em)} on required equity of ${$(res.equity)}. The deal generates a year-one cash-on-cash return of ${pct(res.sum.coc,1)} at a going-in capitalization rate of ${pct(res.sum.capR,2)}.`]);
+  }
+  // Investment Highlights / Capital Stack
+  if(isAff){
+    const L=res.lihtc;
+    S.push(['Sources of Capital',
+      `The capital stack is led by ${$(L.lihtcEquity)} in LIHTC equity, representing ${L.totalUses>0?pct(L.lihtcEquity/L.totalUses,0):'0%'} of total development cost, priced at $${L.creditPrice.toFixed(3)} per credit dollar. A permanent loan of ${$(L.permLoan)} is supported by stabilized net operating income of ${$(res.sum.noi)}. ${L.softSources>0?'Soft sources contribute '+$(L.softSources)+'. ':''}A deferred developer fee of ${$(L.deferredFee)} closes the remaining gap, leaving ${$(L.cashDevFee)} of the fee payable in cash. ${Math.abs(L.fundingGap)<1?'As underwritten, sources and uses are balanced.':(L.fundingGap>0?'As underwritten, the deal carries a funding shortfall of '+$(L.fundingGap)+' that requires additional sources.':'As underwritten, sources exceed uses by '+$(Math.abs(L.fundingGap))+'.')}`]);
+  }else{
+    const exitShare=res.exit.proceeds/(res.ret.totalCF+res.exit.proceeds||1);
+    S.push(['Returns Analysis',
+      `Over the ${hp}-year hold, the investment returns ${$(res.ret.totalCF+res.exit.proceeds)} in total, comprising ${$(res.ret.totalCF)} of cumulative operating cash flow and ${$(res.exit.proceeds)} of net proceeds at exit. The exit assumes a sale at a ${pct((inp.exitCapRate||0)/100,2)} capitalization rate on forward net operating income, net of ${pct((inp.sellingCostsPct||0)/100,0)} selling costs. ${exitShare>0.7?'Because roughly '+pct(exitShare,0)+' of total return depends on the sale, the projected IRR is sensitive to the exit cap rate assumption and should be stress-tested.':'Returns are reasonably balanced between operating cash flow and exit proceeds.'}`]);
+  }
+  // Financing & Coverage
+  const dscrTxt = res.sum.dscr ? `Year-one debt service coverage is ${res.sum.dscr.toFixed(2)}x${res.sum.dscr<1.2?', which is thin relative to typical lender minimums and limits proceeds':(res.sum.dscr<1.4?', which clears typical lender minimums with a modest cushion':', which provides healthy coverage')}.` : 'The deal is underwritten without permanent debt.';
+  if(!isAff){
+    S.push(['Financing',
+      `${dscrTxt} The analysis assumes a loan at ${pct((inp.interestRate||0)/100,2)} interest over a ${inp.amortYears||30}-year amortization${(inp.ioPeriod||0)>0?', including '+inp.ioPeriod+' years of interest-only payments':''}. Break-even occupancy is ${pct(res.sum.beOcc,1)}, against an underwritten vacancy assumption of ${pct((inp.vacancyRate||0)/100,0)}.`]);
+  }
+  // Risks
+  const risks=[];
+  if(res.sum.dscr&&res.sum.dscr<1.25)risks.push('debt service coverage is tight and leaves limited room for income shortfalls');
+  if(!isAff){const es=res.exit.proceeds/(res.ret.totalCF+res.exit.proceeds||1);if(es>0.7)risks.push('a large share of return depends on the exit, exposing the deal to cap-rate movement');}
+  if(isAff&&res.lihtc.fundingGap>1)risks.push('the capital stack does not fully cover development cost as underwritten');
+  const y1=res.rows[0];if(y1&&y1.expR>0.55)risks.push('the operating expense ratio is high and should be verified against actuals');
+  risks.push('all projections depend on the accuracy of the underwriting assumptions and prevailing market conditions');
+  S.push(['Key Risks',`The principal risks to this underwriting are that ${risks.join('; ')}.`]);
+  // Recommendation
+  if(isAff){
+    S.push(['Summary',`${name} pencils as ${Math.abs(res.lihtc.fundingGap)<1?'a balanced':'a'} tax-credit transaction with ${$(res.lihtc.lihtcEquity)} of credit equity anchoring the capital stack. Further diligence on basis eligibility, the credit price, and soft-source commitments is recommended before proceeding.`]);
+  }else{
+    const verdict=res.ret.irr>0.15?'an attractive return profile':(res.ret.irr>0.10?'a reasonable return profile':'a modest return profile');
+    S.push(['Recommendation',`At a projected ${pct(res.ret.irr,1)} levered IRR and ${f.x(res.ret.em)} equity multiple, ${name} presents ${verdict} for a ${hp}-year hold. The recommendation is to advance to confirmatory diligence, with particular attention to the assumptions driving exit value and operating expenses.`]);
+  }
+  return S;
+}
+
+function openMemo(res,inp){
+  const sections=generateMemo(res,inp);
+  const t=(inp.assetType||'').toLowerCase();
+  const isAff=t==='affordable';
+  const name=inp.propertyName||'Pro Forma Analysis';
+  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const metric=(l,v)=>`<tr><td>${l}</td><td style="text-align:right;font-weight:600">${v}</td></tr>`;
+  let metricsRows='';
+  if(isAff){const L=res.lihtc;
+    metricsRows=[metric('Total Development Cost',f.$(L.totalUses)),metric('LIHTC Equity',f.$(L.lihtcEquity)),metric('Annual Credit',f.$(L.annualCredit)),metric('Permanent Loan',f.$(L.permLoan)),metric('Deferred Developer Fee',f.$(L.deferredFee)),metric('Funding Gap',f.$(L.fundingGap)),metric('Year 1 NOI',f.$(res.sum.noi)),metric('Year 1 DSCR',res.sum.dscr?res.sum.dscr.toFixed(2)+'x':'n/a')].join('');
+  }else{
+    metricsRows=[metric('Levered IRR',f.pct(res.ret.irr,1)),metric('Equity Multiple',f.x(res.ret.em)),metric('Equity Required',f.$(res.equity)),metric('Year 1 Cap Rate',f.pct(res.sum.capR,2)),metric('Year 1 Cash-on-Cash',f.pct(res.sum.coc,1)),metric('Year 1 DSCR',res.sum.dscr?res.sum.dscr.toFixed(2)+'x':'n/a'),metric('Net Sale Proceeds',f.$(res.exit.proceeds)),metric('Hold Period',hp+' Years')].join('');
+  }
+  const body=sections.map(([h,p])=>`<h2>${h}</h2><p>${p}</p>`).join('');
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${name} — Investment Memo</title>
+  <style>
+    @page{margin:1in;}
+    body{font-family:Georgia,'Times New Roman',serif;color:#1a1a1a;line-height:1.55;max-width:760px;margin:40px auto;padding:0 24px;}
+    .hdr{border-bottom:2px solid #1f3864;padding-bottom:14px;margin-bottom:24px;}
+    .hdr h1{font-size:24px;color:#1f3864;margin:0 0 4px;}
+    .hdr .sub{font-size:13px;color:#666;}
+    h2{font-size:15px;color:#1f3864;margin:22px 0 6px;border-bottom:1px solid #ddd;padding-bottom:3px;}
+    p{font-size:13.5px;margin:0 0 10px;text-align:justify;}
+    table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-family:Arial,sans-serif;}
+    td{padding:6px 10px;border-bottom:1px solid #eee;font-size:13px;}
+    .mtitle{font-size:12px;font-weight:700;color:#1f3864;letter-spacing:.5px;margin:18px 0 4px;font-family:Arial,sans-serif;}
+    .foot{margin-top:30px;padding-top:12px;border-top:1px solid #ddd;font-size:11px;color:#999;}
+    .noprint{margin-bottom:20px;}
+    @media print{.noprint{display:none;}body{margin:0;}}
+    button{background:#3a5bf0;color:#fff;border:none;border-radius:4px;padding:9px 18px;font-size:14px;cursor:pointer;font-family:Arial,sans-serif;}
+  </style></head><body>
+  <div class="noprint"><button onclick="window.print()">Print or Save as PDF</button></div>
+  <div class="hdr"><h1>${name}</h1><div class="sub">${inp.assetType} Investment Memorandum${inp.address?' &nbsp;|&nbsp; '+inp.address:''} &nbsp;|&nbsp; ${today}</div></div>
+  <div class="mtitle">KEY METRICS</div>
+  <table>${metricsRows}</table>
+  ${body}
+  <div class="foot">Prepared with CapStack. This memorandum is generated from user-supplied assumptions and is for informational purposes only. It does not constitute investment advice, an offer, or a solicitation.</div>
+  </body></html>`;
+  const w=window.open('','_blank');
+  if(w){w.document.write(html);w.document.close();}
+  else alert('Please allow pop-ups to generate the memo.');
+}
+
+function downloadMemo(res,inp){
+  const sections=generateMemo(res,inp);
+  const isAff=(inp.assetType||'').toLowerCase()==='affordable';
+  const name=inp.propertyName||'Pro Forma Analysis';
+  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const m=(l,v)=>`| ${l} | ${v} |`;
+  let rows;
+  if(isAff){const L=res.lihtc;rows=[m('Total Development Cost',f.$(L.totalUses)),m('LIHTC Equity',f.$(L.lihtcEquity)),m('Annual Credit',f.$(L.annualCredit)),m('Permanent Loan',f.$(L.permLoan)),m('Deferred Developer Fee',f.$(L.deferredFee)),m('Funding Gap',f.$(L.fundingGap)),m('Year 1 NOI',f.$(res.sum.noi)),m('Year 1 DSCR',res.sum.dscr?res.sum.dscr.toFixed(2)+'x':'n/a')];}
+  else{rows=[m('Levered IRR',f.pct(res.ret.irr,1)),m('Equity Multiple',f.x(res.ret.em)),m('Equity Required',f.$(res.equity)),m('Year 1 Cap Rate',f.pct(res.sum.capR,2)),m('Year 1 Cash-on-Cash',f.pct(res.sum.coc,1)),m('Year 1 DSCR',res.sum.dscr?res.sum.dscr.toFixed(2)+'x':'n/a'),m('Net Sale Proceeds',f.$(res.exit.proceeds)),m('Hold Period',hp+' Years')];}
+  let md=`# ${name}\n\n${inp.assetType} Investment Memorandum${inp.address?' | '+inp.address:''} | ${today}\n\n## Key Metrics\n\n| Metric | Value |\n|---|---|\n${rows.join('\n')}\n\n`;
+  sections.forEach(sec=>{md+=`## ${sec[0]}\n\n${sec[1]}\n\n`;});
+  md+=`---\n\n_Prepared with CapStack. Generated from user-supplied assumptions; informational only and not investment advice._\n`;
+  try{
+    const blob=new Blob([md],{type:'text/markdown'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=name.replace(/[^a-z0-9]+/gi,'_').replace(/^_|_$/g,'')+'_Memo.md';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }catch(e){alert('Could not download: '+e.message);}
+}
+
+// ─── SAVED DEALS (Supabase + localStorage fallback) ───────────────────────
+const DEALS_KEY='proforma_saved_deals';
+function loadDealsLocal(){try{return JSON.parse(localStorage.getItem(DEALS_KEY)||'[]');}catch(e){return[];}}
+function saveDealsLocal(d){try{localStorage.setItem(DEALS_KEY,JSON.stringify(d));}catch(e){}}
+function normalizeDeal(r){return{id:r.id,name:r.name,assetType:r.asset_type||r.assetType,savedAt:r.saved_at||r.savedAt,inp:r.inp_data||r.inp,summary:r.summary,notes:r.notes||''};}
+async function loadDeals(user){
+  if(user){const{data,error}=await sb.from('deals').select('*').order('saved_at',{ascending:false});if(!error&&data)return data.map(normalizeDeal);}
+  return loadDealsLocal();
+}
+async function deleteDeal(id,user){
+  if(user){await sb.from('deals').delete().eq('id',id);}
+  else{saveDealsLocal(loadDealsLocal().filter(x=>x.id!==id));}
+}
+function dealSummary(res,inp){
+  const isAff=(inp.assetType||'').toLowerCase()==='affordable';
+  return isAff?{
+    type:'affordable',
+    irr:null,em:null,
+    equity:res.lihtc?res.lihtc.lihtcEquity:0,
+    dscr:res.sum.dscr,
+    uses:res.lihtc?res.lihtc.totalUses:0,
+    gap:res.lihtc?res.lihtc.fundingGap:0
+  }:{
+    type:'standard',
+    irr:res.ret.irr,em:res.ret.em,dscr:res.sum.dscr,
+    equity:res.equity,coc:res.sum.coc,capR:res.sum.capR,
+    proceeds:res.exit.proceeds
+  };
+}
+async function persistDeal(inp,res,user){
+  const entry={
+    id:'d'+Date.now(),
+    name:inp.propertyName||'Untitled Deal',
+    assetType:inp.assetType,
+    savedAt:new Date().toISOString(),
+    inp:JSON.parse(JSON.stringify(inp)),
+    summary:dealSummary(res,inp),
+    notes:inp.dealNotes||''
+  };
+  if(user){
+    const{error}=await sb.from('deals').insert({id:entry.id,user_id:user.id,name:entry.name,asset_type:entry.assetType,saved_at:entry.savedAt,inp_data:entry.inp,summary:entry.summary,notes:entry.notes});
+    if(error)throw new Error(error.message);
+  } else {
+    const deals=loadDealsLocal();deals.unshift(entry);saveDealsLocal(deals);
+  }
+  return entry.id;
+}
+async function updateDealNotes(id,notes,user){
+  if(user){await sb.from('deals').update({notes}).eq('id',id);}
+  else{const d=loadDealsLocal();const x=d.find(r=>r.id===id);if(x){x.notes=notes;saveDealsLocal(d);}}
+}
+
+function DealNotes({id,initial,user}){
+  const [val,setVal]=useState(initial);
+  const [open,setOpen]=useState(!!initial);
+  if(!open)return(
+    <button onClick={()=>setOpen(true)} style={{marginTop:10,marginLeft:33,background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontSize:12.5,padding:0,fontFamily:"'Sora',sans-serif"}}>+ Add notes</button>
+  );
+  return(
+    <textarea value={val} placeholder="Notes: address, broker, thesis, next steps..."
+      onChange={e=>{setVal(e.target.value);updateDealNotes(id,e.target.value,user);}}
+      style={{marginTop:10,marginLeft:33,width:'calc(100% - 33px)',minHeight:54,padding:'9px 12px',border:'1px solid var(--border2)',borderRadius:8,fontSize:13,fontFamily:"'Sora',sans-serif",color:'var(--text)',resize:'vertical',outline:'none',background:'var(--surface2)'}}/>
+  );
+}
+
+function calcPortfolio(deals){
+  let stdEquity=0,affEquity=0,totalProceeds=0,totalNOI=0,wIRRnum=0,wEMnum=0,stdCount=0,affCount=0,affUses=0;
+  const byType={}; const pooled=[];
+  deals.forEach(d=>{
+    let res; try{res=buildPF(d.inp);}catch(e){return;}
+    const at=(d.inp.assetType||'').toLowerCase();
+    byType[at]=byType[at]||{count:0,equity:0,label:(ASSETS.find(a=>a.id===at)||{}).label||at};
+    byType[at].count++;
+    if(at==='affordable'){
+      affCount++; const eq=res.lihtc?res.lihtc.lihtcEquity:0; affEquity+=eq; affUses+=res.lihtc?res.lihtc.totalUses:0; byType[at].equity+=eq;
+    } else {
+      stdCount++; const eq=res.equity||0; stdEquity+=eq;
+      totalProceeds+=res.exit.proceeds||0; totalNOI+=res.sum.noi||0;
+      wIRRnum+=(res.ret.irr||0)*eq; wEMnum+=(res.ret.em||0)*eq; byType[at].equity+=eq;
+      const hp=Math.min(Math.max(d.inp.holdingPeriod||7,1),10);
+      pooled[0]=(pooled[0]||0)-eq;
+      for(let y=1;y<=hp;y++){let c=res.rows[y-1].cfbt; if(y===hp)c+=res.exit.proceeds; pooled[y]=(pooled[y]||0)+c;}
+    }
+  });
+  return{
+    stdCount,affCount,total:stdCount+affCount,
+    stdEquity,affEquity,totalEquity:stdEquity+affEquity,
+    totalProceeds,totalNOI,affUses,
+    wIRR:stdEquity>0?wIRRnum/stdEquity:0, wEM:stdEquity>0?wEMnum/stdEquity:0,
+    pooledIRR:pooled.length>1?calcIRR(pooled):NaN,
+    byType:Object.values(byType)
+  };
+}
+
+function PortfolioView({onBack,user}){
+  const [deals,setDeals]=useState([]);
+  useEffect(()=>{loadDeals(user).then(setDeals);},[user]);
+  const P=calcPortfolio(deals);
+  const kpi=(label,val,sub)=>(
+    <div className="glass" style={{padding:'18px 20px',flex:1,minWidth:150}}>
+      <div style={{fontSize:11.5,color:'var(--muted)',marginBottom:5}}>{label}</div>
+      <div className="mono" style={{fontSize:24,fontWeight:800,color:'var(--text)'}}>{val}</div>
+      {sub&&<div style={{fontSize:11,color:'var(--muted2)',marginTop:3}}>{sub}</div>}
+    </div>
+  );
+  return(
+    <div className="fu" style={{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px'}}>
+      <button className="btn-s" onClick={onBack} style={{marginBottom:18}}>&larr; Back to saved deals</button>
+      <h2 style={{fontSize:24,fontWeight:800,marginBottom:6}}>Portfolio Roll-Up</h2>
+      <p style={{fontSize:12.5,color:'var(--muted)',marginBottom:20}}>Aggregated across {P.total} saved {P.total===1?'deal':'deals'}, recomputed live. The pooled IRR assumes deals begin at the same time.</p>
+      {P.total===0?(
+        <div className="glass" style={{padding:'48px 24px',textAlign:'center',color:'var(--muted)'}}>No saved deals to roll up yet.</div>
+      ):(<>
+        <div style={{display:'flex',gap:12,flexWrap:'wrap',marginBottom:14}}>
+          {kpi('Total Equity',f.$(P.totalEquity),P.affEquity>0?f.$(P.stdEquity)+' std + '+f.$(P.affEquity)+' LIHTC':null)}
+          {P.stdCount>0&&kpi('Pooled IRR',f.pct(P.pooledIRR,1),'across '+P.stdCount+' market-rate')}
+          {P.stdCount>0&&kpi('Equity-Wtd IRR',f.pct(P.wIRR,1),'weighted average')}
+          {P.stdCount>0&&kpi('Equity-Wtd Multiple',f.x(P.wEM),null)}
+        </div>
+        <div style={{display:'flex',gap:12,flexWrap:'wrap',marginBottom:24}}>
+          {P.stdCount>0&&kpi('Total Exit Proceeds',f.$(P.totalProceeds),null)}
+          {P.stdCount>0&&kpi('Aggregate Yr-1 NOI',f.$(P.totalNOI),null)}
+          {P.affCount>0&&kpi('LIHTC Equity',f.$(P.affEquity),P.affCount+' affordable')}
+          {P.affCount>0&&kpi('Affordable Dev Cost',f.$(P.affUses),null)}
+        </div>
+        <div className="glass" style={{overflow:'hidden'}}>
+          <table className="tbl">
+            <thead><tr><th style={{textAlign:'left'}}>Asset Type</th><th>Deals</th><th>Equity</th><th>% of Book</th></tr></thead>
+            <tbody>
+              {P.byType.map((b,i)=>(
+                <tr key={i}>
+                  <td style={{fontWeight:600,color:'var(--text)'}}>{b.label}</td>
+                  <td>{b.count}</td>
+                  <td>{f.$(b.equity)}</td>
+                  <td>{P.totalEquity>0?(b.equity/P.totalEquity*100).toFixed(1)+'%':'0%'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>)}
+    </div>
+  );
+}
+
+function SavedDeals({onLoad,onClose,user,onSignIn}){
+  const [portfolio,setPortfolio]=useState(false);
+  const [deals,setDeals]=useState([]);
+  const [loadingDeals,setLoadingDeals]=useState(true);
+  const [sel,setSel]=useState([]);
+  const [compare,setCompare]=useState(false);
+
+  useEffect(()=>{
+    setLoadingDeals(true);
+    loadDeals(user).then(d=>{setDeals(d);setLoadingDeals(false);});
+  },[user]);
+
+  const del=async id=>{
+    await deleteDeal(id,user);
+    setDeals(d=>d.filter(x=>x.id!==id));
+    setSel(s=>s.filter(x=>x!==id));
+  };
+  const toggle=id=>setSel(sel.includes(id)?sel.filter(s=>s!==id):(sel.length<2?[...sel,id]:[sel[1],id]));
+  const fmtDate=iso=>{try{return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch(e){return '';}};
+
+  if(portfolio)return <PortfolioView onBack={()=>setPortfolio(false)} user={user}/>;
+  if(compare&&sel.length===2){
+    const a=deals.find(d=>d.id===sel[0]),b=deals.find(d=>d.id===sel[1]);
+    if(a&&b)return <CompareView a={a} b={b} onBack={()=>setCompare(false)}/>;
+  }
+  return(
+    <div className="fu" style={{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px'}}>
+      {!user&&<div style={{background:'var(--accent-tint)',border:'1px solid var(--accent)',borderRadius:8,padding:'10px 16px',marginBottom:18,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
+        <span style={{fontSize:13,color:'var(--accent)',fontWeight:500}}>Sign in to save deals to the cloud and access them from any device.</span>
+        <button className="btn-p" style={{padding:'6px 14px',fontSize:12.5,flexShrink:0}} onClick={onSignIn}>Sign In</button>
+      </div>}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:12}}>
+        <h2 style={{fontSize:24,fontWeight:800}}>Saved Deals</h2>
+        <div style={{display:'flex',gap:10}}>
+          {sel.length===2&&<button className="btn-p" onClick={()=>setCompare(true)}>Compare selected</button>}
+          {deals.length>0&&<button className="btn-s" onClick={()=>setPortfolio(true)}>Portfolio roll-up</button>}
+          <button className="btn-s" onClick={onClose}>+ New analysis</button>
+        </div>
+      </div>
+      {loadingDeals?(
+        <div style={{padding:'48px 24px',textAlign:'center',color:'#8c8c8c',fontSize:14}}>Loading deals...</div>
+      ):deals.length===0?(
+        <div className="glass" style={{padding:'48px 24px',textAlign:'center',color:'#8c8c8c'}}>
+          <div style={{fontSize:15,marginBottom:6}}>No saved deals yet.</div>
+          <div style={{fontSize:13}}>Run an analysis and click Save to keep it here. {user?'Deals sync across devices.':'Deals stay in this browser.'}</div>
+        </div>
+      ):(
+        <>
+          <p style={{fontSize:12.5,color:'#8c8c8c',marginBottom:14}}>Select two deals to compare them side by side. {user?'Deals are synced to your account.':'Saved deals are stored in this browser only.'}</p>
+          <div style={{display:'grid',gap:10}}>
+            {deals.map(d=>{
+              const s=d.summary||{}; const picked=sel.includes(d.id);
+              return(
+                <div key={d.id} className="glass" style={{padding:'16px 18px',borderColor:picked?'#3a5bf0':'#e2e6f0',borderWidth:picked?2:1}}>
+                  <div style={{display:'flex',alignItems:'center',gap:16}}>
+                    <input type="checkbox" checked={picked} onChange={()=>toggle(d.id)} style={{width:17,height:17,accentColor:'#3a5bf0',flexShrink:0}}/>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontWeight:700,fontSize:15,color:'#191919'}}>{d.name}</div>
+                      <div style={{fontSize:12,color:'#8c8c8c'}}>{d.assetType} &middot; saved {fmtDate(d.savedAt)}</div>
+                    </div>
+                    <div style={{display:'flex',gap:20,fontSize:13,flexShrink:0}}>
+                      {s.type==='affordable'?(
+                        <><Metric l="LIHTC Equity" v={f.$(s.equity)}/><Metric l="DSCR" v={s.dscr?s.dscr.toFixed(2):'n/a'}/><Metric l="Gap" v={f.$(Math.abs(s.gap||0))}/></>
+                      ):(
+                        <><Metric l="IRR" v={f.pct(s.irr,1)}/><Metric l="Multiple" v={f.x(s.em)}/><Metric l="DSCR" v={s.dscr?s.dscr.toFixed(2):'n/a'}/></>
+                      )}
+                    </div>
+                    <div style={{display:'flex',gap:8,flexShrink:0}}>
+                      <button className="btn-s" style={{padding:'6px 14px',fontSize:13}} onClick={()=>onLoad(d)}>Open</button>
+                      <button onClick={()=>del(d.id)} title="Delete" style={{background:'none',border:'1px solid #e2e6f0',borderRadius:3,color:'#b42318',cursor:'pointer',width:32,height:32,fontSize:16}}>&times;</button>
+                    </div>
+                  </div>
+                  <DealNotes id={d.id} initial={d.notes||''} user={user}/>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+function Metric({l,v}){return(<div style={{textAlign:'right'}}><div style={{fontWeight:700,color:'#3a5bf0'}}>{v}</div><div style={{fontSize:10.5,color:'#8c8c8c'}}>{l}</div></div>);}
+
+function CompareView({a,b,onBack}){
+  const rA=buildPF(a.inp), rB=buildPF(b.inp);
+  const isAff=x=>(x.inp.assetType||'').toLowerCase()==='affordable';
+  const bothAff=isAff(a)&&isAff(b);
+  const rows=bothAff?[
+    ['Total Uses',d=>f.$(d.lihtc.totalUses)],
+    ['LIHTC Equity',d=>f.$(d.lihtc.lihtcEquity)],
+    ['Annual Credit',d=>f.$(d.lihtc.annualCredit)],
+    ['Permanent Loan',d=>f.$(d.lihtc.permLoan)],
+    ['Deferred Dev Fee',d=>f.$(d.lihtc.deferredFee)],
+    ['Funding Gap',d=>f.$(d.lihtc.fundingGap)],
+    ['Year 1 NOI',d=>f.$(d.sum.noi)],
+    ['Year 1 DSCR',d=>d.sum.dscr?d.sum.dscr.toFixed(2)+'x':'n/a'],
+  ]:[
+    ['Levered IRR',d=>f.pct(d.ret.irr,1)],
+    ['Equity Multiple',d=>f.x(d.ret.em)],
+    ['Equity Required',d=>f.$(d.equity)],
+    ['Year 1 Cap Rate',d=>f.pct(d.sum.capR,2)],
+    ['Year 1 Cash-on-Cash',d=>f.pct(d.sum.coc,1)],
+    ['Year 1 DSCR',d=>d.sum.dscr?d.sum.dscr.toFixed(2)+'x':'n/a'],
+    ['Year 1 NOI',d=>f.$(d.sum.noi)],
+    ['Net Sale Proceeds',d=>f.$(d.exit.proceeds)],
+  ];
+  return(
+    <div className="fu" style={{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px'}}>
+      <button className="btn-s" onClick={onBack} style={{marginBottom:18}}>← Back to saved deals</button>
+      <h2 style={{fontSize:24,fontWeight:800,marginBottom:18}}>Deal Comparison</h2>
+      <div className="glass" style={{overflow:'hidden'}}>
+        <table className="tbl">
+          <thead><tr>
+            <th style={{textAlign:'left'}}>Metric</th>
+            <th style={{textAlign:'right'}}>{a.name}</th>
+            <th style={{textAlign:'right'}}>{b.name}</th>
+          </tr></thead>
+          <tbody>
+            <tr className="sec"><td colSpan={3}>{a.assetType} vs. {b.assetType}</td></tr>
+            {rows.map((r,i)=>(
+              <tr key={i}>
+                <td style={{fontWeight:600,color:'#5f5f5f'}}>{r[0]}</td>
+                <td style={{textAlign:'right',fontWeight:700}}>{r[1](rA)}</td>
+                <td style={{textAlign:'right',fontWeight:700}}>{r[1](rB)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p style={{fontSize:12,color:'#8c8c8c',marginTop:12}}>Figures recalculated live from each saved deal's inputs.</p>
+    </div>
+  );
+}
+
+// ─── AUTH MODAL ───────────────────────────────────────────────────────────
+function AuthModal({onClose,onUser}){
+  const [mode,setMode]=useState('login');
+  const [email,setEmail]=useState('');
+  const [pw,setPw]=useState('');
+  const [err,setErr]=useState('');
+  const [busy,setBusy]=useState(false);
+  const [msg,setMsg]=useState('');
+  const submit=async()=>{
+    setErr('');setBusy(true);
+    try{
+      let r;
+      if(mode==='login')r=await sb.auth.signInWithPassword({email,password:pw});
+      else r=await sb.auth.signUp({email,password:pw});
+      if(r.error)throw r.error;
+      if(mode==='signup'&&!r.data.session){setMsg('Check your email to confirm your account.');setBusy(false);return;}
+      if(r.data.user){onUser(r.data.user);onClose();}
+    }catch(e){setErr(e.message||'Authentication failed.');}
+    setBusy(false);
+  };
+  const switchMode=m=>{setMode(m);setErr('');setMsg('');};
+  return(
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}
+      onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="glass" style={{width:'100%',maxWidth:420,padding:'32px 28px',position:'relative'}}>
+        <button onClick={onClose} style={{position:'absolute',top:12,right:14,background:'none',border:'none',fontSize:22,cursor:'pointer',color:'var(--muted)',lineHeight:1}}>&times;</button>
+        <h2 style={{fontSize:22,fontWeight:700,marginBottom:4}}>{mode==='login'?'Sign In':'Create Account'}</h2>
+        <p style={{color:'var(--muted)',fontSize:13.5,marginBottom:22}}>Save your deals to the cloud and access them from any device.</p>
+        <Fld label="Email" type="email" value={email} onChange={v=>setEmail(v)}/>
+        <Fld label="Password" type="password" value={pw} onChange={v=>setPw(v)}/>
+        {err&&<div style={{color:'var(--neg)',fontSize:13,marginBottom:10,marginTop:-4}}>{err}</div>}
+        {msg&&<div style={{color:'var(--pos)',fontSize:13,marginBottom:10,marginTop:-4}}>{msg}</div>}
+        <button className="btn-p" onClick={submit} disabled={busy||!email||!pw} style={{width:'100%',marginBottom:16,marginTop:6}}>
+          {busy?'Please wait…':(mode==='login'?'Sign In':'Create Account')}
+        </button>
+        <div style={{textAlign:'center',fontSize:13,color:'var(--muted)'}}>
+          {mode==='login'
+            ?<>No account? <button onClick={()=>switchMode('signup')} style={{background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontWeight:600,fontSize:13,fontFamily:"'Sora',sans-serif"}}>Sign Up</button></>
+            :<>Have an account? <button onClick={()=>switchMode('login')} style={{background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontWeight:600,fontSize:13,fontFamily:"'Sora',sans-serif"}}>Sign In</button></>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────
+const STEPS=['Asset Type','Property Info','Income & Expenses','Financing'];
+
+function App(){
+  const [view,setView]=useState('landing');
+  const [step,setStep]=useState(0);
+  const [assetType,setAssetType]=useState('multifamily');
+  const [inp,setInp]=useState(DEFS.multifamily);
+  const [res,setRes]=useState(null);
+  const [loading,setLoading]=useState(false);
+  const [user,setUser]=useState(null);
+  const [showAuth,setShowAuth]=useState(false);
+
+  useEffect(()=>{
+    sb.auth.getUser().then(({data:{user:u}})=>setUser(u||null));
+    const{data:{subscription}}=sb.auth.onAuthStateChange((_,session)=>setUser(session?.user||null));
+    return()=>subscription.unsubscribe();
+  },[]);
+
+  const update=useCallback(upd=>setInp(prev=>({...prev,...upd})),[]);
+
+  const handleAsset=useCallback(a=>{
+    setAssetType(a);
+    setInp(DEFS[a]||DEFS.multifamily);
+  },[]);
+
+  const handleCalc=()=>{
+    setLoading(true);
+    setTimeout(()=>{
+      try{const r=buildPF(inp);setRes(r);setStep(4);}
+      catch(e){alert('Calculation error: '+e.message);}
+      setLoading(false);
+    },500);
+  };
+
+  const handleSave=async()=>{try{await persistDeal(inp,res,user);}catch(e){alert('Could not save: '+e.message);}};
+  const handleLoadDeal=(d)=>{
+    setAssetType(d.assetType?d.assetType.toLowerCase():'multifamily');
+    setInp(d.inp);
+    try{const r=buildPF(d.inp);setRes(r);setStep(4);setView('app');}
+    catch(e){setStep(1);setView('app');}
+  };
+
+  const progress=(step/STEPS.length)*100;
+
+  return(
+    <div style={{minHeight:'100vh',background:'#eef1f7'}}>
+      <div style={{background:'rgba(12,19,34,.92)',backdropFilter:'blur(10px)',borderBottom:'1px solid rgba(255,255,255,.08)',padding:'13px 24px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100}}>
+        <div style={{display:'flex',alignItems:'center',gap:11,cursor:'pointer'}} onClick={()=>setView('landing')}>
+          <svg width="34" height="34" viewBox="0 0 100 100" style={{flexShrink:0}} xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="hdrAccent" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#7d93ff"/><stop offset="1" stopColor="#5a76f6"/></linearGradient></defs>
+            <rect x="20" y="64" width="60" height="14" rx="3.5" fill="#4a5a85"/>
+            <rect x="20" y="46" width="60" height="14" rx="3.5" fill="#6b7593"/>
+            <rect x="20" y="28" width="60" height="14" rx="3.5" fill="#8a93a6"/>
+            <rect x="20" y="10" width="60" height="14" rx="3.5" fill="url(#hdrAccent)"/>
+          </svg>
+          <div>
+            <div style={{fontWeight:700,fontSize:17,lineHeight:1.1,color:'#fff',fontFamily:"'Space Grotesk',sans-serif"}}>Cap<span style={{color:'#7d93ff'}}>Stack</span></div>
+            <div className="mono" style={{fontSize:9,color:'#6b7593',letterSpacing:'2px',fontWeight:600}}>REAL ESTATE UNDERWRITING</div>
+          </div>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:16}}>
+          {view!=='landing'&&step<4&&step>0&&<span className="mono" style={{fontSize:11,color:'#6b7593'}}>STEP {step}/{STEPS.length}</span>}
+          {view==='landing'&&<button className="btn-p" style={{padding:'7px 18px',fontSize:13}} onClick={()=>setView('app')}>Start an analysis</button>}
+          <button onClick={()=>setView('saved')} style={{background:'none',border:'none',cursor:'pointer',fontSize:12.5,color:view==='saved'?'#7d93ff':'#aab3c9',fontWeight:view==='saved'?700:500,padding:0,fontFamily:"'Sora',sans-serif"}}>Saved deals</button>
+          {user?(
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <span style={{fontSize:11.5,color:'#8a93a6',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.email}</span>
+              <button onClick={async()=>{await sb.auth.signOut();setUser(null);}} style={{background:'none',border:'1px solid rgba(255,255,255,.18)',borderRadius:6,cursor:'pointer',fontSize:12,color:'#aab3c9',padding:'4px 10px',fontFamily:"'Sora',sans-serif"}}>Sign Out</button>
+            </div>
+          ):(
+            <button onClick={()=>setShowAuth(true)} style={{background:'var(--accent)',border:'none',borderRadius:6,cursor:'pointer',fontSize:12.5,color:'#fff',padding:'5px 13px',fontWeight:600,fontFamily:"'Sora',sans-serif"}}>Sign In</button>
+          )}
+          <a href="https://www.linkedin.com/in/jordanchafitz" target="_blank" rel="noopener" style={{fontSize:12.5,color:'#aab3c9',textDecoration:'none'}}>Built by <span style={{color:'#7d93ff',fontWeight:600}}>Jordan Chafitz</span></a>
+          {res&&step<4&&<button className="btn-s" style={{fontSize:12,padding:'6px 14px',background:'rgba(255,255,255,.06)',color:'#fff',borderColor:'rgba(255,255,255,.2)'}} onClick={()=>setStep(4)}>View results →</button>}
+        </div>
+      </div>
+
+      {view==='landing'&&<Landing onStart={()=>setView('app')} onSample={()=>{const sd={...DEFS.multifamily,propertyName:'Sample Deal'};exportXLSX(buildPF(sd),sd);}}/>}
+      {view==='saved'&&<SavedDeals onLoad={handleLoadDeal} onClose={()=>{setView('app');setStep(0);}} user={user} onSignIn={()=>setShowAuth(true)}/>}
+      <div style={{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px',display:(view==='app')?'block':'none'}}>
+        {step<4?(
+          <>
+            <div style={{display:'flex',alignItems:'center',marginBottom:38}}>
+              {STEPS.map((s,i)=>(
+                <React.Fragment key={i}>
+                  <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:5,cursor:i<step?'pointer':'default'}} onClick={()=>{if(i<step)setStep(i);}}>
+                    <div className={`step-dot ${i<step?'done':i===step?'act':'idle'}`}>{i<step?'✓':i+1}</div>
+                    <span style={{fontSize:10.5,color:i===step?'#3a5bf0':'#8c8c8c',fontWeight:i===step?700:400,whiteSpace:'nowrap'}}>{s}</span>
+                  </div>
+                  {i<STEPS.length-1&&<div className={`step-line ${i<step?'done':''}`}/>}
+                </React.Fragment>
+              ))}
+            </div>
+
+            <div className="glass" style={{padding:36,marginBottom:28}}>
+              {step===0&&<Step1 val={assetType} onChange={handleAsset}/>}
+              {step===1&&<Step2 inp={inp} onChange={update} assetType={assetType}/>}
+              {step===2&&<Step3 inp={inp} onChange={update}/>}
+              {step===3&&<Step4 inp={inp} onChange={update}/>}
+            </div>
+
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <button className="btn-s" onClick={()=>setStep(s=>Math.max(0,s-1))} disabled={step===0}>← Back</button>
+              <div style={{display:'flex',gap:10}}>
+                {step<STEPS.length-1?(
+                  <button className="btn-p" onClick={()=>setStep(s=>s+1)}>Continue →</button>
+                ):(
+                  <button className="btn-p" onClick={handleCalc} disabled={loading}
+                    style={{minWidth:190,display:'flex',alignItems:'center',gap:8,justifyContent:'center'}}>
+                    {loading?'Calculating...':'Generate Pro Forma'}
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="prog"><div className="prog-f" style={{width:`${progress}%`}}/></div>
+          </>
+        ):(
+          res&&<Dashboard res={res} inp={inp} onExport={()=>exportXLSX(res,inp)} onBack={()=>setStep(3)} onSave={handleSave}/>
+        )}
+      </div>
+
+      {showAuth&&<AuthModal onClose={()=>setShowAuth(false)} onUser={u=>setUser(u)}/>}
+      <div style={{textAlign:'center',padding:'18px 20px',borderTop:'1px solid #ececec',color:'#8c8c8c',fontSize:11.5}}>
+        <span style={{color:'#737373'}}>Built by <a href="https://www.linkedin.com/in/jordanchafitz" target="_blank" rel="noopener" style={{color:'#3a5bf0',textDecoration:'none',fontWeight:600}}>Jordan Chafitz</a></span><br/>
+        <span style={{fontSize:10.5}}>All projections are estimates for informational purposes only. Not financial advice.</span>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
