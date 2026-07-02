@@ -10,6 +10,7 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://smartcapstack.com">
 <link rel="canonical" href="https://smartcapstack.com/">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"CapStack","alternateName":"Smart CapStack","url":"https://smartcapstack.com/","applicationCategory":"FinanceApplication","operatingSystem":"Web","description":"Institutional-quality real estate underwriting: 10-year DCF, IRR, sensitivity tables, equity waterfall, LIHTC syndication, and live-formula Excel export.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <meta name="theme-color" content="#0c1322">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -110,7 +111,7 @@ select.input-f{cursor:pointer;padding-top:0;padding-bottom:0;line-height:normal}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:5px}
 ::-webkit-scrollbar-thumb:hover{background:var(--muted2)}
 input[type=range]{accent-color:var(--accent);width:100%}
-@media(max-width:760px){.g4{grid-template-columns:1fr 1fr!important}.g3{grid-template-columns:1fr!important}.g2{grid-template-columns:1fr!important}.seg-wrap{flex-wrap:wrap}.seg{flex:1 1 30%}}
+@media(max-width:760px){.g4{grid-template-columns:1fr 1fr!important}.g3{grid-template-columns:1fr!important}.g2{grid-template-columns:1fr!important}.seg-wrap{flex-wrap:wrap}.seg{flex:1 1 30%}.hide-m{display:none!important}}
 </style>
 </head>
 <body>
@@ -2163,7 +2164,6 @@ function LihtcPanel({L,res}){
 }
 
 function Dashboard({res,inp,onExport,onBack,onSave}){
-  const [saved,setSaved]=useState(false);
   const [tab,setTab]=useState('charts');
   const hp=inp.holdingPeriod||7;
   const {rows,ret,sum,exit,equity,totalCost,acqC,LF}=res;
@@ -2201,9 +2201,7 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
           <h2 style={{fontSize:22,fontWeight:800}}>{inp.propertyName||'Pro Forma Analysis'}</h2>
         </div>
         <div style={{display:'flex',gap:10,flexShrink:0}}>
-          <button className="btn-s" onClick={()=>{onSave();setSaved(true);setTimeout(()=>setSaved(false),2000);}}>
-            {saved?'Saved ✓':'Save deal'}
-          </button>
+          <button className="btn-s" onClick={onSave}>Save deal</button>
           <button className="btn-s" onClick={()=>openMemo(res,inp)}>Deal Memo</button>
           <button className="btn-s" onClick={()=>downloadMemo(res,inp)}>Memo .md</button>
           <button className="btn-p" onClick={onExport}>Export Excel</button>
@@ -2689,10 +2687,11 @@ function dealSummary(res,inp){
     proceeds:res.exit.proceeds
   };
 }
-async function persistDeal(inp,res,user){
+async function persistDeal(inp,res,user,opts){
+  opts=opts||{};
   const entry={
-    id:'d'+Date.now(),
-    name:inp.propertyName||'Untitled Deal',
+    id:opts.id||('d'+Date.now()),
+    name:opts.name||inp.propertyName||'Untitled Deal',
     assetType:inp.assetType,
     savedAt:new Date().toISOString(),
     inp:JSON.parse(JSON.stringify(inp)),
@@ -2700,12 +2699,32 @@ async function persistDeal(inp,res,user){
     notes:inp.dealNotes||''
   };
   if(user){
-    const{error}=await sb.from('deals').insert({id:entry.id,user_id:user.id,name:entry.name,asset_type:entry.assetType,saved_at:entry.savedAt,inp_data:entry.inp,summary:entry.summary,notes:entry.notes});
-    if(error)throw new Error(error.message);
+    if(opts.id){
+      // update in place; leave notes untouched
+      const{error}=await sb.from('deals').update({name:entry.name,asset_type:entry.assetType,saved_at:entry.savedAt,inp_data:entry.inp,summary:entry.summary}).eq('id',entry.id);
+      if(error)throw new Error(error.message);
+    }else{
+      const{error}=await sb.from('deals').insert({id:entry.id,user_id:user.id,name:entry.name,asset_type:entry.assetType,saved_at:entry.savedAt,inp_data:entry.inp,summary:entry.summary,notes:entry.notes});
+      if(error)throw new Error(error.message);
+    }
   } else {
-    const deals=loadDealsLocal();deals.unshift(entry);saveDealsLocal(deals);
+    const deals=loadDealsLocal();
+    const old=deals.find(d=>d.id===entry.id);
+    if(old)entry.notes=old.notes||'';
+    const rest=deals.filter(d=>d.id!==entry.id);
+    rest.unshift(entry);
+    saveDealsLocal(rest);
   }
   return entry.id;
+}
+async function migrateLocalDeals(user){
+  const local=loadDealsLocal();
+  if(!local.length)return 0;
+  const rows=local.map(d=>({id:d.id,user_id:user.id,name:d.name||'Untitled Deal',asset_type:d.assetType,saved_at:d.savedAt||new Date().toISOString(),inp_data:d.inp,summary:d.summary,notes:d.notes||''}));
+  const{error}=await sb.from('deals').upsert(rows);
+  if(error)throw new Error(error.message);
+  localStorage.removeItem(DEALS_KEY);
+  return rows.length;
 }
 async function updateDealNotes(id,notes,user){
   if(user){await sb.from('deals').update({notes}).eq('id',id);}
@@ -2805,17 +2824,29 @@ function PortfolioView({onBack,user}){
   );
 }
 
-function SavedDeals({onLoad,onClose,user,onSignIn}){
+function SavedDeals({onLoad,onClose,user,onSignIn,notify}){
   const [portfolio,setPortfolio]=useState(false);
   const [deals,setDeals]=useState([]);
   const [loadingDeals,setLoadingDeals]=useState(true);
   const [sel,setSel]=useState([]);
   const [compare,setCompare]=useState(false);
+  const [localCount,setLocalCount]=useState(0);
 
   useEffect(()=>{
     setLoadingDeals(true);
     loadDeals(user).then(d=>{setDeals(d);setLoadingDeals(false);});
+    setLocalCount(user?loadDealsLocal().length:0);
   },[user]);
+
+  const migrate=async()=>{
+    try{
+      const n=await migrateLocalDeals(user);
+      setLocalCount(0);
+      const d=await loadDeals(user);
+      setDeals(d);
+      notify&&notify(n+' deal'+(n!==1?'s':'')+' uploaded to your account');
+    }catch(e){alert('Upload failed: '+e.message);}
+  };
 
   const del=async id=>{
     await deleteDeal(id,user);
@@ -2832,9 +2863,13 @@ function SavedDeals({onLoad,onClose,user,onSignIn}){
   }
   return(
     <div className="fu" style={{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px'}}>
-      {!user&&<div style={{background:'var(--accent-tint)',border:'1px solid var(--accent)',borderRadius:8,padding:'10px 16px',marginBottom:18,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
+      {!user&&<div style={{background:'var(--accent-tint)',border:'1px solid var(--accent)',borderRadius:8,padding:'10px 16px',marginBottom:18,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
         <span style={{fontSize:13,color:'var(--accent)',fontWeight:500}}>Sign in to save deals to the cloud and access them from any device.</span>
         <button className="btn-p" style={{padding:'6px 14px',fontSize:12.5,flexShrink:0}} onClick={onSignIn}>Sign In</button>
+      </div>}
+      {user&&localCount>0&&<div style={{background:'var(--accent-tint)',border:'1px solid var(--accent)',borderRadius:8,padding:'10px 16px',marginBottom:18,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
+        <span style={{fontSize:13,color:'var(--accent)',fontWeight:500}}>{localCount} deal{localCount!==1?'s':''} saved in this browser {localCount!==1?'are':'is'} not in your account yet.</span>
+        <button className="btn-p" style={{padding:'6px 14px',fontSize:12.5,flexShrink:0}} onClick={migrate}>Upload to account</button>
       </div>}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:12}}>
         <h2 style={{fontSize:24,fontWeight:800}}>Saved Deals</h2>
@@ -2859,7 +2894,7 @@ function SavedDeals({onLoad,onClose,user,onSignIn}){
               const s=d.summary||{}; const picked=sel.includes(d.id);
               return(
                 <div key={d.id} className="glass" style={{padding:'16px 18px',borderColor:picked?'#3a5bf0':'#e2e6f0',borderWidth:picked?2:1}}>
-                  <div style={{display:'flex',alignItems:'center',gap:16}}>
+                  <div style={{display:'flex',alignItems:'center',gap:16,flexWrap:'wrap'}}>
                     <input type="checkbox" checked={picked} onChange={()=>toggle(d.id)} style={{width:17,height:17,accentColor:'#3a5bf0',flexShrink:0}}/>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontWeight:700,fontSize:15,color:'#191919'}}>{d.name}</div>
@@ -2953,7 +2988,7 @@ function AuthModal({onClose,onUser}){
     try{
       let r;
       if(mode==='login')r=await sb.auth.signInWithPassword({email,password:pw});
-      else r=await sb.auth.signUp({email,password:pw});
+      else r=await sb.auth.signUp({email,password:pw,options:{emailRedirectTo:window.location.origin+window.location.pathname}});
       if(r.error)throw r.error;
       if(mode==='signup'&&!r.data.session){setMsg('Check your email to confirm your account.');setBusy(false);return;}
       if(r.data.user){onUser(r.data.user);onClose();}
@@ -2985,6 +3020,46 @@ function AuthModal({onClose,onUser}){
   );
 }
 
+// ─── SAVE MODAL & TOAST ───────────────────────────────────────────────────
+function Toast({msg}){
+  if(!msg)return null;
+  return <div className="fu" style={{position:'fixed',bottom:26,left:'50%',transform:'translateX(-50%)',background:'var(--ink)',color:'#fff',padding:'11px 22px',borderRadius:10,fontSize:13.5,fontWeight:600,zIndex:600,boxShadow:'var(--shadow-lg)',whiteSpace:'nowrap'}}>{msg}</div>;
+}
+function SaveModal({inp,res,user,existingId,onClose,onSaved,onSignIn}){
+  const [name,setName]=useState(inp.propertyName||'');
+  const [busy,setBusy]=useState(false);
+  const [err,setErr]=useState('');
+  const doSave=async asNew=>{
+    setBusy(true);setErr('');
+    try{
+      const useId=asNew?null:existingId;
+      const finalName=name||inp.propertyName||'Untitled Deal';
+      const id=await persistDeal({...inp,propertyName:finalName},res,user,{id:useId,name:finalName});
+      onSaved(id,useId?'updated':'saved',finalName);
+    }catch(e){setErr(e.message||'Could not save.');}
+    setBusy(false);
+  };
+  return(
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}
+      onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="glass" style={{width:'100%',maxWidth:420,padding:'30px 28px',position:'relative'}}>
+        <button onClick={onClose} style={{position:'absolute',top:12,right:14,background:'none',border:'none',fontSize:22,cursor:'pointer',color:'var(--muted)',lineHeight:1}}>&times;</button>
+        <h2 style={{fontSize:21,fontWeight:700,marginBottom:4}}>{existingId?'Update deal':'Save deal'}</h2>
+        <p style={{color:'var(--muted)',fontSize:13,marginBottom:18}}>
+          {user?'Saved to your account and synced across devices.':"You're not signed in — this deal will only be saved in this browser."}
+        </p>
+        <Fld label="Deal name" value={name} onChange={v=>setName(v)}/>
+        {err&&<div style={{color:'var(--neg)',fontSize:13,marginBottom:10,marginTop:-4}}>{err}</div>}
+        <button className="btn-p" onClick={()=>doSave(false)} disabled={busy} style={{width:'100%',marginTop:4}}>
+          {busy?'Saving…':(existingId?'Update deal':'Save deal')}
+        </button>
+        {existingId&&<button className="btn-s" onClick={()=>doSave(true)} disabled={busy} style={{width:'100%',marginTop:8}}>Save as new copy</button>}
+        {!user&&<button onClick={onSignIn} style={{display:'block',margin:'14px auto 0',background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontWeight:600,fontSize:13,fontFamily:"'Sora',sans-serif"}}>Sign in to save to the cloud</button>}
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN APP ─────────────────────────────────────────────────────────────
 const STEPS=['Asset Type','Property Info','Income & Expenses','Financing'];
 
@@ -2997,6 +3072,10 @@ function App(){
   const [loading,setLoading]=useState(false);
   const [user,setUser]=useState(null);
   const [showAuth,setShowAuth]=useState(false);
+  const [showSave,setShowSave]=useState(false);
+  const [currentDealId,setCurrentDealId]=useState(null);
+  const [toast,setToast]=useState('');
+  const notify=useCallback(m=>{setToast(m);setTimeout(()=>setToast(''),2600);},[]);
 
   useEffect(()=>{
     sb.auth.getUser().then(({data:{user:u}})=>setUser(u||null));
@@ -3009,6 +3088,7 @@ function App(){
   const handleAsset=useCallback(a=>{
     setAssetType(a);
     setInp(DEFS[a]||DEFS.multifamily);
+    setCurrentDealId(null);
   },[]);
 
   const handleCalc=()=>{
@@ -3020,10 +3100,11 @@ function App(){
     },500);
   };
 
-  const handleSave=async()=>{try{await persistDeal(inp,res,user);}catch(e){alert('Could not save: '+e.message);}};
+  const handleSave=()=>setShowSave(true);
   const handleLoadDeal=(d)=>{
     setAssetType(d.assetType?d.assetType.toLowerCase():'multifamily');
     setInp(d.inp);
+    setCurrentDealId(d.id);
     try{const r=buildPF(d.inp);setRes(r);setStep(4);setView('app');}
     catch(e){setStep(1);setView('app');}
   };
@@ -3043,28 +3124,28 @@ function App(){
           </svg>
           <div>
             <div style={{fontWeight:700,fontSize:17,lineHeight:1.1,color:'#fff',fontFamily:"'Space Grotesk',sans-serif"}}>Cap<span style={{color:'#7d93ff'}}>Stack</span></div>
-            <div className="mono" style={{fontSize:9,color:'#6b7593',letterSpacing:'2px',fontWeight:600}}>REAL ESTATE UNDERWRITING</div>
+            <div className="mono hide-m" style={{fontSize:9,color:'#6b7593',letterSpacing:'2px',fontWeight:600}}>REAL ESTATE UNDERWRITING</div>
           </div>
         </div>
-        <div style={{display:'flex',alignItems:'center',gap:16}}>
-          {view!=='landing'&&step<4&&step>0&&<span className="mono" style={{fontSize:11,color:'#6b7593'}}>STEP {step}/{STEPS.length}</span>}
+        <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap',justifyContent:'flex-end'}}>
+          {view!=='landing'&&step<4&&step>0&&<span className="mono hide-m" style={{fontSize:11,color:'#6b7593'}}>STEP {step}/{STEPS.length}</span>}
           {view==='landing'&&<button className="btn-p" style={{padding:'7px 18px',fontSize:13}} onClick={()=>setView('app')}>Start an analysis</button>}
           <button onClick={()=>setView('saved')} style={{background:'none',border:'none',cursor:'pointer',fontSize:12.5,color:view==='saved'?'#7d93ff':'#aab3c9',fontWeight:view==='saved'?700:500,padding:0,fontFamily:"'Sora',sans-serif"}}>Saved deals</button>
           {user?(
             <div style={{display:'flex',alignItems:'center',gap:8}}>
-              <span style={{fontSize:11.5,color:'#8a93a6',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.email}</span>
+              <span className="hide-m" style={{fontSize:11.5,color:'#8a93a6',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.email}</span>
               <button onClick={async()=>{await sb.auth.signOut();setUser(null);}} style={{background:'none',border:'1px solid rgba(255,255,255,.18)',borderRadius:6,cursor:'pointer',fontSize:12,color:'#aab3c9',padding:'4px 10px',fontFamily:"'Sora',sans-serif"}}>Sign Out</button>
             </div>
           ):(
             <button onClick={()=>setShowAuth(true)} style={{background:'var(--accent)',border:'none',borderRadius:6,cursor:'pointer',fontSize:12.5,color:'#fff',padding:'5px 13px',fontWeight:600,fontFamily:"'Sora',sans-serif"}}>Sign In</button>
           )}
-          <a href="https://www.linkedin.com/in/jordanchafitz" target="_blank" rel="noopener" style={{fontSize:12.5,color:'#aab3c9',textDecoration:'none'}}>Built by <span style={{color:'#7d93ff',fontWeight:600}}>Jordan Chafitz</span></a>
+          <a className="hide-m" href="https://www.linkedin.com/in/jordanchafitz" target="_blank" rel="noopener" style={{fontSize:12.5,color:'#aab3c9',textDecoration:'none'}}>Built by <span style={{color:'#7d93ff',fontWeight:600}}>Jordan Chafitz</span></a>
           {res&&step<4&&<button className="btn-s" style={{fontSize:12,padding:'6px 14px',background:'rgba(255,255,255,.06)',color:'#fff',borderColor:'rgba(255,255,255,.2)'}} onClick={()=>setStep(4)}>View results →</button>}
         </div>
       </div>
 
       {view==='landing'&&<Landing onStart={()=>setView('app')} onSample={()=>{const sd={...DEFS.multifamily,propertyName:'Sample Deal'};exportXLSX(buildPF(sd),sd);}}/>}
-      {view==='saved'&&<SavedDeals onLoad={handleLoadDeal} onClose={()=>{setView('app');setStep(0);}} user={user} onSignIn={()=>setShowAuth(true)}/>}
+      {view==='saved'&&<SavedDeals onLoad={handleLoadDeal} onClose={()=>{setView('app');setStep(0);}} user={user} onSignIn={()=>setShowAuth(true)} notify={notify}/>}
       <div style={{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px',display:(view==='app')?'block':'none'}}>
         {step<4?(
           <>
@@ -3108,6 +3189,16 @@ function App(){
       </div>
 
       {showAuth&&<AuthModal onClose={()=>setShowAuth(false)} onUser={u=>setUser(u)}/>}
+      {showSave&&res&&<SaveModal inp={inp} res={res} user={user} existingId={currentDealId}
+        onClose={()=>setShowSave(false)}
+        onSaved={(id,mode,name)=>{
+          setCurrentDealId(id);
+          setShowSave(false);
+          setInp(prev=>({...prev,propertyName:name}));
+          notify(mode==='updated'?'Deal updated':(user?'Saved to your account':'Saved in this browser'));
+        }}
+        onSignIn={()=>{setShowSave(false);setShowAuth(true);}}/>}
+      <Toast msg={toast}/>
       <div style={{textAlign:'center',padding:'18px 20px',borderTop:'1px solid #ececec',color:'#8c8c8c',fontSize:11.5}}>
         <span style={{color:'#737373'}}>Built by <a href="https://www.linkedin.com/in/jordanchafitz" target="_blank" rel="noopener" style={{color:'#3a5bf0',textDecoration:'none',fontWeight:600}}>Jordan Chafitz</a></span><br/>
         <span style={{fontSize:10.5}}>All projections are estimates for informational purposes only. Not financial advice.</span>
