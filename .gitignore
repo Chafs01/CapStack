@@ -3,3 +3,6 @@
 serve.py
 SCS-PNG.png
 SmartCap Logo.png
+node_modules/
+dist/
+.env
