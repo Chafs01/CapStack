@@ -98,7 +98,6 @@ function App(){
           ):(
             <button onClick={()=>setShowAuth(true)} style={{background:'var(--accent)',border:'none',borderRadius:6,cursor:'pointer',fontSize:12.5,color:'#fff',padding:'5px 13px',fontWeight:600,fontFamily:"'Sora',sans-serif"}}>Sign In</button>
           )}
-          <a className="hide-m" href="https://www.linkedin.com/in/jordanchafitz" target="_blank" rel="noopener" style={{fontSize:12.5,color:'#aab3c9',textDecoration:'none'}}>Built by <span style={{color:'#7d93ff',fontWeight:600}}>Jordan Chafitz</span></a>
           {res&&step<4&&<button className="btn-s" style={{fontSize:12,padding:'6px 14px',background:'rgba(255,255,255,.06)',color:'#fff',borderColor:'rgba(255,255,255,.2)'}} onClick={()=>setStep(4)}>View results →</button>}
         </div>
       </div>
@@ -160,7 +159,7 @@ function App(){
         onSignIn={()=>{setShowSave(false);setShowAuth(true);}}/>}
       <Toast msg={toast}/>
       <div style={{textAlign:'center',padding:'18px 20px',borderTop:'1px solid #ececec',color:'#8c8c8c',fontSize:11.5}}>
-        <span style={{color:'#737373'}}>Built by <a href="https://www.linkedin.com/in/jordanchafitz" target="_blank" rel="noopener" style={{color:'#3a5bf0',textDecoration:'none',fontWeight:600}}>Jordan Chafitz</a></span><br/>
+        <span style={{color:'#737373',fontWeight:600}}>SmartCapStack</span><br/>
         <span style={{fontSize:10.5}}>All projections are estimates for informational purposes only. Not financial advice.</span>
       </div>
     </div>
