@@ -10,7 +10,7 @@ import{Step2}from'./components/Step2.jsx';
 import{Step3}from'./components/Step3.jsx';
 import{Step4}from'./components/Step4.jsx';
 import{Dashboard}from'./components/Dashboard.jsx';
-import{AuthModal,SaveModal,Toast}from'./components/modals.jsx';
+import{AuthModal,ResetPasswordModal,SaveModal,Toast}from'./components/modals.jsx';
 // ─── MAIN APP ─────────────────────────────────────────────────────────────
 const STEPS=['Asset Type','Property Info','Income & Expenses','Financing'];
 
@@ -23,6 +23,7 @@ function App(){
   const [loading,setLoading]=useState(false);
   const [user,setUser]=useState(null);
   const [showAuth,setShowAuth]=useState(false);
+  const [showReset,setShowReset]=useState(false);
   const [showSave,setShowSave]=useState(false);
   const [currentDealId,setCurrentDealId]=useState(null);
   const [toast,setToast]=useState('');
@@ -31,7 +32,10 @@ function App(){
   useEffect(()=>{
     if(!sb)return; // no Supabase config — calculator still works standalone
     sb.auth.getUser().then(({data:{user:u}})=>setUser(u||null)).catch(()=>{});
-    const{data:{subscription}}=sb.auth.onAuthStateChange((_,session)=>setUser(session?.user||null));
+    const{data:{subscription}}=sb.auth.onAuthStateChange((event,session)=>{
+      setUser(session?.user||null);
+      if(event==='PASSWORD_RECOVERY'){setShowAuth(false);setShowReset(true);}
+    });
     return()=>subscription.unsubscribe();
   },[]);
 
@@ -144,6 +148,7 @@ function App(){
       </div>
 
       {showAuth&&<AuthModal onClose={()=>setShowAuth(false)} onUser={u=>setUser(u)}/>}
+      {showReset&&<ResetPasswordModal onDone={()=>{setShowReset(false);notify('Password updated');}}/>}
       {showSave&&res&&<SaveModal inp={inp} res={res} user={user} existingId={currentDealId}
         onClose={()=>setShowSave(false)}
         onSaved={(id,mode,name)=>{
