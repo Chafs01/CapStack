@@ -3,7 +3,7 @@ import{f}from'../engine/format.js';
 import{calcIRR}from'../engine/finance.js';
 import{buildPF}from'../engine/buildPF.js';
 import{ASSETS}from'./Step1.jsx';
-import{loadDeals,loadDealsLocal,deleteDeal,migrateLocalDeals,updateDealNotes}from'../lib/deals.js';
+import{loadDeals,loadDealsLocal,renameDeal,deleteDeal,migrateLocalDeals,updateDealNotes}from'../lib/deals.js';
 function DealNotes({id,initial,user}){
   const [val,setVal]=useState(initial);
   const [open,setOpen]=useState(!!initial);
@@ -126,6 +126,18 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify}){
     setDeals(d=>d.filter(x=>x.id!==id));
     setSel(s=>s.filter(x=>x!==id));
   };
+  const [editingId,setEditingId]=useState(null);
+  const [editName,setEditName]=useState('');
+  const commitRename=async()=>{
+    const id=editingId,name=editName.trim();
+    setEditingId(null);
+    if(!id||!name)return;
+    try{
+      await renameDeal(id,name,user);
+      setDeals(ds=>ds.map(x=>x.id===id?{...x,name}:x));
+      notify&&notify('Deal renamed');
+    }catch(e){alert('Rename failed: '+e.message);}
+  };
   const toggle=id=>setSel(sel.includes(id)?sel.filter(s=>s!==id):(sel.length<2?[...sel,id]:[sel[1],id]));
   const fmtDate=iso=>{try{return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch(e){return '';}};
 
@@ -170,7 +182,19 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify}){
                   <div style={{display:'flex',alignItems:'center',gap:16,flexWrap:'wrap'}}>
                     <input type="checkbox" checked={picked} onChange={()=>toggle(d.id)} style={{width:17,height:17,accentColor:'#3a5bf0',flexShrink:0}}/>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontWeight:700,fontSize:15,color:'#191919'}}>{d.name}</div>
+                      {editingId===d.id?(
+                        <input className="input-f" autoFocus value={editName}
+                          onChange={e=>setEditName(e.target.value)}
+                          onBlur={commitRename}
+                          onKeyDown={e=>{if(e.key==='Enter')commitRename();if(e.key==='Escape')setEditingId(null);}}
+                          style={{fontWeight:700,fontSize:15,padding:'6px 10px',maxWidth:320}}/>
+                      ):(
+                        <div style={{fontWeight:700,fontSize:15,color:'#191919',display:'flex',alignItems:'center',gap:8}}>
+                          {d.name}
+                          <button onClick={()=>{setEditingId(d.id);setEditName(d.name);}} title="Rename"
+                            style={{background:'none',border:'none',cursor:'pointer',color:'#8c8c8c',fontSize:13,padding:0,lineHeight:1}}>✎</button>
+                        </div>
+                      )}
                       <div style={{fontSize:12,color:'#8c8c8c'}}>{d.assetType} &middot; saved {fmtDate(d.savedAt)}</div>
                     </div>
                     <div style={{display:'flex',gap:20,fontSize:13,flexShrink:0}}>

@@ -5,11 +5,25 @@ function loadDealsLocal(){try{return JSON.parse(localStorage.getItem(DEALS_KEY)|
 function saveDealsLocal(d){try{localStorage.setItem(DEALS_KEY,JSON.stringify(d));}catch(e){}}
 function normalizeDeal(r){return{id:r.id,name:r.name,assetType:r.asset_type||r.assetType,savedAt:r.saved_at||r.savedAt,inp:r.inp_data||r.inp,summary:r.summary,notes:r.notes||''};}
 async function loadDeals(user){
-  if(user){const{data,error}=await sb.from('deals').select('*').order('saved_at',{ascending:false});if(!error&&data)return data.map(normalizeDeal);}
+  if(user&&sb){
+    try{
+      const{data,error}=await sb.from('deals').select('*').order('saved_at',{ascending:false});
+      if(!error&&data)return data.map(normalizeDeal);
+    }catch(e){/* network down — fall through to local */}
+  }
   return loadDealsLocal();
 }
+async function renameDeal(id,name,user){
+  if(user&&sb){
+    const{error}=await sb.from('deals').update({name}).eq('id',id);
+    if(error)throw new Error(error.message);
+  }else{
+    const d=loadDealsLocal();const x=d.find(r=>r.id===id);
+    if(x){x.name=name;saveDealsLocal(d);}
+  }
+}
 async function deleteDeal(id,user){
-  if(user){await sb.from('deals').delete().eq('id',id);}
+  if(user&&sb){await sb.from('deals').delete().eq('id',id);}
   else{saveDealsLocal(loadDealsLocal().filter(x=>x.id!==id));}
 }
 function dealSummary(res,inp){
@@ -39,7 +53,7 @@ async function persistDeal(inp,res,user,opts){
     summary:dealSummary(res,inp),
     notes:inp.dealNotes||''
   };
-  if(user){
+  if(user&&sb){
     if(opts.id){
       // update in place; leave notes untouched
       const{error}=await sb.from('deals').update({name:entry.name,asset_type:entry.assetType,saved_at:entry.savedAt,inp_data:entry.inp,summary:entry.summary}).eq('id',entry.id);
@@ -68,8 +82,8 @@ async function migrateLocalDeals(user){
   return rows.length;
 }
 async function updateDealNotes(id,notes,user){
-  if(user){await sb.from('deals').update({notes}).eq('id',id);}
+  if(user&&sb){await sb.from('deals').update({notes}).eq('id',id);}
   else{const d=loadDealsLocal();const x=d.find(r=>r.id===id);if(x){x.notes=notes;saveDealsLocal(d);}}
 }
 
-export{DEALS_KEY,loadDealsLocal,saveDealsLocal,normalizeDeal,loadDeals,deleteDeal,dealSummary,persistDeal,migrateLocalDeals,updateDealNotes};
+export{DEALS_KEY,loadDealsLocal,saveDealsLocal,normalizeDeal,loadDeals,renameDeal,deleteDeal,dealSummary,persistDeal,migrateLocalDeals,updateDealNotes};
