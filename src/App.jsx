@@ -11,6 +11,8 @@ import{Step3}from'./components/Step3.jsx';
 import{Step4}from'./components/Step4.jsx';
 import{Dashboard}from'./components/Dashboard.jsx';
 import{AuthModal,ResetPasswordModal,SaveModal,Toast}from'./components/modals.jsx';
+import{Legal}from'./components/Legal.jsx';
+import{initTelemetry}from'./lib/telemetry.js';
 // ─── MAIN APP ─────────────────────────────────────────────────────────────
 const STEPS=['Asset Type','Property Info','Income & Expenses','Financing'];
 
@@ -27,7 +29,10 @@ function App(){
   const [showSave,setShowSave]=useState(false);
   const [currentDealId,setCurrentDealId]=useState(null);
   const [toast,setToast]=useState('');
+  const [legalTab,setLegalTab]=useState('privacy');
   const notify=useCallback(m=>{setToast(m);setTimeout(()=>setToast(''),2600);},[]);
+
+  useEffect(()=>{initTelemetry();},[]);
 
   useEffect(()=>{
     if(!sb)return; // no Supabase config — calculator still works standalone
@@ -104,6 +109,7 @@ function App(){
 
       {view==='landing'&&<Landing onStart={()=>setView('app')} onSample={()=>{const sd={...DEFS.multifamily,propertyName:'Sample Deal'};exportXLSX(buildPF(sd),sd);}}/>}
       {view==='saved'&&<SavedDeals onLoad={handleLoadDeal} onClose={()=>{setView('app');setStep(0);}} user={user} onSignIn={()=>setShowAuth(true)} notify={notify}/>}
+      {view==='legal'&&<Legal tab={legalTab} onTab={setLegalTab} onBack={()=>setView('landing')}/>}
       <div style={{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px',display:(view==='app')?'block':'none'}}>
         {step<4?(
           <>
@@ -159,7 +165,12 @@ function App(){
         onSignIn={()=>{setShowSave(false);setShowAuth(true);}}/>}
       <Toast msg={toast}/>
       <div style={{textAlign:'center',padding:'18px 20px',borderTop:'1px solid #ececec',color:'#8c8c8c',fontSize:11.5}}>
-        <span style={{color:'#737373',fontWeight:600}}>SmartCapStack</span><br/>
+        <span style={{color:'#737373',fontWeight:600}}>SmartCapStack</span>
+        <span style={{margin:'0 8px',color:'#c7cbd4'}}>·</span>
+        <button onClick={()=>{setLegalTab('privacy');setView('legal');window.scrollTo(0,0);}} style={{background:'none',border:'none',cursor:'pointer',color:'#3a5bf0',fontSize:11.5,padding:0,fontFamily:"'Sora',sans-serif"}}>Privacy</button>
+        <span style={{margin:'0 8px',color:'#c7cbd4'}}>·</span>
+        <button onClick={()=>{setLegalTab('terms');setView('legal');window.scrollTo(0,0);}} style={{background:'none',border:'none',cursor:'pointer',color:'#3a5bf0',fontSize:11.5,padding:0,fontFamily:"'Sora',sans-serif"}}>Terms</button>
+        <br/>
         <span style={{fontSize:10.5}}>All projections are estimates for informational purposes only. Not financial advice.</span>
       </div>
     </div>
