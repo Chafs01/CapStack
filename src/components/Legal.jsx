@@ -6,8 +6,8 @@ const CONTACT='support@smartcapstack.com';
 function Section({title,children}){
   return(
     <div style={{marginBottom:26}}>
-      <h3 style={{fontSize:16,fontWeight:700,marginBottom:8,fontFamily:"'Space Grotesk',sans-serif"}}>{title}</h3>
-      <div style={{fontSize:14,color:'var(--muted)',lineHeight:1.65}}>{children}</div>
+      <h3 style={{fontSize:'var(--fs-6)',fontWeight:700,marginBottom:8,fontFamily:"'Space Grotesk',sans-serif"}}>{title}</h3>
+      <div style={{fontSize:'var(--fs-5)',color:'var(--muted)',lineHeight:1.65}}>{children}</div>
     </div>
   );
 }
@@ -23,8 +23,8 @@ function Legal({tab='privacy',onTab,onBack}){
 
       {tab==='privacy'?(
         <div>
-          <h2 style={{fontSize:26,fontWeight:700,marginBottom:4}}>Privacy Policy</h2>
-          <p style={{fontSize:12.5,color:'var(--muted2)',marginBottom:24}}>Last updated {UPDATED}</p>
+          <h2 style={{fontSize:'var(--fs-9)',fontWeight:700,marginBottom:4}}>Privacy Policy</h2>
+          <p style={{fontSize:'var(--fs-3)',color:'var(--muted2)',marginBottom:24}}>Last updated {UPDATED}</p>
           <Section title="Who we are">
             SmartCapStack is a web-based real estate underwriting tool that runs pro forma
             financial analyses in your browser. This policy explains what information we
@@ -67,8 +67,8 @@ function Legal({tab='privacy',onTab,onBack}){
         </div>
       ):(
         <div>
-          <h2 style={{fontSize:26,fontWeight:700,marginBottom:4}}>Terms of Service</h2>
-          <p style={{fontSize:12.5,color:'var(--muted2)',marginBottom:24}}>Last updated {UPDATED}</p>
+          <h2 style={{fontSize:'var(--fs-9)',fontWeight:700,marginBottom:4}}>Terms of Service</h2>
+          <p style={{fontSize:'var(--fs-3)',color:'var(--muted2)',marginBottom:24}}>Last updated {UPDATED}</p>
           <Section title="Acceptance">
             By using SmartCapStack, you agree to these terms. If you don't agree, please don't
             use the service.

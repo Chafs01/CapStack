@@ -8,4 +8,43 @@ const DEFS={
 };
 
 
-export{DEFS};
+
+// ─── BLANK START ──────────────────────────────────────────────────────────
+// A new analysis starts empty so nobody accidentally underwrites the sample
+// deal. DEFS stays as-is: it still backs the landing-page preview, the
+// "Download sample model" button, and the golden-fixture tests.
+//
+// Kept rather than zeroed are the modelling conventions a user expects to be
+// pre-set (and where 0 would break the math or be silently overridden by a
+// `||` fallback in the UI): amortisation, hold, growth/exit/discount sliders,
+// the LP/GP waterfall tiers, debt-sizing limits, tax rates, and LIHTC
+// programme parameters. Everything describing the actual deal starts at 0.
+const KEEP=new Set([
+  'assetType','propertyName','address','drawPattern','creditType','sizeDebt','qctDda',
+  'amortYears','holdingPeriod','revenueGrowth','expenseGrowth','exitCapRate',
+  'sellingCostsPct','discountRate',
+  'lpSharePct','prefRate','hurdle2','lpTier2','hurdle3','lpTier3','lpTier4',
+  'minDSCR','maxLTV','maxLTC','minDebtYield',
+  'depYears','taxRate','capGainsRate','recaptureRate','landPct',
+  'creditRate','creditPrice','eligibleBasisPct','affordablePct','maxDeferPct',
+]);
+// one empty row keeps the editors from opening completely empty
+const BLANK_UNIT={type:'1BR',count:0,rent:0};
+const BLANK_SPACE={name:'',sf:0,rentPerSF:0};
+function blankOf(d){
+  const out={};
+  for(const k in d){
+    const v=d[k];
+    if(KEEP.has(k))out[k]=v;
+    else if(k==='unitMix')out[k]=[{...BLANK_UNIT}];
+    else if(k==='retailIncome')out[k]=[{...BLANK_SPACE}];
+    else if(Array.isArray(v))out[k]=[];
+    else if(typeof v==='number')out[k]=0;
+    else if(typeof v==='string')out[k]='';
+    else out[k]=v;
+  }
+  return out;
+}
+const BLANKS=Object.fromEntries(Object.entries(DEFS).map(([k,v])=>[k,blankOf(v)]));
+
+export{DEFS,BLANKS};

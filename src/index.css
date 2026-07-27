@@ -114,6 +114,12 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .neg{color:var(--neg)!important}
 .warn{color:var(--warn)!important}
 
+/* Wide tables scroll on their own axis. Without overscroll-behavior the swipe
+   chains to the page, so on a phone the table looks stuck while the whole page
+   slides instead. touch-action keeps vertical page scrolling working. */
+.xscroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x pan-y}
+.xscroll>table{min-width:max-content}
+
 .sect-lbl{font-size:var(--fs-4);font-weight:700;color:var(--text);margin-bottom:14px;margin-top:4px;display:flex;align-items:center;gap:10px;text-transform:uppercase;letter-spacing:.06em;font-family:'Space Grotesk',sans-serif}
 .sect-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
 .upload-z{border:1.5px dashed var(--border2);border-radius:var(--r-lg);padding:28px;text-align:center;cursor:pointer;transition:all .15s;background:var(--surface2)}

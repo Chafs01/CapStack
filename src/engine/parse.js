@@ -1,12 +1,16 @@
-import Papa from'papaparse';
-import*as XLSX from'xlsx';
 import{pn}from'./format.js';
 // ─── FILE PARSE ───────────────────────────────────────────────────────────
-function parseFile(file,cb){
+// The CSV/XLSX parsers are only needed once a file is actually dropped, so
+// they load on demand rather than shipping with the initial page. The pure
+// helpers below (extractFields, extractRentRoll) stay in the main bundle.
+async function parseFile(file,cb){
   const ext=file.name.split('.').pop().toLowerCase();
   if(ext==='csv'){
+    const mod=await import('papaparse');
+    const Papa=mod.default||mod;
     Papa.parse(file,{header:true,skipEmptyLines:true,complete:r=>cb({data:r.data,headers:r.meta.fields||[]})});
   }else{
+    const XLSX=await import('xlsx');
     const rd=new FileReader();
     rd.onload=e=>{
       const wb=XLSX.read(e.target.result,{type:'binary'});

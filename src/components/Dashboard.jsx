@@ -15,9 +15,9 @@ function ChartTip({active,payload,label}){
   if(!active||!payload||!payload.length)return null;
   return(
     <div style={{background:'#ffffff',border:'1px solid var(--border)',borderRadius:9,padding:'10px 14px'}}>
-      <p style={{fontWeight:700,marginBottom:6,color:'var(--text)',fontSize:13}}>{label}</p>
+      <p style={{fontWeight:700,marginBottom:6,color:'var(--text)',fontSize:'var(--fs-4)'}}>{label}</p>
       {payload.map(p=>(
-        <p key={p.name} style={{color:p.color,fontSize:12.5,marginBottom:2}}>
+        <p key={p.name} style={{color:p.color,fontSize:'var(--fs-3)',marginBottom:2}}>
           {p.name}: {typeof p.value==='number'?(/rate|return|coc/i.test(p.name)?`${p.value.toFixed(2)}%`:f.$(p.value,false)):p.value}
         </p>
       ))}
@@ -44,7 +44,7 @@ function PFTable({rows,hp}){
     {l:'Loan Balance (EOY)',k:'bal',fmt:f.$f,type:'metric'},
   ];
   return(
-    <div style={{overflowX:'auto'}}>
+    <div className="xscroll">
       <table className="tbl">
         <thead>
           <tr>
@@ -90,12 +90,12 @@ function SensTable({inp}){
   return(
     <div>
       <div className="sect-lbl" style={{marginBottom:6}}>Levered IRR Sensitivity</div>
-      <p style={{fontSize:12,color:'var(--muted)',marginBottom:6}}>Each cell is the deal's levered IRR at that revenue growth and exit cap. Edit any axis value below and the grid recalculates live. All other inputs held constant.</p>
-      <p style={{fontSize:12,color:'var(--muted)',marginBottom:14}}><span style={{color:'var(--pos)'}}>&#9632; &gt;15%</span>  <span style={{color:'var(--warn)',marginLeft:8}}>&#9632; 10-15%</span>  <span style={{color:'var(--neg)',marginLeft:8}}>&#9632; &lt;10%</span></p>
+      <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginBottom:6}}>Each cell is the deal's levered IRR at that revenue growth and exit cap. Edit any axis value below and the grid recalculates live. All other inputs held constant.</p>
+      <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginBottom:14}}><span style={{color:'var(--pos)'}}>&#9632; &gt;15%</span>  <span style={{color:'var(--warn)',marginLeft:8}}>&#9632; 10-15%</span>  <span style={{color:'var(--neg)',marginLeft:8}}>&#9632; &lt;10%</span></p>
       <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
-        <span style={{fontSize:11,fontWeight:700,color:'var(--muted2)',letterSpacing:'.5px'}}>EXIT CAP RATE &rarr; (columns, editable)</span>
+        <span style={{fontSize:'var(--fs-2)',fontWeight:700,color:'var(--muted2)',letterSpacing:'.5px'}}>EXIT CAP RATE &rarr; (columns, editable)</span>
       </div>
-      <div style={{overflowX:'auto'}}>
+      <div className="xscroll">
         <table className="tbl">
           <thead><tr>
             <th style={{textAlign:'left',minWidth:140}}>Revenue Growth &darr;<br/><span style={{fontWeight:400,color:'var(--muted2)'}}>vs. Exit Cap &rarr;</span></th>
@@ -152,7 +152,7 @@ function DevCreditsPanel({D}){
   if(!D)return null;
   const PUR='var(--purple)';
   const su=(label,val,bold)=>(
-    <div style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid var(--border)',fontSize:13.5}}>
+    <div style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid var(--border)',fontSize:'var(--fs-4)'}}>
       <span style={{color:bold?'var(--text)':'var(--muted)',fontWeight:bold?700:400}}>{label}</span>
       <span className="mono" style={{fontWeight:bold?800:600}}>{val}</span>
     </div>
@@ -160,7 +160,7 @@ function DevCreditsPanel({D}){
   return(
     <div className="glass" style={{padding:'22px 24px',marginBottom:22,borderTop:'3px solid '+PUR}}>
       <div className="sect-lbl" style={{color:PUR}}>Tax Credit Equity</div>
-      <div style={{overflow:'hidden',borderRadius:8,border:'1px solid var(--border)',marginBottom:16}}>
+      <div className="xscroll" style={{borderRadius:'var(--r-md)',border:'1px solid var(--border)',marginBottom:16}}>
         <table className="tbl">
           <thead><tr><th style={{textAlign:'left'}}>Credit</th><th>Eligible Basis</th><th>Rate</th><th>Price</th><th>Credit</th><th>Equity</th></tr></thead>
           <tbody>
@@ -177,7 +177,7 @@ function DevCreditsPanel({D}){
       </div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:24}} className="g2">
         <div>
-          <div style={{fontSize:11,fontWeight:700,color:PUR,letterSpacing:'.5px',marginBottom:6}}>SOURCES &amp; USES</div>
+          <div style={{fontSize:'var(--fs-2)',fontWeight:700,color:PUR,letterSpacing:'.5px',marginBottom:6}}>SOURCES &amp; USES</div>
           {su('Total development cost',f.$(D.uses),true)}
           {su('Permanent loan',f.$(D.loan))}
           {D.isAff&&su('LIHTC equity',f.$(D.lihtcEq))}
@@ -187,7 +187,7 @@ function DevCreditsPanel({D}){
           {su('Sponsor equity required',f.$(D.sponsorEquityAfter),true)}
         </div>
         <div>
-          <div style={{fontSize:11,fontWeight:700,color:PUR,letterSpacing:'.5px',marginBottom:6}}>IMPACT</div>
+          <div style={{fontSize:'var(--fs-2)',fontWeight:700,color:PUR,letterSpacing:'.5px',marginBottom:6}}>IMPACT</div>
           {su('Sponsor equity before credits',f.$(D.sponsorEquityBefore))}
           {su('Covered by credit equity',f.$(Math.min(D.totalEquity,D.sponsorEquityBefore)))}
           {su('Credit equity as % of cost',D.uses>0?(D.totalEquity/D.uses*100).toFixed(1)+'%':'0%')}
@@ -195,7 +195,7 @@ function DevCreditsPanel({D}){
           {!D.isAff&&D.baseIRR!=null&&su('Levered IRR before credits',f.pct(D.baseIRR,1))}
         </div>
       </div>
-      <p style={{fontSize:12,color:'var(--muted)',marginTop:14,lineHeight:1.5}}>Each credit is computed on its own basis, rate, and syndication price, then stacked as a source against development cost. {D.isAff?'These stack on top of the LIHTC equity from the affordable module.':'The sponsor IRR with credits assumes the sponsor retains operating cash flow while credit investors take the credits; it is indicative.'}</p>
+      <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginTop:14,lineHeight:1.5}}>Each credit is computed on its own basis, rate, and syndication price, then stacked as a source against development cost. {D.isAff?'These stack on top of the LIHTC equity from the affordable module.':'The sponsor IRR with credits assumes the sponsor retains operating cash flow while credit investors take the credits; it is indicative.'}</p>
     </div>
   );
 }
@@ -212,7 +212,7 @@ function ScenarioPanel({S}){
   return(
     <div className="glass" style={{padding:'22px 24px',marginBottom:22,borderTop:'3px solid var(--accent)'}}>
       <div className="sect-lbl">Scenario Analysis</div>
-      <div style={{overflow:'hidden',borderRadius:8,border:'1px solid var(--border)'}}>
+      <div className="xscroll" style={{borderRadius:'var(--r-md)',border:'1px solid var(--border)'}}>
         <table className="tbl">
           <thead><tr>
             <th style={{textAlign:'left'}}>Metric</th>
@@ -231,7 +231,7 @@ function ScenarioPanel({S}){
           </tbody>
         </table>
       </div>
-      <p style={{fontSize:12,color:'var(--muted)',marginTop:12,lineHeight:1.5}}>Downside and upside flex rent growth by &plusmn;{S.deltas.g}pt, exit cap by &plusmn;{S.deltas.c}pt, and vacancy by &plusmn;{S.deltas.v}pt around your base case, recomputed end to end.</p>
+      <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginTop:12,lineHeight:1.5}}>Downside and upside flex rent growth by &plusmn;{S.deltas.g}pt, exit cap by &plusmn;{S.deltas.c}pt, and vacancy by &plusmn;{S.deltas.v}pt around your base case, recomputed end to end.</p>
     </div>
   );
 }
@@ -245,38 +245,38 @@ function RefinancePanel({R}){
       <div className="sect-lbl" style={{color:C}}>Refinance &amp; Cash-Out (Year {R.refiYear})</div>
       <div style={{display:'flex',gap:14,flexWrap:'wrap',marginBottom:16}}>
         <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
-          <div style={{fontSize:11,color:'var(--muted)'}}>Cash Out to Equity</div>
-          <div className="mono" style={{fontSize:21,fontWeight:800,color:R.cashOut>=0?C:'var(--neg)'}}>{f.$(R.cashOut)}</div>
-          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>year {R.refiYear} distribution</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted)'}}>Cash Out to Equity</div>
+          <div className="mono" style={{fontSize:'var(--fs-8)',fontWeight:800,color:R.cashOut>=0?C:'var(--neg)'}}>{f.$(R.cashOut)}</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginTop:2}}>year {R.refiYear} distribution</div>
         </div>
         <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
-          <div style={{fontSize:11,color:'var(--muted)'}}>IRR with Refi</div>
-          <div className="mono" style={{fontSize:21,fontWeight:800,color:C}}>{f.pct(R.refiIRR,1)}</div>
-          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>base {f.pct(R.baseIRR,1)}</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted)'}}>IRR with Refi</div>
+          <div className="mono" style={{fontSize:'var(--fs-8)',fontWeight:800,color:C}}>{f.pct(R.refiIRR,1)}</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginTop:2}}>base {f.pct(R.baseIRR,1)}</div>
         </div>
         <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
-          <div style={{fontSize:11,color:'var(--muted)'}}>IRR Impact</div>
-          <div className="mono" style={{fontSize:21,fontWeight:800,color:lift>=0?C:'var(--warn)'}}>{lift>=0?'+':''}{f.pct(lift,1)}</div>
-          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>multiple {f.x(R.refiEM)} vs {f.x(R.baseEM)}</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted)'}}>IRR Impact</div>
+          <div className="mono" style={{fontSize:'var(--fs-8)',fontWeight:800,color:lift>=0?C:'var(--warn)'}}>{lift>=0?'+':''}{f.pct(lift,1)}</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginTop:2}}>multiple {f.x(R.refiEM)} vs {f.x(R.baseEM)}</div>
         </div>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:24}} className="g2">
         <div>
           {[['Refinanced value',f.$(R.value)],['New loan',f.$(R.newLoan)],['Old loan retired',f.$(R.oldBal)]].map((r,i)=>(
-            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--border)',fontSize:13}}>
+            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--border)',fontSize:'var(--fs-4)'}}>
               <span style={{color:'var(--muted)'}}>{r[0]}</span><span className="mono" style={{fontWeight:600}}>{r[1]}</span>
             </div>
           ))}
         </div>
         <div>
           {[['Refi costs',f.$(R.refiCosts)],['New debt service',f.$(R.newDS)],['DSCR at refi',R.refiDSCR?R.refiDSCR.toFixed(2)+'x':'n/a']].map((r,i)=>(
-            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--border)',fontSize:13}}>
+            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--border)',fontSize:'var(--fs-4)'}}>
               <span style={{color:'var(--muted)'}}>{r[0]}</span><span className="mono" style={{fontWeight:600}}>{r[1]}</span>
             </div>
           ))}
         </div>
       </div>
-      <p style={{fontSize:12,color:'var(--muted)',marginTop:14,lineHeight:1.5}}>The property is valued at a {((R.newLoan/(R.value||1))*100).toFixed(0)}% LTV refinance in year {R.refiYear}, returning {f.$(R.cashOut)} of tax-free proceeds to equity. The remaining hold runs on the new loan, and exit proceeds reflect its payoff.</p>
+      <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginTop:14,lineHeight:1.5}}>The property is valued at a {((R.newLoan/(R.value||1))*100).toFixed(0)}% LTV refinance in year {R.refiYear}, returning {f.$(R.cashOut)} of tax-free proceeds to equity. The remaining hold runs on the new loan, and exit proceeds reflect its payoff.</p>
     </div>
   );
 }
@@ -290,48 +290,48 @@ function ProjectTimelinePanel({P}){
       <div className="sect-lbl" style={{color:C}}>Construction &amp; Lease-Up Timeline</div>
       <div style={{display:'flex',gap:14,flexWrap:'wrap',marginBottom:16}}>
         <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
-          <div style={{fontSize:11,color:'var(--muted)'}}>Project IRR</div>
-          <div className="mono" style={{fontSize:21,fontWeight:800,color:C}}>{f.pct(P.projectIRR,1)}</div>
-          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>includes build + lease-up</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted)'}}>Project IRR</div>
+          <div className="mono" style={{fontSize:'var(--fs-8)',fontWeight:800,color:C}}>{f.pct(P.projectIRR,1)}</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginTop:2}}>includes build + lease-up</div>
         </div>
         <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
-          <div style={{fontSize:11,color:'var(--muted)'}}>Stabilized IRR</div>
-          <div className="mono" style={{fontSize:21,fontWeight:800,color:'var(--muted)'}}>{f.pct(P.stabilizedIRR,1)}</div>
-          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>operations only</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted)'}}>Stabilized IRR</div>
+          <div className="mono" style={{fontSize:'var(--fs-8)',fontWeight:800,color:'var(--muted)'}}>{f.pct(P.stabilizedIRR,1)}</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginTop:2}}>operations only</div>
         </div>
         <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
-          <div style={{fontSize:11,color:'var(--muted)'}}>Timing Drag</div>
-          <div className="mono" style={{fontSize:21,fontWeight:800,color:'var(--warn)'}}>{f.pct(drag,1)}</div>
-          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>cost of the build</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted)'}}>Timing Drag</div>
+          <div className="mono" style={{fontSize:'var(--fs-8)',fontWeight:800,color:'var(--warn)'}}>{f.pct(drag,1)}</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginTop:2}}>cost of the build</div>
         </div>
       </div>
       <div style={{display:'flex',gap:8,marginBottom:12}}>
         <div style={{flex:P.constructionMonths||1,padding:'8px 10px',background:'var(--warn-tint)',borderRadius:'6px 0 0 6px',textAlign:'center'}}>
-          <div className="mono" style={{fontSize:13,fontWeight:700,color:C}}>{P.constructionMonths}mo</div>
-          <div style={{fontSize:10,color:'var(--muted)'}}>Construction</div>
+          <div className="mono" style={{fontSize:'var(--fs-4)',fontWeight:700,color:C}}>{P.constructionMonths}mo</div>
+          <div style={{fontSize:'var(--fs-1)',color:'var(--muted)'}}>Construction</div>
         </div>
         <div style={{flex:P.leaseUpMonths||1,padding:'8px 10px',background:'var(--warn-tint)',textAlign:'center'}}>
-          <div className="mono" style={{fontSize:13,fontWeight:700,color:'var(--warn)'}}>{P.leaseUpMonths}mo</div>
-          <div style={{fontSize:10,color:'var(--muted)'}}>Lease-Up</div>
+          <div className="mono" style={{fontSize:'var(--fs-4)',fontWeight:700,color:'var(--warn)'}}>{P.leaseUpMonths}mo</div>
+          <div style={{fontSize:'var(--fs-1)',color:'var(--muted)'}}>Lease-Up</div>
         </div>
         <div style={{flex:6,padding:'8px 10px',background:'var(--pos-tint)',borderRadius:'0 6px 6px 0',textAlign:'center'}}>
-          <div className="mono" style={{fontSize:13,fontWeight:700,color:'var(--pos)'}}>Stabilized Hold &rarr; Exit</div>
-          <div style={{fontSize:10,color:'var(--muted)'}}>{Math.round(P.totalMonths/12*10)/10} yrs total</div>
+          <div className="mono" style={{fontSize:'var(--fs-4)',fontWeight:700,color:'var(--pos)'}}>Stabilized Hold &rarr; Exit</div>
+          <div style={{fontSize:'var(--fs-1)',color:'var(--muted)'}}>{Math.round(P.totalMonths/12*10)/10} yrs total</div>
         </div>
       </div>
       {P.constructionLoan>0&&<div style={{display:'flex',gap:14,flexWrap:'wrap',marginBottom:12}}>
         <div style={{flex:1,minWidth:140,padding:'11px 14px',background:'var(--surface2)',borderRadius:8,border:'1px solid var(--border)'}}>
-          <div style={{fontSize:11,color:'var(--muted)'}}>Capitalized Interest</div>
-          <div className="mono" style={{fontSize:15,fontWeight:700,color:C}}>{f.$(P.capInterest)}</div>
-          <div style={{fontSize:10,color:'var(--muted2)',marginTop:1}}>{P.drawPattern==='scurve'?'S-curve':'straight-line'} draws, exact monthly accrual</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted)'}}>Capitalized Interest</div>
+          <div className="mono" style={{fontSize:'var(--fs-5)',fontWeight:700,color:C}}>{f.$(P.capInterest)}</div>
+          <div style={{fontSize:'var(--fs-1)',color:'var(--muted2)',marginTop:1}}>{P.drawPattern==='scurve'?'S-curve':'straight-line'} draws, exact monthly accrual</div>
         </div>
         <div style={{flex:1,minWidth:140,padding:'11px 14px',background:'var(--surface2)',borderRadius:8,border:'1px solid var(--border)'}}>
-          <div style={{fontSize:11,color:'var(--muted)'}}>Peak Loan Draw</div>
-          <div className="mono" style={{fontSize:15,fontWeight:700,color:'var(--text)'}}>{f.$(P.peakDrawBalance)}</div>
-          <div style={{fontSize:10,color:'var(--muted2)',marginTop:1}}>on a {f.$(P.constructionLoan)} construction loan</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted)'}}>Peak Loan Draw</div>
+          <div className="mono" style={{fontSize:'var(--fs-5)',fontWeight:700,color:'var(--text)'}}>{f.$(P.peakDrawBalance)}</div>
+          <div style={{fontSize:'var(--fs-1)',color:'var(--muted2)',marginTop:1}}>on a {f.$(P.constructionLoan)} construction loan</div>
         </div>
       </div>}
-      <p style={{fontSize:12,color:'var(--muted)',lineHeight:1.5}}>The project IRR holds equity through {P.constructionMonths} months of construction with no income, ramps revenue over a {P.leaseUpMonths}-month lease-up, and capitalizes {f.$(P.capInterest)} of construction-period interest{P.constructionLoan>0?' computed month-by-month on the actual outstanding draw balance':''}. This is the honest return; the stabilized IRR above assumes operations begin on day one.</p>
+      <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',lineHeight:1.5}}>The project IRR holds equity through {P.constructionMonths} months of construction with no income, ramps revenue over a {P.leaseUpMonths}-month lease-up, and capitalizes {f.$(P.capInterest)} of construction-period interest{P.constructionLoan>0?' computed month-by-month on the actual outstanding draw balance':''}. This is the honest return; the stabilized IRR above assumes operations begin on day one.</p>
     </div>
   );
 }
@@ -345,40 +345,40 @@ function AfterTaxPanel({A}){
       <div className="sect-lbl" style={{color:G}}>After-Tax Returns</div>
       <div style={{display:'flex',gap:14,flexWrap:'wrap',marginBottom:16}}>
         <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
-          <div style={{fontSize:11,color:'var(--muted)'}}>After-Tax IRR</div>
-          <div className="mono" style={{fontSize:21,fontWeight:800,color:G}}>{f.pct(A.atIRR,1)}</div>
-          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>pre-tax {f.pct(A.preTaxIRR,1)}</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted)'}}>After-Tax IRR</div>
+          <div className="mono" style={{fontSize:'var(--fs-8)',fontWeight:800,color:G}}>{f.pct(A.atIRR,1)}</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginTop:2}}>pre-tax {f.pct(A.preTaxIRR,1)}</div>
         </div>
         <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
-          <div style={{fontSize:11,color:'var(--muted)'}}>After-Tax Multiple</div>
-          <div className="mono" style={{fontSize:21,fontWeight:800,color:'var(--text)'}}>{f.x(A.atEM)}</div>
-          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>pre-tax {f.x(A.preTaxEM)}</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted)'}}>After-Tax Multiple</div>
+          <div className="mono" style={{fontSize:'var(--fs-8)',fontWeight:800,color:'var(--text)'}}>{f.x(A.atEM)}</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginTop:2}}>pre-tax {f.x(A.preTaxEM)}</div>
         </div>
         <div style={{flex:1,minWidth:140,padding:'13px 16px',background:'var(--surface2)',borderRadius:9,border:'1px solid var(--border)'}}>
-          <div style={{fontSize:11,color:'var(--muted)'}}>Tax Drag on IRR</div>
-          <div className="mono" style={{fontSize:21,fontWeight:800,color:'var(--warn)'}}>{f.pct(drop,1)}</div>
-          <div style={{fontSize:10.5,color:'var(--muted2)',marginTop:2}}>{(A.depYears).toFixed(1)}-yr depreciation</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted)'}}>Tax Drag on IRR</div>
+          <div className="mono" style={{fontSize:'var(--fs-8)',fontWeight:800,color:'var(--warn)'}}>{f.pct(drop,1)}</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginTop:2}}>{(A.depYears).toFixed(1)}-yr depreciation</div>
         </div>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:24}} className="g2">
         <div>
-          <div style={{fontSize:11,fontWeight:700,color:G,letterSpacing:'.5px',marginBottom:6}}>SALE TAX</div>
+          <div style={{fontSize:'var(--fs-2)',fontWeight:700,color:G,letterSpacing:'.5px',marginBottom:6}}>SALE TAX</div>
           {[['Adjusted basis at sale',f.$(A.adjBasis)],['Total gain',f.$(A.saleGain)],['Depreciation recapture tax',f.$(A.recaptureTax)],['Capital gains tax',f.$(A.capGainTax)],['Total tax on sale',f.$(A.saleTax)],['After-tax sale proceeds',f.$(A.atProceeds)]].map((r,i)=>(
-            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--border)',fontSize:13}}>
+            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--border)',fontSize:'var(--fs-4)'}}>
               <span style={{color:'var(--muted)'}}>{r[0]}</span><span className="mono" style={{fontWeight:600}}>{r[1]}</span>
             </div>
           ))}
         </div>
         <div>
-          <div style={{fontSize:11,fontWeight:700,color:G,letterSpacing:'.5px',marginBottom:6}}>ANNUAL DEPRECIATION SHIELD</div>
+          <div style={{fontSize:'var(--fs-2)',fontWeight:700,color:G,letterSpacing:'.5px',marginBottom:6}}>ANNUAL DEPRECIATION SHIELD</div>
           {[['Depreciable basis',f.$(A.deprBasis)],['Annual depreciation',f.$(A.annualDep)],['Accumulated at exit',f.$(A.accumDep)],['Ordinary tax rate',(A.taxRate*100).toFixed(0)+'%']].map((r,i)=>(
-            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--border)',fontSize:13}}>
+            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--border)',fontSize:'var(--fs-4)'}}>
               <span style={{color:'var(--muted)'}}>{r[0]}</span><span className="mono" style={{fontWeight:600}}>{r[1]}</span>
             </div>
           ))}
         </div>
       </div>
-      <p style={{fontSize:12,color:'var(--muted)',marginTop:14,lineHeight:1.5}}>Depreciation shelters operating income each year; at sale, that depreciation is recaptured at {(A.recRate*100).toFixed(0)}% and remaining gain taxed at {(A.capRate*100).toFixed(0)}%. Passive-loss limitations are simplified.</p>
+      <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginTop:14,lineHeight:1.5}}>Depreciation shelters operating income each year; at sale, that depreciation is recaptured at {(A.recRate*100).toFixed(0)}% and remaining gain taxed at {(A.capRate*100).toFixed(0)}%. Passive-loss limitations are simplified.</p>
     </div>
   );
 }
@@ -388,7 +388,7 @@ function WaterfallPanel({W}){
   const GP='var(--accent)', LPc='var(--muted)';
   const f0=f.$;
   const box=(label,lp,gp)=>(
-    <div style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid var(--border)',fontSize:13.5}}>
+    <div style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid var(--border)',fontSize:'var(--fs-4)'}}>
       <span style={{color:'var(--muted)'}}>{label}</span>
       <span style={{display:'flex',gap:24}}>
         <span style={{width:92,textAlign:'right',color:'var(--text)',fontWeight:600}}>{lp}</span>
@@ -399,7 +399,7 @@ function WaterfallPanel({W}){
   return(
     <div className="glass" style={{padding:'22px 24px',marginBottom:22,borderTop:'3px solid '+GP}}>
       <div className="sect-lbl" style={{color:GP}}>Equity Waterfall &mdash; LP / GP Returns</div>
-      <div style={{display:'flex',justifyContent:'flex-end',gap:24,fontSize:11,fontWeight:700,letterSpacing:'.5px',color:'var(--muted2)',marginBottom:4,marginTop:2}}>
+      <div style={{display:'flex',justifyContent:'flex-end',gap:24,fontSize:'var(--fs-2)',fontWeight:700,letterSpacing:'.5px',color:'var(--muted2)',marginBottom:4,marginTop:2}}>
         <span style={{width:92,textAlign:'right'}}>LIMITED PARTNER</span>
         <span style={{width:92,textAlign:'right'}}>SPONSOR (GP)</span>
       </div>
@@ -410,26 +410,26 @@ function WaterfallPanel({W}){
       {box('Equity multiple',f.x(W.lpEM),f.x(W.gpEM))}
       <div style={{display:'flex',gap:14,marginTop:16,flexWrap:'wrap'}}>
         <div style={{flex:1,minWidth:150,padding:'12px 16px',background:'var(--accent-tint)',borderRadius:4,border:'1px solid var(--accent-brd)'}}>
-          <div style={{fontSize:11,color:'var(--muted2)',marginBottom:3}}>GP Promote (above pro-rata)</div>
-          <div style={{fontSize:18,fontWeight:800,color:GP}}>{f0(W.gpPromote)}</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginBottom:3}}>GP Promote (above pro-rata)</div>
+          <div style={{fontSize:'var(--fs-7)',fontWeight:800,color:GP}}>{f0(W.gpPromote)}</div>
         </div>
         <div style={{flex:1,minWidth:150,padding:'12px 16px',background:'var(--accent-tint)',borderRadius:4,border:'1px solid var(--accent-brd)'}}>
-          <div style={{fontSize:11,color:'var(--muted2)',marginBottom:3}}>Structure</div>
-          <div style={{fontSize:14,fontWeight:700,color:'var(--text)'}}>{(W.lpShare*100).toFixed(0)}/{(W.gpShare*100).toFixed(0)} equity &middot; {(W.pref*100).toFixed(0)}% pref</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginBottom:3}}>Structure</div>
+          <div style={{fontSize:'var(--fs-5)',fontWeight:700,color:'var(--text)'}}>{(W.lpShare*100).toFixed(0)}/{(W.gpShare*100).toFixed(0)} equity &middot; {(W.pref*100).toFixed(0)}% pref</div>
         </div>
       </div>
       <div style={{marginTop:14}}>
-        <div style={{fontSize:11,fontWeight:700,color:GP,letterSpacing:'.5px',marginBottom:6}}>PROMOTE TIERS (LP SHARE OF CASH)</div>
+        <div style={{fontSize:'var(--fs-2)',fontWeight:700,color:GP,letterSpacing:'.5px',marginBottom:6}}>PROMOTE TIERS (LP SHARE OF CASH)</div>
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
           {W.tiers.map((t,i)=>(
             <div key={i} style={{flex:1,minWidth:120,padding:'8px 10px',background:'var(--surface2)',borderRadius:4,textAlign:'center'}}>
-              <div style={{fontSize:11,color:'var(--muted2)'}}>{t.label}</div>
-              <div style={{fontSize:14,fontWeight:700,color:'var(--text)'}}>{(t.sL*100).toFixed(0)} / {(100-t.sL*100).toFixed(0)}</div>
+              <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)'}}>{t.label}</div>
+              <div style={{fontSize:'var(--fs-5)',fontWeight:700,color:'var(--text)'}}>{(t.sL*100).toFixed(0)} / {(100-t.sL*100).toFixed(0)}</div>
             </div>
           ))}
         </div>
       </div>
-      <p style={{fontSize:12,color:'var(--muted)',marginTop:14,lineHeight:1.5}}>Return of capital and the preferred return are paid first; the sponsor earns its promote on cash flow above each LP IRR hurdle. LP and GP figures are computed from the deal's levered cash flows.</p>
+      <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginTop:14,lineHeight:1.5}}>Return of capital and the preferred return are paid first; the sponsor earns its promote on cash flow above each LP IRR hurdle. LP and GP figures are computed from the deal's levered cash flows.</p>
     </div>
   );
 }
@@ -437,7 +437,7 @@ function WaterfallPanel({W}){
 function LihtcPanel({L,res}){
   const PUR='var(--purple)';
   const row=(label,val,opts={})=>(
-    <div style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid var(--border)',fontSize:13.5}}>
+    <div style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid var(--border)',fontSize:'var(--fs-4)'}}>
       <span style={{color:opts.bold?'var(--text)':'var(--muted)',fontWeight:opts.bold?700:400,paddingLeft:opts.indent?14:0}}>{label}</span>
       <span style={{color:opts.color||(opts.bold?'var(--text)':'var(--text)'),fontWeight:opts.bold?700:600}}>{val}</span>
     </div>
@@ -450,7 +450,7 @@ function LihtcPanel({L,res}){
       <div className="sect-lbl" style={{color:PUR}}>LIHTC &amp; Syndication Analysis</div>
       <div className="g2" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:28,marginTop:4}}>
         <div>
-          <div style={{fontSize:11,fontWeight:700,color:PUR,letterSpacing:'.5px',marginBottom:6}}>TAX CREDIT CALCULATION</div>
+          <div style={{fontSize:'var(--fs-2)',fontWeight:700,color:PUR,letterSpacing:'.5px',marginBottom:6}}>TAX CREDIT CALCULATION</div>
           {row('Eligible basis ('+(L.ebPct*100).toFixed(0)+'%)',f.$(L.eligibleBasis))}
           {row('Basis boost',L.boostPct+'%')}
           {row('Boosted eligible basis',f.$(L.boostedBasis))}
@@ -463,7 +463,7 @@ function LihtcPanel({L,res}){
           {row('LIHTC equity',f.$(L.lihtcEquity),{bold:true,color:PUR})}
         </div>
         <div>
-          <div style={{fontSize:11,fontWeight:700,color:PUR,letterSpacing:'.5px',marginBottom:6}}>SOURCES &amp; USES</div>
+          <div style={{fontSize:'var(--fs-2)',fontWeight:700,color:PUR,letterSpacing:'.5px',marginBottom:6}}>SOURCES &amp; USES</div>
           {row('Permanent loan (DSCR-sized)',f.$(L.permLoan))}
           {row('LIHTC equity',f.$(L.lihtcEquity))}
           {row('Soft sources / subsidy',f.$(L.softSources))}
@@ -479,19 +479,19 @@ function LihtcPanel({L,res}){
       </div>
       <div style={{display:'flex',gap:14,marginTop:16,flexWrap:'wrap'}}>
         <div style={{flex:1,minWidth:160,padding:'12px 16px',background:'var(--purple-tint)',borderRadius:4,border:'1px solid var(--purple-brd)'}}>
-          <div style={{fontSize:11,color:'var(--muted2)',marginBottom:3}}>Financing Gap</div>
-          <div style={{fontSize:18,fontWeight:800,color:gapColor}}>{f.$(Math.abs(gap))} <span style={{fontSize:12,fontWeight:600}}>{gapLabel}</span></div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginBottom:3}}>Financing Gap</div>
+          <div style={{fontSize:'var(--fs-7)',fontWeight:800,color:gapColor}}>{f.$(Math.abs(gap))} <span style={{fontSize:'var(--fs-3)',fontWeight:600}}>{gapLabel}</span></div>
         </div>
         <div style={{flex:1,minWidth:160,padding:'12px 16px',background:'var(--purple-tint)',borderRadius:4,border:'1px solid var(--purple-brd)'}}>
-          <div style={{fontSize:11,color:'var(--muted2)',marginBottom:3}}>Developer Fee Paid in Cash</div>
-          <div style={{fontSize:18,fontWeight:800,color:'var(--text)'}}>{f.$(L.cashDevFee)}</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginBottom:3}}>Developer Fee Paid in Cash</div>
+          <div style={{fontSize:'var(--fs-7)',fontWeight:800,color:'var(--text)'}}>{f.$(L.cashDevFee)}</div>
         </div>
         <div style={{flex:1,minWidth:160,padding:'12px 16px',background:'var(--purple-tint)',borderRadius:4,border:'1px solid var(--purple-brd)'}}>
-          <div style={{fontSize:11,color:'var(--muted2)',marginBottom:3}}>Equity as % of Total Uses</div>
-          <div style={{fontSize:18,fontWeight:800,color:PUR}}>{L.totalUses>0?(L.lihtcEquity/L.totalUses*100).toFixed(1):0}%</div>
+          <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginBottom:3}}>Equity as % of Total Uses</div>
+          <div style={{fontSize:'var(--fs-7)',fontWeight:800,color:PUR}}>{L.totalUses>0?(L.lihtcEquity/L.totalUses*100).toFixed(1):0}%</div>
         </div>
       </div>
-      <p style={{fontSize:12,color:'var(--purple)',marginTop:14,lineHeight:1.5}}>The permanent loan is sized to your minimum DSCR on stabilized NOI. This analysis covers the credit calculation and capital stack; the operating metrics below reflect stabilized cash flow. Full LP and GP partnership returns with credit delivery are a separate analysis.</p>
+      <p style={{fontSize:'var(--fs-3)',color:'var(--purple)',marginTop:14,lineHeight:1.5}}>The permanent loan is sized to your minimum DSCR on stabilized NOI. This analysis covers the credit calculation and capital stack; the operating metrics below reflect stabilized cash flow. Full LP and GP partnership returns with credit delivery are a separate analysis.</p>
     </div>
   );
 }
@@ -579,23 +579,23 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
         <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
           {res.debtSizing.constraints.map((c,i)=>(
             <div key={i} style={{flex:1,minWidth:130,padding:'12px 14px',borderRadius:9,background:c.binds?'var(--ink)':'var(--surface2)',border:'1px solid '+(c.binds?'var(--ink)':'var(--border)')}}>
-              <div style={{fontSize:11,color:c.binds?'#aab3c9':'var(--muted)'}}>{c.name} <span style={{opacity:.7}}>({c.basis})</span></div>
-              <div className="mono" style={{fontSize:16,fontWeight:700,color:c.binds?'#fff':'var(--text)',marginTop:3}}>{f.$(c.loan)}</div>
-              {c.binds&&<div style={{fontSize:9.5,color:'#7d93ff',fontWeight:700,letterSpacing:'.5px',marginTop:3}}>BINDING CONSTRAINT</div>}
+              <div style={{fontSize:'var(--fs-2)',color:c.binds?'#aab3c9':'var(--muted)'}}>{c.name} <span style={{opacity:.7}}>({c.basis})</span></div>
+              <div className="mono" style={{fontSize:'var(--fs-6)',fontWeight:700,color:c.binds?'#fff':'var(--text)',marginTop:3}}>{f.$(c.loan)}</div>
+              {c.binds&&<div style={{fontSize:'var(--fs-1)',color:'#7d93ff',fontWeight:700,letterSpacing:'.5px',marginTop:3}}>BINDING CONSTRAINT</div>}
             </div>
           ))}
         </div>
-        <p style={{fontSize:12.5,color:'var(--muted)',marginTop:12,lineHeight:1.5}}>The loan is sized to <span style={{fontWeight:700,color:'var(--text)'}}>{f.$(res.debtSizing.sizedLoan)}</span>, set by the {res.debtSizing.binding} constraint &mdash; the most restrictive of the three. Lowering it would loosen leverage; this is the maximum supportable loan under your limits.</p>
+        <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginTop:12,lineHeight:1.5}}>The loan is sized to <span style={{fontWeight:700,color:'var(--text)'}}>{f.$(res.debtSizing.sizedLoan)}</span>, set by the {res.debtSizing.binding} constraint &mdash; the most restrictive of the three. Lowering it would loosen leverage; this is the maximum supportable loan under your limits.</p>
       </div>}
       {!res.lihtc&&<WaterfallPanel W={calcWaterfall(res,inp)}/>}
       {!res.lihtc&&inp.afterTax&&<AfterTaxPanel A={calcAfterTax(res,inp)}/>}
 
       <div className="glass" style={{padding:'20px 24px',marginBottom:22}}>
-        <div className="sect-lbl">Analyst Notes<span style={{fontWeight:400,letterSpacing:0,textTransform:'none',fontSize:10.5,color:'var(--muted)'}}>auto-generated from your inputs</span></div>
+        <div className="sect-lbl">Analyst Notes<span style={{fontWeight:400,letterSpacing:0,textTransform:'none',fontSize:'var(--fs-2)',color:'var(--muted)'}}>auto-generated from your inputs</span></div>
         {analystNotes(res,inp).map((n,i)=>(
-          <p key={i} style={{fontSize:13.5,color:'var(--text)',lineHeight:1.65,marginBottom:i===analystNotes(res,inp).length-1?0:9}}>{n}</p>
+          <p key={i} style={{fontSize:'var(--fs-4)',color:'var(--text)',lineHeight:1.65,marginBottom:i===analystNotes(res,inp).length-1?0:9}}>{n}</p>
         ))}
-        {t==='development'&&<p style={{fontSize:12,color:'var(--warn)',marginTop:10,lineHeight:1.5}}>Note: the headline IRR is the stabilized-operations return. See the Construction &amp; Lease-Up panel for the project-level IRR that accounts for the build period, lease-up ramp, and capitalized interest.</p>}
+        {t==='development'&&<p style={{fontSize:'var(--fs-3)',color:'var(--warn)',marginTop:10,lineHeight:1.5}}>Note: the headline IRR is the stabilized-operations return. See the Construction &amp; Lease-Up panel for the project-level IRR that accounts for the build period, lease-up ramp, and capitalized interest.</p>}
       </div>
 
       <div style={{display:'flex',gap:7,marginBottom:22,flexWrap:'wrap'}}>
@@ -611,24 +611,24 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
             {ResponsiveContainer?<ResponsiveContainer width="100%" height={260}>
               <ComposedChart data={chartData} margin={{top:4,right:10,left:0,bottom:0}}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e6f0"/>
-                <XAxis dataKey="yr" tick={{fill:'#5a6478',fontSize:12}}/>
-                <YAxis tick={{fill:'#5a6478',fontSize:11}} tickFormatter={v=>f.$(v)}/>
+                <XAxis dataKey="yr" tick={{fill:'#5a6478',fontSize:'var(--fs-3)'}}/>
+                <YAxis tick={{fill:'#5a6478',fontSize:'var(--fs-2)'}} tickFormatter={v=>f.$(v)}/>
                 <Tooltip content={<ChartTip/>}/>
-                <Legend wrapperStyle={{fontSize:13,color:'var(--muted)'}}/>
+                <Legend wrapperStyle={{fontSize:'var(--fs-4)',color:'var(--muted)'}}/>
                 <Bar dataKey="NOI" fill="#3a5bf0" opacity={0.85} radius={[4,4,0,0]}/>
                 <Bar dataKey="Cash Flow" fill="#0e9f6e" opacity={0.85} radius={[4,4,0,0]}/>
               </ComposedChart>
-            </ResponsiveContainer>:<p style={{color:'var(--neg)',fontSize:13}}>Chart library failed to load. Refresh the page to retry.</p>}
+            </ResponsiveContainer>:<p style={{color:'var(--neg)',fontSize:'var(--fs-4)'}}>Chart library failed to load. Refresh the page to retry.</p>}
           </div>
           <div className="glass" style={{padding:22}}>
             <div className="sect-lbl">Cap Rate & Cash-on-Cash Trend</div>
             {ResponsiveContainer&&<ResponsiveContainer width="100%" height={210}>
               <LineChart data={ratesData} margin={{top:4,right:10,left:0,bottom:0}}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e6f0"/>
-                <XAxis dataKey="yr" tick={{fill:'#5a6478',fontSize:12}}/>
-                <YAxis tick={{fill:'#5a6478',fontSize:11}} tickFormatter={v=>`${v}%`}/>
+                <XAxis dataKey="yr" tick={{fill:'#5a6478',fontSize:'var(--fs-3)'}}/>
+                <YAxis tick={{fill:'#5a6478',fontSize:'var(--fs-2)'}} tickFormatter={v=>`${v}%`}/>
                 <Tooltip content={<ChartTip/>}/>
-                <Legend wrapperStyle={{fontSize:13,color:'var(--muted)'}}/>
+                <Legend wrapperStyle={{fontSize:'var(--fs-4)',color:'var(--muted)'}}/>
                 <Line type="monotone" dataKey="Cap Rate" stroke="#5a6478" strokeWidth={2.5} dot={{fill:'#5a6478',r:3.5}}/>
                 <Line type="monotone" dataKey="CoC Return" stroke="#0e9f6e" strokeWidth={2.5} dot={{fill:'#0e9f6e',r:3.5}}/>
               </LineChart>
@@ -657,7 +657,7 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
                 {l:'  Debt (Loan)',v:inp.loanAmount,c:'var(--neg)'},
                 {l:'  Equity',v:equity,c:'var(--pos)',bold:true},
               ].map((r,i)=>(
-                <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid var(--border)',fontSize:13.5}}>
+                <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid var(--border)',fontSize:'var(--fs-4)'}}>
                   <span style={{color:r.bold?'var(--text)':'var(--muted)',fontWeight:r.bold?700:400}}>{r.l}</span>
                   <span style={{color:r.c||(r.bold?'var(--text)':'var(--text)'),fontWeight:r.bold?700:400}}>{f.$f(r.v)}</span>
                 </div>
@@ -674,7 +674,7 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
                 {l:'  Less: Loan Payoff',v:`(${f.$f(exit.payoff)})`},
                 {l:'Net Proceeds to Equity',v:f.$f(exit.proceeds),bold:true,c:'var(--pos)'},
               ].map((r,i)=>(
-                <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid var(--border)',fontSize:13.5}}>
+                <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid var(--border)',fontSize:'var(--fs-4)'}}>
                   <span style={{color:r.bold?'var(--text)':'var(--muted)',fontWeight:r.bold?700:400}}>{r.l}</span>
                   <span style={{color:r.c||(r.bold?'var(--text)':'var(--text)'),fontWeight:r.bold?700:400}}>{r.v}</span>
                 </div>
@@ -693,8 +693,8 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
                 {l:'Equity Multiple',v:f.x(ret.em),c:'var(--muted)'},
               ].map((i,k)=>(
                 <div key={k} style={{textAlign:'center',padding:'16px 12px',background:'var(--surface2)',borderRadius:3}}>
-                  <div style={{fontSize:19,fontWeight:800,color:i.c}}>{i.v}</div>
-                  <div style={{fontSize:11.5,color:'var(--muted)',marginTop:4}}>{i.l}</div>
+                  <div style={{fontSize:'var(--fs-7)',fontWeight:800,color:i.c}}>{i.v}</div>
+                  <div style={{fontSize:'var(--fs-2)',color:'var(--muted)',marginTop:4}}>{i.l}</div>
                 </div>
               ))}
             </div>

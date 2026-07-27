@@ -1,12 +1,14 @@
-import ExcelJS from'exceljs';
 import{f}from'./format.js';
 import{getDevCost}from'./income.js';
 import{buildPF}from'./buildPF.js';
 import{calcWaterfall}from'./waterfall.js';
 import{calcAfterTax}from'./afterTax.js';
 // ─── EXCEL EXPORT ────────────────────────────────────────────────────────
+// ExcelJS is ~1MB and only needed when someone actually exports, so it loads
+// on demand instead of shipping with the initial page.
 async function buildWorkbook(res,inp,withResults=true){
-  const E=ExcelJS;
+  const mod=await import('exceljs');
+  const E=mod.default||mod;
   const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
   const t=(inp.assetType||'').toLowerCase();
   const isDev=t==='development';
@@ -411,7 +413,7 @@ async function exportXLSX(res,inp){
   const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download=(inp.propertyName||'SmartCapStack').replace(/\s+/g,'_')+'_SmartCapStack.xlsx';
+  a.download=((inp.propertyName||'Pro Forma').trim().replace(/[^a-z0-9]+/gi,'_').replace(/^_|_$/g,'')||'Pro_Forma')+'_SmartCapStack.xlsx';
   a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),2000);
 }

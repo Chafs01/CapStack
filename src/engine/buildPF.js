@@ -86,7 +86,9 @@ function buildPF(inp){
   const profit=totalCF+proceeds-equity;
   const em2=equity>0?(totalCF+proceeds)/equity:0;
   const irrFlows=[-equity,...rows.slice(0,hp-1).map(r=>r.cfbt),rows[hp-1].cfbt+proceeds];
-  const irr=calcIRR(irrFlows);
+  // with no equity at risk there is no return to solve for — an empty form
+  // would otherwise report a meaningless IRR off all-zero cash flows
+  const irr=equity>0?calcIRR(irrFlows):NaN;
   const npv=calcNPV(irrFlows,dr);
   const y1=rows[0];
   const beOcc=y1.gpi>0?Math.max(0,(y1.opex+y1.ds)/y1.gpi):0;

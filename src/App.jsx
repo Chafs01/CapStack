@@ -1,7 +1,7 @@
-import{useState,useCallback,useEffect}from'react';
+import{useState,useCallback,useEffect,lazy,Suspense}from'react';
 import{sb}from'./lib/supabase.js';
 import{buildPF}from'./engine/buildPF.js';
-import{DEFS}from'./engine/defaults.js';
+import{DEFS,BLANKS}from'./engine/defaults.js';
 import{exportXLSX}from'./engine/excel.js';
 import{Landing}from'./components/Landing.jsx';
 import{SavedDeals}from'./components/SavedDeals.jsx';
@@ -9,10 +9,12 @@ import{Step1}from'./components/Step1.jsx';
 import{Step2}from'./components/Step2.jsx';
 import{Step3}from'./components/Step3.jsx';
 import{Step4}from'./components/Step4.jsx';
-import{Dashboard}from'./components/Dashboard.jsx';
 import{AuthModal,ResetPasswordModal,SaveModal,Toast}from'./components/modals.jsx';
 import{Legal}from'./components/Legal.jsx';
 import{initTelemetry}from'./lib/telemetry.js';
+// The dashboard carries the charting library and only renders after a pro
+// forma is generated, so it loads as its own chunk.
+const Dashboard=lazy(()=>import('./components/Dashboard.jsx').then(m=>({default:m.Dashboard})));
 // ─── MAIN APP ─────────────────────────────────────────────────────────────
 const STEPS=['Asset Type','Property Info','Income & Expenses','Financing'];
 
@@ -20,7 +22,7 @@ function App(){
   const [view,setView]=useState('landing');
   const [step,setStep]=useState(0);
   const [assetType,setAssetType]=useState('multifamily');
-  const [inp,setInp]=useState(DEFS.multifamily);
+  const [inp,setInp]=useState(BLANKS.multifamily);
   const [res,setRes]=useState(null);
   const [loading,setLoading]=useState(false);
   const [user,setUser]=useState(null);
@@ -48,7 +50,7 @@ function App(){
 
   const handleAsset=useCallback(a=>{
     setAssetType(a);
-    setInp(DEFS[a]||DEFS.multifamily);
+    setInp(BLANKS[a]||BLANKS.multifamily);
     setCurrentDealId(null);
   },[]);
 
@@ -86,26 +88,26 @@ function App(){
             <rect x="20" y="10" width="60" height="14" rx="3.5" fill="url(#hdrAccent)"/>
           </svg>
           <div>
-            <div style={{fontWeight:700,fontSize:17,lineHeight:1.1,color:'#fff',fontFamily:"'Space Grotesk',sans-serif"}}>Smart<span style={{color:'#7d93ff'}}>Cap</span>Stack</div>
-            <div className="mono hide-m" style={{fontSize:9,color:'#6b7593',letterSpacing:'2px',fontWeight:600}}>REAL ESTATE PRO FORMA CREATOR</div>
+            <div style={{fontWeight:700,fontSize:'var(--fs-6)',lineHeight:1.1,color:'#fff',fontFamily:"'Space Grotesk',sans-serif"}}>Smart<span style={{color:'#7d93ff'}}>Cap</span>Stack</div>
+            <div className="mono hide-m" style={{fontSize:'var(--fs-1)',color:'#6b7593',letterSpacing:'2px',fontWeight:600}}>REAL ESTATE PRO FORMA CREATOR</div>
           </div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap',justifyContent:'flex-end'}}>
-          {view!=='landing'&&step<4&&step>0&&<span className="mono hide-m" style={{fontSize:11,color:'#6b7593'}}>STEP {step}/{STEPS.length}</span>}
-          {view==='landing'&&<button className="btn-p" style={{padding:'7px 18px',fontSize:13}} onClick={()=>setView('app')}>Start an analysis</button>}
-          <button onClick={()=>setView('saved')} style={{background:'none',border:'none',cursor:'pointer',fontSize:12.5,color:view==='saved'?'#7d93ff':'#aab3c9',fontWeight:view==='saved'?700:500,padding:0,fontFamily:"'Sora',sans-serif"}}>Saved deals</button>
+          {view!=='landing'&&step<4&&step>0&&<span className="mono hide-m" style={{fontSize:'var(--fs-2)',color:'#6b7593'}}>STEP {step}/{STEPS.length}</span>}
+          {view==='landing'&&<button className="btn-p" style={{padding:'7px 18px',fontSize:'var(--fs-4)'}} onClick={()=>setView('app')}>Start an analysis</button>}
+          <button onClick={()=>setView('saved')} style={{background:'none',border:'none',cursor:'pointer',fontSize:'var(--fs-3)',color:view==='saved'?'#7d93ff':'#aab3c9',fontWeight:view==='saved'?700:500,padding:0,fontFamily:"'Sora',sans-serif"}}>Saved deals</button>
           {user?(
             <div style={{display:'flex',alignItems:'center',gap:8}}>
               {user.user_metadata?.avatar_url
                 ?<img src={user.user_metadata.avatar_url} alt="" referrerPolicy="no-referrer" style={{width:24,height:24,borderRadius:'50%',border:'1px solid rgba(255,255,255,.25)'}}/>
                 :null}
-              <span className="hide-m" style={{fontSize:11.5,color:'#8a93a6',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.user_metadata?.full_name||user.email}</span>
-              <button onClick={async()=>{if(sb)await sb.auth.signOut();setUser(null);}} style={{background:'none',border:'1px solid rgba(255,255,255,.18)',borderRadius:6,cursor:'pointer',fontSize:12,color:'#aab3c9',padding:'4px 10px',fontFamily:"'Sora',sans-serif"}}>Sign Out</button>
+              <span className="hide-m" style={{fontSize:'var(--fs-2)',color:'#8a93a6',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.user_metadata?.full_name||user.email}</span>
+              <button onClick={async()=>{if(sb)await sb.auth.signOut();setUser(null);}} style={{background:'none',border:'1px solid rgba(255,255,255,.18)',borderRadius:6,cursor:'pointer',fontSize:'var(--fs-3)',color:'#aab3c9',padding:'4px 10px',fontFamily:"'Sora',sans-serif"}}>Sign Out</button>
             </div>
           ):(
-            <button onClick={()=>setShowAuth(true)} style={{background:'var(--accent)',border:'none',borderRadius:6,cursor:'pointer',fontSize:12.5,color:'#fff',padding:'5px 13px',fontWeight:600,fontFamily:"'Sora',sans-serif"}}>Sign In</button>
+            <button onClick={()=>setShowAuth(true)} style={{background:'var(--accent)',border:'none',borderRadius:6,cursor:'pointer',fontSize:'var(--fs-3)',color:'#fff',padding:'5px 13px',fontWeight:600,fontFamily:"'Sora',sans-serif"}}>Sign In</button>
           )}
-          {res&&step<4&&<button className="btn-s" style={{fontSize:12,padding:'6px 14px',background:'rgba(255,255,255,.06)',color:'#fff',borderColor:'rgba(255,255,255,.2)'}} onClick={()=>setStep(4)}>View results →</button>}
+          {res&&step<4&&<button className="btn-s" style={{fontSize:'var(--fs-3)',padding:'6px 14px',background:'rgba(255,255,255,.06)',color:'#fff',borderColor:'rgba(255,255,255,.2)'}} onClick={()=>setStep(4)}>View results →</button>}
         </div>
       </div>
 
@@ -153,7 +155,11 @@ function App(){
             </div>
           </>
         ):(
-          res&&<Dashboard res={res} inp={inp} onExport={()=>exportXLSX(res,inp)} onBack={()=>setStep(3)} onSave={handleSave}/>
+          res&&(
+            <Suspense fallback={<div style={{padding:'80px 24px',textAlign:'center',color:'var(--muted2)',fontSize:'var(--fs-5)'}}>Preparing results…</div>}>
+              <Dashboard res={res} inp={inp} onExport={()=>exportXLSX(res,inp)} onBack={()=>setStep(3)} onSave={handleSave}/>
+            </Suspense>
+          )
         )}
       </div>
 
@@ -169,14 +175,14 @@ function App(){
         }}
         onSignIn={()=>{setShowSave(false);setShowAuth(true);}}/>}
       <Toast msg={toast}/>
-      <div style={{textAlign:'center',padding:'18px 20px',borderTop:'1px solid var(--border)',color:'var(--muted2)',fontSize:11.5}}>
+      <div style={{textAlign:'center',padding:'18px 20px',borderTop:'1px solid var(--border)',color:'var(--muted2)',fontSize:'var(--fs-2)'}}>
         <span style={{color:'var(--muted)',fontWeight:600}}>SmartCapStack</span>
         <span style={{margin:'0 8px',color:'var(--border2)'}}>·</span>
-        <button onClick={()=>{setLegalTab('privacy');setView('legal');window.scrollTo(0,0);}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--accent)',fontSize:11.5,padding:0,fontFamily:"'Sora',sans-serif"}}>Privacy</button>
+        <button onClick={()=>{setLegalTab('privacy');setView('legal');window.scrollTo(0,0);}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--accent)',fontSize:'var(--fs-2)',padding:0,fontFamily:"'Sora',sans-serif"}}>Privacy</button>
         <span style={{margin:'0 8px',color:'var(--border2)'}}>·</span>
-        <button onClick={()=>{setLegalTab('terms');setView('legal');window.scrollTo(0,0);}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--accent)',fontSize:11.5,padding:0,fontFamily:"'Sora',sans-serif"}}>Terms</button>
+        <button onClick={()=>{setLegalTab('terms');setView('legal');window.scrollTo(0,0);}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--accent)',fontSize:'var(--fs-2)',padding:0,fontFamily:"'Sora',sans-serif"}}>Terms</button>
         <br/>
-        <span style={{fontSize:10.5}}>All projections are estimates for informational purposes only. Not financial advice.</span>
+        <span style={{fontSize:'var(--fs-2)'}}>All projections are estimates for informational purposes only. Not financial advice.</span>
       </div>
     </div>
   );

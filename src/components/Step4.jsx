@@ -52,25 +52,8 @@ function Step4({inp,onChange}){
     <div className="fu">
       <div style={{marginBottom:18}}>
         <h2 style={{fontSize:'var(--fs-9)',fontWeight:700,marginBottom:6}}>Financing &amp; Assumptions</h2>
-        <p style={{color:'var(--muted)',fontSize:'var(--fs-5)',lineHeight:1.55}}>Debt structure, growth rates, and exit strategy.</p>
+        <p style={{color:'var(--muted)',fontSize:'var(--fs-5)',lineHeight:1.55}}>Debt structure, growth rates, and exit strategy. The summary at the bottom updates as you type.</p>
       </div>
-
-      <div className="hair g4" style={{gridTemplateColumns:'repeat(4,1fr)',marginBottom:20}}>
-        {cells.map(c=><Metric key={c.label} {...c}/>)}
-      </div>
-
-      {isDev&&(
-        <div style={{display:'flex',gap:28,flexWrap:'wrap',alignItems:'baseline',background:'var(--warn-tint)',border:'1px solid var(--warn-brd)',borderRadius:'var(--r-md)',padding:'12px 16px',marginBottom:20}}>
-          <div>
-            <span style={{color:'var(--muted)',fontSize:'var(--fs-4)'}}>Total Development Cost&nbsp;&nbsp;</span>
-            <span className="mono" style={{fontWeight:700,fontSize:'var(--fs-5)',color:'var(--text)'}}>{f.$f(devCost)}</span>
-          </div>
-          <div>
-            <span style={{color:'var(--muted)',fontSize:'var(--fs-4)'}}>Return on Cost (Yr 1)&nbsp;&nbsp;</span>
-            <span className="mono" style={{fontWeight:700,fontSize:'var(--fs-5)',color:'var(--text)'}}>{devCost>0?f.pct(noi/devCost,2):'—'}</span>
-          </div>
-        </div>
-      )}
 
       <Card title="Loan Terms" sub="Sizing, rate, and amortization">
         <label className={'tgl'+(inp.sizeDebt?' on':'')} style={{marginBottom:16}}>
@@ -165,6 +148,25 @@ function Step4({inp,onChange}){
         <Card title="Partnership Economics">
           <p style={{fontSize:'var(--fs-4)',color:'var(--muted)',lineHeight:1.65}}>The LP/GP promote waterfall is not applied to affordable / LIHTC deals. Tax-credit partnership economics are driven by credit delivery, and are shown in the LIHTC analysis instead.</p>
         </Card>
+      )}
+
+      {/* summary sits after the inputs so people aren't reading numbers
+          before they've entered anything */}
+      <div className="eyebrow" style={{marginBottom:9,marginTop:24}}>Financing summary</div>
+      <div className="hair g4" style={{gridTemplateColumns:'repeat(4,1fr)'}}>
+        {cells.map(c=><Metric key={c.label} {...c}/>)}
+      </div>
+      {isDev&&(
+        <div style={{display:'flex',gap:28,flexWrap:'wrap',alignItems:'baseline',background:'var(--warn-tint)',border:'1px solid var(--warn-brd)',borderRadius:'var(--r-md)',padding:'12px 16px',marginTop:14}}>
+          <div>
+            <span style={{color:'var(--muted)',fontSize:'var(--fs-4)'}}>Total Development Cost&nbsp;&nbsp;</span>
+            <span className="mono" style={{fontWeight:700,fontSize:'var(--fs-5)',color:'var(--text)'}}>{f.$f(devCost)}</span>
+          </div>
+          <div>
+            <span style={{color:'var(--muted)',fontSize:'var(--fs-4)'}}>Return on Cost (Yr 1)&nbsp;&nbsp;</span>
+            <span className="mono" style={{fontWeight:700,fontSize:'var(--fs-5)',color:'var(--text)'}}>{devCost>0?f.pct(noi/devCost,2):'—'}</span>
+          </div>
+        </div>
       )}
     </div>
   );

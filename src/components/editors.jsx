@@ -21,10 +21,10 @@ function CreditEditor({rows,onChange}){
   return(
     <div style={{marginBottom:14}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-        <label style={{fontSize:13,fontWeight:600,color:'var(--text)'}}>Tax Credits (historic, brownfield, affordable)</label>
-        <span style={{fontSize:12,color:'var(--muted2)'}}>{rows.length} credit{rows.length!==1?'s':''} &middot; {f.$(tot)} equity</span>
+        <label style={{fontSize:'var(--fs-4)',fontWeight:600,color:'var(--text)'}}>Tax Credits (historic, brownfield, affordable)</label>
+        <span style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>{rows.length} credit{rows.length!==1?'s':''} &middot; {f.$(tot)} equity</span>
       </div>
-      {rows.length>0&&<div style={{display:'grid',gridTemplateColumns:C,gap:8,padding:'0 2px 6px',fontSize:11,fontWeight:700,color:'var(--muted2)'}}>
+      {rows.length>0&&<div style={{display:'grid',gridTemplateColumns:C,gap:8,padding:'0 2px 6px',fontSize:'var(--fs-2)',fontWeight:700,color:'var(--muted2)'}}>
         <div>Type</div><div>Eligible Basis</div><div>Rate %</div><div>Price</div><div>Equity</div><div></div>
       </div>}
       {rows.map((r,i)=>{
@@ -36,24 +36,24 @@ function CreditEditor({rows,onChange}){
               {CREDIT_TYPES.map(c=><option key={c.id} value={c.id}>{c.id}</option>)}
             </select>
             <div style={{position:'relative'}}>
-              <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:13}}>$</span>
+              <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>$</span>
               <input className="input-f" value={r.basis||''} onChange={e=>set(i,{basis:pn(e.target.value)})} placeholder="0" style={{paddingLeft:24}}/>
             </div>
             <input className="input-f" value={r.rate!=null?r.rate:''} onChange={e=>set(i,{rate:parseFloat(e.target.value)||0})} placeholder="0"/>
             <input className="input-f" value={r.price!=null?r.price:''} onChange={e=>set(i,{price:parseFloat(e.target.value)||0})} placeholder="0.90"/>
-            <div className="mono" style={{fontSize:13,fontWeight:700,color:'var(--purple)',paddingLeft:2}}>{f.$((+r.basis||0)*((+r.rate||0)/100)*(r.price!=null?+r.price:0.9))}</div>
-            <button onClick={()=>del(i)} title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:15,lineHeight:1}}>&times;</button>
+            <div className="mono" style={{fontSize:'var(--fs-4)',fontWeight:700,color:'var(--purple)',paddingLeft:2}}>{f.$((+r.basis||0)*((+r.rate||0)/100)*(r.price!=null?+r.price:0.9))}</div>
+            <button onClick={()=>del(i)} title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
           </div>
-          {ct&&<div style={{fontSize:11,color:'var(--purple)',marginTop:3,marginLeft:2}}>{ct.note}</div>}
+          {ct&&<div style={{fontSize:'var(--fs-2)',color:'var(--purple)',marginTop:3,marginLeft:2}}>{ct.note}</div>}
         </div>
         );
       })}
-      <button onClick={add} className="btn-s" style={{padding:'7px 14px',fontSize:13,marginTop:2}}>+ Add credit</button>
+      <button onClick={add} className="btn-s" style={{padding:'7px 14px',fontSize:'var(--fs-4)',marginTop:2}}>+ Add credit</button>
     </div>
   );
 }
 function delBtn(onClick){return(
-  <button onClick={onClick} title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:15,lineHeight:1,flexShrink:0}}>&times;</button>
+  <button onClick={onClick} title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1,flexShrink:0}}>&times;</button>
 );}
 function UnitMixEditor({rows,onChange}){
   rows=rows||[];
@@ -66,10 +66,10 @@ function UnitMixEditor({rows,onChange}){
   return(
     <div style={{marginBottom:14}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-        <label style={{fontSize:13,fontWeight:600,color:'var(--text)'}}>Unit Mix / Floor Plans</label>
-        <span style={{fontSize:12,color:'var(--muted2)'}}>{tU} units &middot; {f.$(tA)}/yr</span>
+        <label style={{fontSize:'var(--fs-4)',fontWeight:600,color:'var(--text)'}}>Unit Mix / Floor Plans</label>
+        <span style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>{tU} units &middot; {f.$(tA)}/yr</span>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:C,gap:8,padding:'0 2px 6px',fontSize:11,fontWeight:700,color:'var(--muted2)'}}>
+      <div style={{display:'grid',gridTemplateColumns:C,gap:8,padding:'0 2px 6px',fontSize:'var(--fs-2)',fontWeight:700,color:'var(--muted2)'}}>
         <div>Type</div><div># Units</div><div>Rent / Mo</div><div></div>
       </div>
       {rows.map((r,i)=>(
@@ -80,15 +80,15 @@ function UnitMixEditor({rows,onChange}){
             </select>
             <input className="input-f" value={r.count||''} onChange={e=>set(i,{count:pn(e.target.value)})} placeholder="0"/>
             <div style={{position:'relative'}}>
-              <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:13}}>$</span>
+              <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>$</span>
               <input className="input-f" value={r.rent||''} onChange={e=>set(i,{rent:pn(e.target.value)})} placeholder="0" style={{paddingLeft:24}}/>
             </div>
-            <button onClick={()=>del(i)} title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:15,lineHeight:1}}>&times;</button>
+            <button onClick={()=>del(i)} title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
           </div>
-          {r.type==='Other'&&<input className="input-f" value={r.label||''} onChange={e=>set(i,{label:e.target.value})} placeholder="Name this floor plan (e.g. Live/Work Loft, Garden 2BR)" style={{marginBottom:8,fontSize:13}}/>}
+          {r.type==='Other'&&<input className="input-f" value={r.label||''} onChange={e=>set(i,{label:e.target.value})} placeholder="Name this floor plan (e.g. Live/Work Loft, Garden 2BR)" style={{marginBottom:8,fontSize:'var(--fs-4)'}}/>}
         </div>
       ))}
-      <button className="btn-s" style={{padding:'7px 14px',fontSize:13,marginTop:2}} onClick={add}>+ Add unit type</button>
+      <button className="btn-s" style={{padding:'7px 14px',fontSize:'var(--fs-4)',marginTop:2}} onClick={add}>+ Add unit type</button>
     </div>
   );
 }
@@ -103,10 +103,10 @@ function RetailEditor({rows,onChange,label}){
   return(
     <div style={{marginBottom:14}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-        <label style={{fontSize:13,fontWeight:600,color:'var(--text)'}}>{label||'Commercial / Retail Income'}</label>
-        <span style={{fontSize:12,color:'var(--muted2)'}}>{tSF.toLocaleString()} SF &middot; {f.$(tA)}/yr</span>
+        <label style={{fontSize:'var(--fs-4)',fontWeight:600,color:'var(--text)'}}>{label||'Commercial / Retail Income'}</label>
+        <span style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>{tSF.toLocaleString()} SF &middot; {f.$(tA)}/yr</span>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:C,gap:8,padding:'0 2px 6px',fontSize:11,fontWeight:700,color:'var(--muted2)'}}>
+      <div style={{display:'grid',gridTemplateColumns:C,gap:8,padding:'0 2px 6px',fontSize:'var(--fs-2)',fontWeight:700,color:'var(--muted2)'}}>
         <div>Tenant / Space</div><div>SF</div><div>Rent / SF</div><div></div>
       </div>
       {rows.map((r,i)=>(
@@ -114,13 +114,13 @@ function RetailEditor({rows,onChange,label}){
           <input className="input-f" value={r.name||''} onChange={e=>set(i,{name:e.target.value})} placeholder="Tenant name"/>
           <input className="input-f" value={r.sf||''} onChange={e=>set(i,{sf:pn(e.target.value)})} placeholder="0"/>
           <div style={{position:'relative'}}>
-            <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:13}}>$</span>
+            <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>$</span>
             <input className="input-f" value={r.rentPerSF||''} onChange={e=>set(i,{rentPerSF:pn(e.target.value)})} placeholder="0" style={{paddingLeft:24}}/>
           </div>
-          <button onClick={()=>del(i)} title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:15,lineHeight:1}}>&times;</button>
+          <button onClick={()=>del(i)} title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
         </div>
       ))}
-      <button className="btn-s" style={{padding:'7px 14px',fontSize:13,marginTop:2}} onClick={add}>+ Add retail space</button>
+      <button className="btn-s" style={{padding:'7px 14px',fontSize:'var(--fs-4)',marginTop:2}} onClick={add}>+ Add retail space</button>
     </div>
   );
 }

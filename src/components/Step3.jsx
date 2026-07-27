@@ -24,11 +24,7 @@ function Step3({inp,onChange}){
     <div className="fu">
       <div style={{marginBottom:18}}>
         <h2 style={{fontSize:'var(--fs-9)',fontWeight:700,marginBottom:6}}>Income &amp; Expenses</h2>
-        <p style={{color:'var(--muted)',fontSize:'var(--fs-5)',lineHeight:1.55}}>Year 1 operating assumptions, with the running figures updating as you type.</p>
-      </div>
-
-      <div className="hair g4" style={{gridTemplateColumns:'repeat(4,1fr)',marginBottom:20}}>
-        {cells.map(c=><Metric key={c.label} {...c}/>)}
+        <p style={{color:'var(--muted)',fontSize:'var(--fs-5)',lineHeight:1.55}}>Enter your Year 1 operating assumptions. The summary at the bottom updates as you type.</p>
       </div>
 
       <Card title="Revenue" sub="Gross potential income and vacancy">
@@ -63,6 +59,13 @@ function Step3({inp,onChange}){
           </div>
         </div>
       </Card>
+
+      {/* summary sits after the inputs so people aren't reading numbers
+          before they've entered anything */}
+      <div className="eyebrow" style={{marginBottom:9,marginTop:24}}>Year 1 summary</div>
+      <div className="hair g4" style={{gridTemplateColumns:'repeat(4,1fr)'}}>
+        {cells.map(c=><Metric key={c.label} {...c}/>)}
+      </div>
     </div>
   );
 }

@@ -8,12 +8,12 @@ function DealNotes({id,initial,user}){
   const [val,setVal]=useState(initial);
   const [open,setOpen]=useState(!!initial);
   if(!open)return(
-    <button onClick={()=>setOpen(true)} style={{marginTop:10,marginLeft:33,background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontSize:12.5,padding:0,fontFamily:"'Sora',sans-serif"}}>+ Add notes</button>
+    <button onClick={()=>setOpen(true)} style={{marginTop:10,marginLeft:33,background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontSize:'var(--fs-3)',padding:0,fontFamily:"'Sora',sans-serif"}}>+ Add notes</button>
   );
   return(
     <textarea value={val} placeholder="Notes: address, broker, thesis, next steps..."
       onChange={e=>{setVal(e.target.value);updateDealNotes(id,e.target.value,user);}}
-      style={{marginTop:10,marginLeft:33,width:'calc(100% - 33px)',minHeight:54,padding:'9px 12px',border:'1px solid var(--border2)',borderRadius:8,fontSize:13,fontFamily:"'Sora',sans-serif",color:'var(--text)',resize:'vertical',outline:'none',background:'var(--surface2)'}}/>
+      style={{marginTop:10,marginLeft:33,width:'calc(100% - 33px)',minHeight:54,padding:'9px 12px',border:'1px solid var(--border2)',borderRadius:8,fontSize:'var(--fs-4)',fontFamily:"'Sora',sans-serif",color:'var(--text)',resize:'vertical',outline:'none',background:'var(--surface2)'}}/>
   );
 }
 
@@ -52,16 +52,16 @@ function PortfolioView({onBack,user}){
   const P=calcPortfolio(deals);
   const kpi=(label,val,sub)=>(
     <div className="glass" style={{padding:'18px 20px',flex:1,minWidth:150}}>
-      <div style={{fontSize:11.5,color:'var(--muted)',marginBottom:5}}>{label}</div>
-      <div className="mono" style={{fontSize:24,fontWeight:800,color:'var(--text)'}}>{val}</div>
-      {sub&&<div style={{fontSize:11,color:'var(--muted2)',marginTop:3}}>{sub}</div>}
+      <div style={{fontSize:'var(--fs-2)',color:'var(--muted)',marginBottom:5}}>{label}</div>
+      <div className="mono" style={{fontSize:'var(--fs-9)',fontWeight:800,color:'var(--text)'}}>{val}</div>
+      {sub&&<div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginTop:3}}>{sub}</div>}
     </div>
   );
   return(
     <div className="fu" style={{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px'}}>
       <button className="btn-s" onClick={onBack} style={{marginBottom:18}}>&larr; Back to saved deals</button>
-      <h2 style={{fontSize:24,fontWeight:800,marginBottom:6}}>Portfolio Roll-Up</h2>
-      <p style={{fontSize:12.5,color:'var(--muted)',marginBottom:20}}>Aggregated across {P.total} saved {P.total===1?'deal':'deals'}, recomputed live. The pooled IRR assumes deals begin at the same time.</p>
+      <h2 style={{fontSize:'var(--fs-9)',fontWeight:800,marginBottom:6}}>Portfolio Roll-Up</h2>
+      <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginBottom:20}}>Aggregated across {P.total} saved {P.total===1?'deal':'deals'}, recomputed live. The pooled IRR assumes deals begin at the same time.</p>
       {P.total===0?(
         <div className="glass" style={{padding:'48px 24px',textAlign:'center',color:'var(--muted)'}}>No saved deals to roll up yet.</div>
       ):(<>
@@ -77,7 +77,7 @@ function PortfolioView({onBack,user}){
           {P.affCount>0&&kpi('LIHTC Equity',f.$(P.affEquity),P.affCount+' affordable')}
           {P.affCount>0&&kpi('Affordable Dev Cost',f.$(P.affUses),null)}
         </div>
-        <div className="glass" style={{overflow:'hidden'}}>
+        <div className="glass xscroll">
           <table className="tbl">
             <thead><tr><th style={{textAlign:'left'}}>Asset Type</th><th>Deals</th><th>Equity</th><th>% of Book</th></tr></thead>
             <tbody>
@@ -149,15 +149,15 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify}){
   return(
     <div className="fu" style={{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px'}}>
       {!user&&<div style={{background:'var(--accent-tint)',border:'1px solid var(--accent)',borderRadius:8,padding:'10px 16px',marginBottom:18,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
-        <span style={{fontSize:13,color:'var(--accent)',fontWeight:500}}>Sign in to save deals to the cloud and access them from any device.</span>
-        <button className="btn-p" style={{padding:'6px 14px',fontSize:12.5,flexShrink:0}} onClick={onSignIn}>Sign In</button>
+        <span style={{fontSize:'var(--fs-4)',color:'var(--accent)',fontWeight:500}}>Sign in to save deals to the cloud and access them from any device.</span>
+        <button className="btn-p" style={{padding:'6px 14px',fontSize:'var(--fs-3)',flexShrink:0}} onClick={onSignIn}>Sign In</button>
       </div>}
       {user&&localCount>0&&<div style={{background:'var(--accent-tint)',border:'1px solid var(--accent)',borderRadius:8,padding:'10px 16px',marginBottom:18,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
-        <span style={{fontSize:13,color:'var(--accent)',fontWeight:500}}>{localCount} deal{localCount!==1?'s':''} saved in this browser {localCount!==1?'are':'is'} not in your account yet.</span>
-        <button className="btn-p" style={{padding:'6px 14px',fontSize:12.5,flexShrink:0}} onClick={migrate}>Upload to account</button>
+        <span style={{fontSize:'var(--fs-4)',color:'var(--accent)',fontWeight:500}}>{localCount} deal{localCount!==1?'s':''} saved in this browser {localCount!==1?'are':'is'} not in your account yet.</span>
+        <button className="btn-p" style={{padding:'6px 14px',fontSize:'var(--fs-3)',flexShrink:0}} onClick={migrate}>Upload to account</button>
       </div>}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:12}}>
-        <h2 style={{fontSize:24,fontWeight:800}}>Saved Deals</h2>
+        <h2 style={{fontSize:'var(--fs-9)',fontWeight:800}}>Saved Deals</h2>
         <div style={{display:'flex',gap:10}}>
           {sel.length===2&&<button className="btn-p" onClick={()=>setCompare(true)}>Compare selected</button>}
           {deals.length>0&&<button className="btn-s" onClick={()=>setPortfolio(true)}>Portfolio roll-up</button>}
@@ -165,15 +165,15 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify}){
         </div>
       </div>
       {loadingDeals?(
-        <div style={{padding:'48px 24px',textAlign:'center',color:'var(--muted2)',fontSize:14}}>Loading deals...</div>
+        <div style={{padding:'48px 24px',textAlign:'center',color:'var(--muted2)',fontSize:'var(--fs-5)'}}>Loading deals...</div>
       ):deals.length===0?(
         <div className="glass" style={{padding:'48px 24px',textAlign:'center',color:'var(--muted2)'}}>
-          <div style={{fontSize:15,marginBottom:6}}>No saved deals yet.</div>
-          <div style={{fontSize:13}}>Run an analysis and click Save to keep it here. {user?'Deals sync across devices.':'Deals stay in this browser.'}</div>
+          <div style={{fontSize:'var(--fs-5)',marginBottom:6}}>No saved deals yet.</div>
+          <div style={{fontSize:'var(--fs-4)'}}>Run an analysis and click Save to keep it here. {user?'Deals sync across devices.':'Deals stay in this browser.'}</div>
         </div>
       ):(
         <>
-          <p style={{fontSize:12.5,color:'var(--muted2)',marginBottom:14}}>Select two deals to compare them side by side. {user?'Deals are synced to your account.':'Saved deals are stored in this browser only.'}</p>
+          <p style={{fontSize:'var(--fs-3)',color:'var(--muted2)',marginBottom:14}}>Select two deals to compare them side by side. {user?'Deals are synced to your account.':'Saved deals are stored in this browser only.'}</p>
           <div style={{display:'grid',gap:10}}>
             {deals.map(d=>{
               const s=d.summary||{}; const picked=sel.includes(d.id);
@@ -187,17 +187,17 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify}){
                           onChange={e=>setEditName(e.target.value)}
                           onBlur={commitRename}
                           onKeyDown={e=>{if(e.key==='Enter')commitRename();if(e.key==='Escape')setEditingId(null);}}
-                          style={{fontWeight:700,fontSize:15,padding:'6px 10px',maxWidth:320}}/>
+                          style={{fontWeight:700,fontSize:'var(--fs-5)',padding:'6px 10px',maxWidth:320}}/>
                       ):(
-                        <div style={{fontWeight:700,fontSize:15,color:'var(--text)',display:'flex',alignItems:'center',gap:8}}>
+                        <div style={{fontWeight:700,fontSize:'var(--fs-5)',color:'var(--text)',display:'flex',alignItems:'center',gap:8}}>
                           {d.name}
                           <button onClick={()=>{setEditingId(d.id);setEditName(d.name);}} title="Rename"
-                            style={{background:'none',border:'none',cursor:'pointer',color:'var(--muted2)',fontSize:13,padding:0,lineHeight:1}}>✎</button>
+                            style={{background:'none',border:'none',cursor:'pointer',color:'var(--muted2)',fontSize:'var(--fs-4)',padding:0,lineHeight:1}}>✎</button>
                         </div>
                       )}
-                      <div style={{fontSize:12,color:'var(--muted2)'}}>{d.assetType} &middot; saved {fmtDate(d.savedAt)}</div>
+                      <div style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>{d.assetType} &middot; saved {fmtDate(d.savedAt)}</div>
                     </div>
-                    <div style={{display:'flex',gap:20,fontSize:13,flexShrink:0}}>
+                    <div style={{display:'flex',gap:20,fontSize:'var(--fs-4)',flexShrink:0}}>
                       {s.type==='affordable'?(
                         <><Metric l="LIHTC Equity" v={f.$(s.equity)}/><Metric l="DSCR" v={s.dscr?s.dscr.toFixed(2):'n/a'}/><Metric l="Gap" v={f.$(Math.abs(s.gap||0))}/></>
                       ):(
@@ -205,8 +205,8 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify}){
                       )}
                     </div>
                     <div style={{display:'flex',gap:8,flexShrink:0}}>
-                      <button className="btn-s" style={{padding:'6px 14px',fontSize:13}} onClick={()=>onLoad(d)}>Open</button>
-                      <button onClick={()=>del(d.id)} title="Delete" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:32,height:32,fontSize:16}}>&times;</button>
+                      <button className="btn-s" style={{padding:'6px 14px',fontSize:'var(--fs-4)'}} onClick={()=>onLoad(d)}>Open</button>
+                      <button onClick={()=>del(d.id)} title="Delete" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:32,height:32,fontSize:'var(--fs-6)'}}>&times;</button>
                     </div>
                   </div>
                   <DealNotes id={d.id} initial={d.notes||''} user={user}/>
@@ -219,7 +219,7 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify}){
     </div>
   );
 }
-function Metric({l,v}){return(<div style={{textAlign:'right'}}><div style={{fontWeight:700,color:'var(--accent)'}}>{v}</div><div style={{fontSize:10.5,color:'var(--muted2)'}}>{l}</div></div>);}
+function Metric({l,v}){return(<div style={{textAlign:'right'}}><div style={{fontWeight:700,color:'var(--accent)'}}>{v}</div><div style={{fontSize:'var(--fs-2)',color:'var(--muted2)'}}>{l}</div></div>);}
 
 function CompareView({a,b,onBack}){
   const rA=buildPF(a.inp), rB=buildPF(b.inp);
@@ -247,8 +247,8 @@ function CompareView({a,b,onBack}){
   return(
     <div className="fu" style={{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px'}}>
       <button className="btn-s" onClick={onBack} style={{marginBottom:18}}>← Back to saved deals</button>
-      <h2 style={{fontSize:24,fontWeight:800,marginBottom:18}}>Deal Comparison</h2>
-      <div className="glass" style={{overflow:'hidden'}}>
+      <h2 style={{fontSize:'var(--fs-9)',fontWeight:800,marginBottom:18}}>Deal Comparison</h2>
+      <div className="glass xscroll">
         <table className="tbl">
           <thead><tr>
             <th style={{textAlign:'left'}}>Metric</th>
@@ -267,7 +267,7 @@ function CompareView({a,b,onBack}){
           </tbody>
         </table>
       </div>
-      <p style={{fontSize:12,color:'var(--muted2)',marginTop:12}}>Figures recalculated live from each saved deal's inputs.</p>
+      <p style={{fontSize:'var(--fs-3)',color:'var(--muted2)',marginTop:12}}>Figures recalculated live from each saved deal's inputs.</p>
     </div>
   );
 }
