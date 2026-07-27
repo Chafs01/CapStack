@@ -1,10 +1,12 @@
-
+import{Card}from'./ui.jsx';
 // ─── STEP 1 ASSET TYPE ────────────────────────────────────────────────────
+// Categorical identity colors for the five asset types — deliberately literal
+// hexes, not semantic tokens, since they encode "which asset" not "good/bad".
 const ASSETS=[
   {id:'multifamily',abbr:'MF',label:'Multifamily',sub:'Apartments, condos, townhomes',c:'#3a5bf0'},
-  {id:'commercial',abbr:'CRE',label:'Commercial',sub:'Office, retail, industrial NNN',c:'#56687a'},
-  {id:'mixed-use',abbr:'MXU',label:'Mixed-Use',sub:'Residential + commercial floors',c:'#1a7f37'},
-  {id:'development',abbr:'DEV',label:'Development',sub:'Ground-up construction / value-add',c:'#b54708'},
+  {id:'commercial',abbr:'CRE',label:'Commercial',sub:'Office, retail, industrial NNN',c:'#5a6478'},
+  {id:'mixed-use',abbr:'MXU',label:'Mixed-Use',sub:'Residential + commercial floors',c:'#0e9f6e'},
+  {id:'development',abbr:'DEV',label:'Development',sub:'Ground-up construction / value-add',c:'#c27803'},
   {id:'affordable',abbr:'LIHTC',label:'Affordable / LIHTC',sub:'Tax-credit & syndication underwriting',c:'#7a5195'},
 ];
 
@@ -30,30 +32,39 @@ const ASSET_DESC={
     models:'The model runs the full credit calculation, sizes a loan to your minimum DSCR, raises syndication equity, and fills the gap with a deferred developer fee.'
   }
 };
+
 function Step1({val,onChange}){
   const cur=ASSETS.find(a=>a.id===val)||ASSETS[0];
   const d=ASSET_DESC[cur.id]||{};
   return(
     <div className="fu">
-      <h2 style={{fontSize:23,fontWeight:700,marginBottom:6}}>What are you underwriting?</h2>
-      <p style={{color:'var(--muted)',marginBottom:26,fontSize:14}}>Pick the asset type and the model adapts its inputs and outputs to match.</p>
-
-      <label style={{display:'block',fontSize:12,fontWeight:600,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>Asset type</label>
-      <div style={{position:'relative',maxWidth:440}}>
-        <span style={{position:'absolute',left:16,top:'50%',transform:'translateY(-50%)',width:11,height:11,borderRadius:3,background:cur.c,pointerEvents:'none'}}/>
-        <select value={cur.id} onChange={e=>onChange(e.target.value)}
-          style={{width:'100%',appearance:'none',WebkitAppearance:'none',background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:10,padding:'15px 44px 15px 38px',fontSize:16,fontWeight:600,color:'var(--text)',fontFamily:"'Sora',sans-serif",cursor:'pointer',boxShadow:'var(--shadow)',outline:'none'}}>
-          {ASSETS.map(a=><option key={a.id} value={a.id}>{a.label}</option>)}
-        </select>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2.5" style={{position:'absolute',right:18,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}}><polyline points="6 9 12 15 18 9"/></svg>
+      <div style={{marginBottom:20}}>
+        <h2 style={{fontSize:'var(--fs-9)',fontWeight:700,marginBottom:6}}>What are you underwriting?</h2>
+        <p style={{color:'var(--muted)',fontSize:'var(--fs-5)',lineHeight:1.55}}>Pick the asset type and the model adapts its inputs and outputs to match.</p>
       </div>
 
-      <div style={{marginTop:24,maxWidth:560}}>
-        <div style={{height:3,width:38,background:cur.c,borderRadius:2,marginBottom:16}}/>
-        <div style={{fontSize:18,fontWeight:600,fontFamily:"'Space Grotesk',sans-serif",marginBottom:10}}>{cur.label}</div>
-        <p style={{fontSize:15,color:'var(--text)',lineHeight:1.6,marginBottom:12}}>{d.what}</p>
-        <p style={{fontSize:14,color:'var(--muted)',lineHeight:1.65}}>{d.models}</p>
+      <div className="eyebrow" style={{marginBottom:9}}>Asset type</div>
+      <div className="seg-wrap" style={{marginBottom:18}}>
+        {ASSETS.map(a=>{
+          const on=a.id===cur.id;
+          return(
+            <button key={a.id} className={'seg'+(on?' on':'')} onClick={()=>onChange(a.id)} type="button">
+              <span className="seg-abbr" style={on?undefined:{background:a.c+'1a',color:a.c}}>{a.abbr}</span>
+              <span className="seg-label">{a.label}</span>
+            </button>
+          );
+        })}
       </div>
+
+      <Card>
+        <div style={{display:'flex',alignItems:'center',gap:11,marginBottom:14}}>
+          <span style={{width:10,height:10,borderRadius:3,background:cur.c,flexShrink:0}}/>
+          <div style={{fontSize:'var(--fs-7)',fontWeight:600,fontFamily:"'Space Grotesk',sans-serif"}}>{cur.label}</div>
+          <span className="eyebrow" style={{marginLeft:'auto'}}>{cur.sub}</span>
+        </div>
+        <p style={{fontSize:'var(--fs-5)',color:'var(--text)',lineHeight:1.65,marginBottom:10,maxWidth:640}}>{d.what}</p>
+        <p style={{fontSize:'var(--fs-4)',color:'var(--muted)',lineHeight:1.7,maxWidth:640}}>{d.models}</p>
+      </Card>
     </div>
   );
 }

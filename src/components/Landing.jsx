@@ -13,7 +13,7 @@ function Landing({onStart,onSample}){
         <div className="g2" style={{position:'relative',maxWidth:1140,margin:'0 auto',padding:'72px 24px 64px',display:'grid',gridTemplateColumns:'1.05fr .95fr',gap:56,alignItems:'center'}}>
           <div>
             <div className="mono" style={{fontSize:11.5,fontWeight:600,letterSpacing:'3px',color:'#7d93ff',marginBottom:20,display:'flex',alignItems:'center',gap:10}}>
-              <span style={{width:7,height:7,borderRadius:2,background:'#3a5bf0',boxShadow:'0 0 10px #3a5bf0'}}/>SMARTCAPSTACK.COM
+              <span style={{width:7,height:7,borderRadius:2,background:'var(--accent)',boxShadow:'0 0 10px var(--accent)'}}/>SMARTCAPSTACK.COM
             </div>
             <h1 style={{fontSize:'clamp(32px,5vw,48px)',fontWeight:600,lineHeight:1.1,color:'#fff',marginBottom:20}}>Underwrite any deal like an institution.</h1>
             <p style={{fontSize:17,color:'#aab3c9',lineHeight:1.6,marginBottom:30,maxWidth:520}}>Enter your assumptions. Get a full ten-year discounted cash flow, levered returns, an equity waterfall, sensitivity analysis, and a lender-ready Excel model in under two minutes.</p>
@@ -41,7 +41,7 @@ function Landing({onStart,onSample}){
               <div style={{display:'flex',alignItems:'flex-end',gap:8,height:84}}>
                 {yrs.map(x=>(
                   <div key={x.yr} style={{flex:1,textAlign:'center'}}>
-                    <div style={{background:'linear-gradient(180deg,#5a76f6,#3a5bf0)',borderRadius:'3px 3px 0 0',height:`${Math.round(x.noi/maxNOI*64)}px`,boxShadow:'0 0 12px rgba(58,91,240,.4)'}}/>
+                    <div style={{background:'linear-gradient(180deg,var(--accent2),var(--accent))',borderRadius:'3px 3px 0 0',height:`${Math.round(x.noi/maxNOI*64)}px`,boxShadow:'0 0 12px rgba(58,91,240,.4)'}}/>
                     <div className="mono" style={{fontSize:9.5,color:'#6b7593',marginTop:6}}>Y{x.yr}</div>
                   </div>
                 ))}
@@ -128,7 +128,7 @@ function Landing({onStart,onSample}){
               <span style={{width:9,height:9,borderRadius:'50%',background:'#3ddc97'}}/>
               <span className="mono" style={{fontSize:11.5,color:'#fff',fontWeight:600}}>SmartCapStack_Model.xlsx</span>
             </div>
-            <div className="mono" style={{padding:'8px 14px',borderBottom:'1px solid #d3d9e8',fontSize:11.5,color:'#5a6478',display:'flex',gap:10,background:'#fff'}}>
+            <div className="mono" style={{padding:'8px 14px',borderBottom:'1px solid var(--border2)',fontSize:11.5,color:'#5a6478',display:'flex',gap:10,background:'#fff'}}>
               <span style={{fontStyle:'italic',fontWeight:700}}>fx</span>
               <span>=IRR($C$45:$J$45)</span>
             </div>
@@ -140,9 +140,9 @@ function Landing({onStart,onSample}){
               ['Levered IRR',f.pct(r.ret.irr,1),false],
               ['Equity Multiple',f.x(r.ret.em),false],
             ].map((row,i)=>(
-              <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'9px 16px',borderBottom:'1px solid #e2e6f0',fontSize:12.5,background:i%2?'#f7f9fd':'#fff'}}>
+              <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'9px 16px',borderBottom:'1px solid var(--border)',fontSize:12.5,background:i%2?'var(--surface2)':'#fff'}}>
                 <span style={{color:'#5a6478'}}>{row[0]}</span>
-                <span className="mono" style={{fontWeight:700,color:row[2]?'#0070c0':'#0c1322'}}>{row[1]}</span>
+                <span className="mono" style={{fontWeight:700,color:row[2]?'#0070c0':'var(--ink)'}}>{row[1]}</span>
               </div>
             ))}
           </div>

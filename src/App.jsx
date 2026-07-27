@@ -1,4 +1,4 @@
-import React,{useState,useCallback,useEffect}from'react';
+import{useState,useCallback,useEffect}from'react';
 import{sb}from'./lib/supabase.js';
 import{buildPF}from'./engine/buildPF.js';
 import{DEFS}from'./engine/defaults.js';
@@ -53,12 +53,15 @@ function App(){
   },[]);
 
   const handleCalc=()=>{
+    // the engine is synchronous and fast — no artificial delay, and errors
+    // surface in the toast rather than a native alert()
     setLoading(true);
-    setTimeout(()=>{
-      try{const r=buildPF(inp);setRes(r);setStep(4);}
-      catch(e){alert('Calculation error: '+e.message);}
-      setLoading(false);
-    },500);
+    try{
+      const r=buildPF(inp);
+      setRes(r);setStep(4);
+      window.scrollTo({top:0,behavior:'smooth'});
+    }catch(e){notify('Could not build the pro forma: '+e.message);}
+    setLoading(false);
   };
 
   const handleSave=()=>setShowSave(true);
@@ -70,10 +73,9 @@ function App(){
     catch(e){setStep(1);setView('app');}
   };
 
-  const progress=(step/STEPS.length)*100;
 
   return(
-    <div style={{minHeight:'100vh',background:'#eef1f7'}}>
+    <div style={{minHeight:'100vh',background:'var(--bg)'}}>
       <div style={{background:'rgba(12,19,34,.92)',backdropFilter:'blur(10px)',borderBottom:'1px solid rgba(255,255,255,.08)',padding:'13px 24px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100}}>
         <div style={{display:'flex',alignItems:'center',gap:11,cursor:'pointer'}} onClick={()=>setView('landing')}>
           <svg width="34" height="34" viewBox="0 0 100 100" style={{flexShrink:0}} xmlns="http://www.w3.org/2000/svg">
@@ -113,39 +115,42 @@ function App(){
       <div style={{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px',display:(view==='app')?'block':'none'}}>
         {step<4?(
           <>
-            <div style={{display:'flex',alignItems:'center',marginBottom:38}}>
-              {STEPS.map((s,i)=>(
-                <React.Fragment key={i}>
-                  <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:5,cursor:i<step?'pointer':'default'}} onClick={()=>{if(i<step)setStep(i);}}>
-                    <div className={`step-dot ${i<step?'done':i===step?'act':'idle'}`}>{i<step?'✓':i+1}</div>
-                    <span style={{fontSize:10.5,color:i===step?'#3a5bf0':'#8c8c8c',fontWeight:i===step?700:400,whiteSpace:'nowrap'}}>{s}</span>
+            {/* connector sits behind each dot and spans back to the previous one,
+                so it stays aligned without the old margin-bottom hack */}
+            <div style={{display:'flex',alignItems:'flex-start',marginBottom:28}}>
+              {STEPS.map((s,i)=>{
+                const done=i<step,act=i===step;
+                return(
+                  <div key={i} onClick={()=>{if(done)setStep(i);}}
+                    style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:9,position:'relative',cursor:done?'pointer':'default'}}>
+                    {i>0&&<span style={{position:'absolute',top:14,right:'50%',width:'100%',height:2,background:i<=step?'var(--accent)':'var(--border2)',transition:'background .25s'}}/>}
+                    <div className={`step-dot ${done?'done':act?'act':'idle'}`}>{done?'✓':i+1}</div>
+                    {/* labels don't fit four-across on a phone — see .only-m line below */}
+                    <span className="hide-m" style={{fontSize:'var(--fs-3)',color:act?'var(--text)':done?'var(--muted)':'var(--muted2)',fontWeight:act?700:500,whiteSpace:'nowrap'}}>{s}</span>
                   </div>
-                  {i<STEPS.length-1&&<div className={`step-line ${i<step?'done':''}`}/>}
-                </React.Fragment>
-              ))}
+                );
+              })}
+            </div>
+            <div className="only-m eyebrow" style={{textAlign:'center',marginTop:-16,marginBottom:24,color:'var(--muted)'}}>
+              Step {step+1} of {STEPS.length} &middot; {STEPS[step]}
             </div>
 
-            <div className="glass" style={{padding:36,marginBottom:28}}>
-              {step===0&&<Step1 val={assetType} onChange={handleAsset}/>}
-              {step===1&&<Step2 inp={inp} onChange={update} assetType={assetType}/>}
-              {step===2&&<Step3 inp={inp} onChange={update}/>}
-              {step===3&&<Step4 inp={inp} onChange={update}/>}
-            </div>
+            {step===0&&<Step1 val={assetType} onChange={handleAsset}/>}
+            {step===1&&<Step2 inp={inp} onChange={update} assetType={assetType}/>}
+            {step===2&&<Step3 inp={inp} onChange={update}/>}
+            {step===3&&<Step4 inp={inp} onChange={update}/>}
 
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:24,paddingTop:20,borderTop:'1px solid var(--border)'}}>
               <button className="btn-s" onClick={()=>setStep(s=>Math.max(0,s-1))} disabled={step===0}>← Back</button>
-              <div style={{display:'flex',gap:10}}>
-                {step<STEPS.length-1?(
-                  <button className="btn-p" onClick={()=>setStep(s=>s+1)}>Continue →</button>
-                ):(
-                  <button className="btn-p" onClick={handleCalc} disabled={loading}
-                    style={{minWidth:190,display:'flex',alignItems:'center',gap:8,justifyContent:'center'}}>
-                    {loading?'Calculating...':'Generate Pro Forma'}
-                  </button>
-                )}
-              </div>
+              {step<STEPS.length-1?(
+                <button className="btn-p" onClick={()=>setStep(s=>s+1)}>Continue →</button>
+              ):(
+                <button className="btn-p" onClick={handleCalc} disabled={loading}
+                  style={{minWidth:190,display:'flex',alignItems:'center',gap:8,justifyContent:'center'}}>
+                  {loading?'Calculating…':'Generate Pro Forma'}
+                </button>
+              )}
             </div>
-            <div className="prog"><div className="prog-f" style={{width:`${progress}%`}}/></div>
           </>
         ):(
           res&&<Dashboard res={res} inp={inp} onExport={()=>exportXLSX(res,inp)} onBack={()=>setStep(3)} onSave={handleSave}/>
@@ -164,12 +169,12 @@ function App(){
         }}
         onSignIn={()=>{setShowSave(false);setShowAuth(true);}}/>}
       <Toast msg={toast}/>
-      <div style={{textAlign:'center',padding:'18px 20px',borderTop:'1px solid #ececec',color:'#8c8c8c',fontSize:11.5}}>
-        <span style={{color:'#737373',fontWeight:600}}>SmartCapStack</span>
-        <span style={{margin:'0 8px',color:'#c7cbd4'}}>·</span>
-        <button onClick={()=>{setLegalTab('privacy');setView('legal');window.scrollTo(0,0);}} style={{background:'none',border:'none',cursor:'pointer',color:'#3a5bf0',fontSize:11.5,padding:0,fontFamily:"'Sora',sans-serif"}}>Privacy</button>
-        <span style={{margin:'0 8px',color:'#c7cbd4'}}>·</span>
-        <button onClick={()=>{setLegalTab('terms');setView('legal');window.scrollTo(0,0);}} style={{background:'none',border:'none',cursor:'pointer',color:'#3a5bf0',fontSize:11.5,padding:0,fontFamily:"'Sora',sans-serif"}}>Terms</button>
+      <div style={{textAlign:'center',padding:'18px 20px',borderTop:'1px solid var(--border)',color:'var(--muted2)',fontSize:11.5}}>
+        <span style={{color:'var(--muted)',fontWeight:600}}>SmartCapStack</span>
+        <span style={{margin:'0 8px',color:'var(--border2)'}}>·</span>
+        <button onClick={()=>{setLegalTab('privacy');setView('legal');window.scrollTo(0,0);}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--accent)',fontSize:11.5,padding:0,fontFamily:"'Sora',sans-serif"}}>Privacy</button>
+        <span style={{margin:'0 8px',color:'var(--border2)'}}>·</span>
+        <button onClick={()=>{setLegalTab('terms');setView('legal');window.scrollTo(0,0);}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--accent)',fontSize:11.5,padding:0,fontFamily:"'Sora',sans-serif"}}>Terms</button>
         <br/>
         <span style={{fontSize:10.5}}>All projections are estimates for informational purposes only. Not financial advice.</span>
       </div>

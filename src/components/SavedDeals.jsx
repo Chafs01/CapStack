@@ -165,22 +165,22 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify}){
         </div>
       </div>
       {loadingDeals?(
-        <div style={{padding:'48px 24px',textAlign:'center',color:'#8c8c8c',fontSize:14}}>Loading deals...</div>
+        <div style={{padding:'48px 24px',textAlign:'center',color:'var(--muted2)',fontSize:14}}>Loading deals...</div>
       ):deals.length===0?(
-        <div className="glass" style={{padding:'48px 24px',textAlign:'center',color:'#8c8c8c'}}>
+        <div className="glass" style={{padding:'48px 24px',textAlign:'center',color:'var(--muted2)'}}>
           <div style={{fontSize:15,marginBottom:6}}>No saved deals yet.</div>
           <div style={{fontSize:13}}>Run an analysis and click Save to keep it here. {user?'Deals sync across devices.':'Deals stay in this browser.'}</div>
         </div>
       ):(
         <>
-          <p style={{fontSize:12.5,color:'#8c8c8c',marginBottom:14}}>Select two deals to compare them side by side. {user?'Deals are synced to your account.':'Saved deals are stored in this browser only.'}</p>
+          <p style={{fontSize:12.5,color:'var(--muted2)',marginBottom:14}}>Select two deals to compare them side by side. {user?'Deals are synced to your account.':'Saved deals are stored in this browser only.'}</p>
           <div style={{display:'grid',gap:10}}>
             {deals.map(d=>{
               const s=d.summary||{}; const picked=sel.includes(d.id);
               return(
-                <div key={d.id} className="glass" style={{padding:'16px 18px',borderColor:picked?'#3a5bf0':'#e2e6f0',borderWidth:picked?2:1}}>
+                <div key={d.id} className="glass" style={{padding:'16px 18px',borderColor:picked?'var(--accent)':'var(--border)',borderWidth:picked?2:1}}>
                   <div style={{display:'flex',alignItems:'center',gap:16,flexWrap:'wrap'}}>
-                    <input type="checkbox" checked={picked} onChange={()=>toggle(d.id)} style={{width:17,height:17,accentColor:'#3a5bf0',flexShrink:0}}/>
+                    <input type="checkbox" checked={picked} onChange={()=>toggle(d.id)} style={{width:17,height:17,accentColor:'var(--accent)',flexShrink:0}}/>
                     <div style={{flex:1,minWidth:0}}>
                       {editingId===d.id?(
                         <input className="input-f" autoFocus value={editName}
@@ -189,13 +189,13 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify}){
                           onKeyDown={e=>{if(e.key==='Enter')commitRename();if(e.key==='Escape')setEditingId(null);}}
                           style={{fontWeight:700,fontSize:15,padding:'6px 10px',maxWidth:320}}/>
                       ):(
-                        <div style={{fontWeight:700,fontSize:15,color:'#191919',display:'flex',alignItems:'center',gap:8}}>
+                        <div style={{fontWeight:700,fontSize:15,color:'var(--text)',display:'flex',alignItems:'center',gap:8}}>
                           {d.name}
                           <button onClick={()=>{setEditingId(d.id);setEditName(d.name);}} title="Rename"
-                            style={{background:'none',border:'none',cursor:'pointer',color:'#8c8c8c',fontSize:13,padding:0,lineHeight:1}}>✎</button>
+                            style={{background:'none',border:'none',cursor:'pointer',color:'var(--muted2)',fontSize:13,padding:0,lineHeight:1}}>✎</button>
                         </div>
                       )}
-                      <div style={{fontSize:12,color:'#8c8c8c'}}>{d.assetType} &middot; saved {fmtDate(d.savedAt)}</div>
+                      <div style={{fontSize:12,color:'var(--muted2)'}}>{d.assetType} &middot; saved {fmtDate(d.savedAt)}</div>
                     </div>
                     <div style={{display:'flex',gap:20,fontSize:13,flexShrink:0}}>
                       {s.type==='affordable'?(
@@ -206,7 +206,7 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify}){
                     </div>
                     <div style={{display:'flex',gap:8,flexShrink:0}}>
                       <button className="btn-s" style={{padding:'6px 14px',fontSize:13}} onClick={()=>onLoad(d)}>Open</button>
-                      <button onClick={()=>del(d.id)} title="Delete" style={{background:'none',border:'1px solid #e2e6f0',borderRadius:3,color:'#b42318',cursor:'pointer',width:32,height:32,fontSize:16}}>&times;</button>
+                      <button onClick={()=>del(d.id)} title="Delete" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:32,height:32,fontSize:16}}>&times;</button>
                     </div>
                   </div>
                   <DealNotes id={d.id} initial={d.notes||''} user={user}/>
@@ -219,7 +219,7 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify}){
     </div>
   );
 }
-function Metric({l,v}){return(<div style={{textAlign:'right'}}><div style={{fontWeight:700,color:'#3a5bf0'}}>{v}</div><div style={{fontSize:10.5,color:'#8c8c8c'}}>{l}</div></div>);}
+function Metric({l,v}){return(<div style={{textAlign:'right'}}><div style={{fontWeight:700,color:'var(--accent)'}}>{v}</div><div style={{fontSize:10.5,color:'var(--muted2)'}}>{l}</div></div>);}
 
 function CompareView({a,b,onBack}){
   const rA=buildPF(a.inp), rB=buildPF(b.inp);
@@ -259,7 +259,7 @@ function CompareView({a,b,onBack}){
             <tr className="sec"><td colSpan={3}>{a.assetType} vs. {b.assetType}</td></tr>
             {rows.map((r,i)=>(
               <tr key={i}>
-                <td style={{fontWeight:600,color:'#5f5f5f'}}>{r[0]}</td>
+                <td style={{fontWeight:600,color:'var(--muted)'}}>{r[0]}</td>
                 <td style={{textAlign:'right',fontWeight:700}}>{r[1](rA)}</td>
                 <td style={{textAlign:'right',fontWeight:700}}>{r[1](rB)}</td>
               </tr>
@@ -267,7 +267,7 @@ function CompareView({a,b,onBack}){
           </tbody>
         </table>
       </div>
-      <p style={{fontSize:12,color:'#8c8c8c',marginTop:12}}>Figures recalculated live from each saved deal's inputs.</p>
+      <p style={{fontSize:12,color:'var(--muted2)',marginTop:12}}>Figures recalculated live from each saved deal's inputs.</p>
     </div>
   );
 }

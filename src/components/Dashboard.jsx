@@ -9,13 +9,13 @@ import{calcRefinance}from'../engine/refinance.js';
 import{calcScenarios}from'../engine/scenarios.js';
 import{calcDevCredits}from'../engine/devCredits.js';
 import{openMemo,downloadMemo}from'../engine/memo.js';
-import{Chip}from'./ui.jsx';
+import{Chip,fillCells}from'./ui.jsx';
 // ─── RESULTS CHARTS ────────────────────────────────────────────────────────
 function ChartTip({active,payload,label}){
   if(!active||!payload||!payload.length)return null;
   return(
-    <div style={{background:'#ffffff',border:'1px solid #e0e0e0',borderRadius:9,padding:'10px 14px'}}>
-      <p style={{fontWeight:700,marginBottom:6,color:'#191919',fontSize:13}}>{label}</p>
+    <div style={{background:'#ffffff',border:'1px solid var(--border)',borderRadius:9,padding:'10px 14px'}}>
+      <p style={{fontWeight:700,marginBottom:6,color:'var(--text)',fontSize:13}}>{label}</p>
       {payload.map(p=>(
         <p key={p.name} style={{color:p.color,fontSize:12.5,marginBottom:2}}>
           {p.name}: {typeof p.value==='number'?(/rate|return|coc/i.test(p.name)?`${p.value.toFixed(2)}%`:f.$(p.value,false)):p.value}
@@ -83,31 +83,33 @@ function SensTable({inp}){
   const getIRR=(rg,ec)=>buildPF({...inp,revenueGrowth:rg,exitCapRate:ec}).ret.irr;
   const setCap=(i,v)=>setCaps(caps.map((c,j)=>j===i?(parseFloat(v)||0):c));
   const setGr=(i,v)=>setGrowths(growths.map((g,j)=>j===i?(parseFloat(v)||0):g));
-  const axIn={width:'100%',border:'none',background:'transparent',color:'#fff',fontWeight:700,fontSize:12,textAlign:'center',outline:'none',fontFamily:'inherit'};
-  const axInL={width:46,border:'1px solid #c7c5c0',borderRadius:3,background:'#fff',color:'#1f3864',fontWeight:700,fontSize:12,textAlign:'center',outline:'none',fontFamily:'inherit',padding:'3px 2px'};
+  // both axes are editable — they need to actually be legible on the light
+  // header (these were white-on-white and effectively invisible)
+  const axIn={width:'100%',border:'1px solid var(--border2)',borderRadius:'var(--r-sm)',background:'var(--surface)',color:'var(--text)',fontWeight:700,fontSize:'var(--fs-4)',textAlign:'center',outline:'none',fontFamily:"'JetBrains Mono',monospace",padding:'4px 2px'};
+  const axInL={...axIn,width:52};
   return(
     <div>
       <div className="sect-lbl" style={{marginBottom:6}}>Levered IRR Sensitivity</div>
-      <p style={{fontSize:12,color:'#737373',marginBottom:6}}>Each cell is the deal's levered IRR at that revenue growth and exit cap. Edit any axis value below and the grid recalculates live. All other inputs held constant.</p>
-      <p style={{fontSize:12,color:'#737373',marginBottom:14}}><span style={{color:'#1a7f37'}}>&#9632; &gt;15%</span>  <span style={{color:'#9a6700',marginLeft:8}}>&#9632; 10-15%</span>  <span style={{color:'#b42318',marginLeft:8}}>&#9632; &lt;10%</span></p>
+      <p style={{fontSize:12,color:'var(--muted)',marginBottom:6}}>Each cell is the deal's levered IRR at that revenue growth and exit cap. Edit any axis value below and the grid recalculates live. All other inputs held constant.</p>
+      <p style={{fontSize:12,color:'var(--muted)',marginBottom:14}}><span style={{color:'var(--pos)'}}>&#9632; &gt;15%</span>  <span style={{color:'var(--warn)',marginLeft:8}}>&#9632; 10-15%</span>  <span style={{color:'var(--neg)',marginLeft:8}}>&#9632; &lt;10%</span></p>
       <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
-        <span style={{fontSize:11,fontWeight:700,color:'#8c8c8c',letterSpacing:'.5px'}}>EXIT CAP RATE &rarr; (columns, editable)</span>
+        <span style={{fontSize:11,fontWeight:700,color:'var(--muted2)',letterSpacing:'.5px'}}>EXIT CAP RATE &rarr; (columns, editable)</span>
       </div>
       <div style={{overflowX:'auto'}}>
         <table className="tbl">
           <thead><tr>
-            <th style={{textAlign:'left',minWidth:140}}>Revenue Growth &darr;<br/><span style={{fontWeight:400,color:'#8c9bb5'}}>vs. Exit Cap &rarr;</span></th>
+            <th style={{textAlign:'left',minWidth:140}}>Revenue Growth &darr;<br/><span style={{fontWeight:400,color:'var(--muted2)'}}>vs. Exit Cap &rarr;</span></th>
             {caps.map((c,i)=><th key={i}><input value={c} onChange={e=>setCap(i,e.target.value)} style={axIn} inputMode="decimal"/></th>)}
           </tr></thead>
           <tbody>{growths.map((g,gi)=>(
             <tr key={gi}>
-              <td style={{fontWeight:700,color:'#5f5f5f'}}>
-                <input value={g} onChange={e=>setGr(gi,e.target.value)} style={axInL} inputMode="decimal"/> <span style={{color:'#8c8c8c'}}>% / yr</span>
+              <td style={{fontWeight:700,color:'var(--muted)'}}>
+                <input value={g} onChange={e=>setGr(gi,e.target.value)} style={axInL} inputMode="decimal"/> <span style={{color:'var(--muted2)'}}>% / yr</span>
               </td>
               {caps.map((c,ci)=>{
                 const irr=getIRR(g,c);
-                const col=irr>0.15?'#1a7f37':irr>0.10?'#9a6700':'#b42318';
-                const bg=irr>0.15?'#e6f4ea':irr>0.10?'#fbf3da':'#fdecea';
+                const col=irr>0.15?'var(--pos)':irr>0.10?'var(--warn)':'var(--neg)';
+                const bg=irr>0.15?'var(--pos-tint)':irr>0.10?'var(--warn-tint)':'var(--neg-tint)';
                 return<td key={ci} style={{background:bg,color:col,fontWeight:700,textAlign:'center',borderRadius:3}}>{f.pct(irr,1)}</td>;
               })}
             </tr>
@@ -148,9 +150,9 @@ function analystNotes(res,inp){
 // ─── RESULTS DASHBOARD ────────────────────────────────────────────────────
 function DevCreditsPanel({D}){
   if(!D)return null;
-  const PUR='#7a5195';
+  const PUR='var(--purple)';
   const su=(label,val,bold)=>(
-    <div style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid #ececec',fontSize:13.5}}>
+    <div style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid var(--border)',fontSize:13.5}}>
       <span style={{color:bold?'var(--text)':'var(--muted)',fontWeight:bold?700:400}}>{label}</span>
       <span className="mono" style={{fontWeight:bold?800:600}}>{val}</span>
     </div>
@@ -200,7 +202,7 @@ function DevCreditsPanel({D}){
 
 function ScenarioPanel({S}){
   if(!S||!S.base)return null;
-  const cols=[['Downside',S.downside,'#b42318'],['Base',S.base,'var(--accent)'],['Upside',S.upside,'#0e7c5a']];
+  const cols=[['Downside',S.downside,'var(--neg)'],['Base',S.base,'var(--accent)'],['Upside',S.upside,'var(--pos)']];
   const row=(label,fn)=>(
     <tr>
       <td style={{fontWeight:600,color:'var(--muted)'}}>{label}</td>
@@ -236,7 +238,7 @@ function ScenarioPanel({S}){
 
 function RefinancePanel({R}){
   if(!R)return null;
-  const C='#0e7c5a';
+  const C='var(--pos)';
   const lift=R.refiIRR-R.baseIRR;
   return(
     <div className="glass" style={{padding:'22px 24px',marginBottom:22,borderTop:'3px solid '+C}}>
@@ -261,14 +263,14 @@ function RefinancePanel({R}){
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:24}} className="g2">
         <div>
           {[['Refinanced value',f.$(R.value)],['New loan',f.$(R.newLoan)],['Old loan retired',f.$(R.oldBal)]].map((r,i)=>(
-            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid #ececec',fontSize:13}}>
+            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--border)',fontSize:13}}>
               <span style={{color:'var(--muted)'}}>{r[0]}</span><span className="mono" style={{fontWeight:600}}>{r[1]}</span>
             </div>
           ))}
         </div>
         <div>
           {[['Refi costs',f.$(R.refiCosts)],['New debt service',f.$(R.newDS)],['DSCR at refi',R.refiDSCR?R.refiDSCR.toFixed(2)+'x':'n/a']].map((r,i)=>(
-            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid #ececec',fontSize:13}}>
+            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--border)',fontSize:13}}>
               <span style={{color:'var(--muted)'}}>{r[0]}</span><span className="mono" style={{fontWeight:600}}>{r[1]}</span>
             </div>
           ))}
@@ -281,7 +283,7 @@ function RefinancePanel({R}){
 
 function ProjectTimelinePanel({P}){
   if(!P)return null;
-  const C='#b54708';
+  const C='var(--warn)';
   const drag=P.stabilizedIRR-P.projectIRR;
   return(
     <div className="glass" style={{padding:'22px 24px',marginBottom:22,borderTop:'3px solid '+C}}>
@@ -304,16 +306,16 @@ function ProjectTimelinePanel({P}){
         </div>
       </div>
       <div style={{display:'flex',gap:8,marginBottom:12}}>
-        <div style={{flex:P.constructionMonths||1,padding:'8px 10px',background:'#fbeee0',borderRadius:'6px 0 0 6px',textAlign:'center'}}>
+        <div style={{flex:P.constructionMonths||1,padding:'8px 10px',background:'var(--warn-tint)',borderRadius:'6px 0 0 6px',textAlign:'center'}}>
           <div className="mono" style={{fontSize:13,fontWeight:700,color:C}}>{P.constructionMonths}mo</div>
           <div style={{fontSize:10,color:'var(--muted)'}}>Construction</div>
         </div>
-        <div style={{flex:P.leaseUpMonths||1,padding:'8px 10px',background:'#fdf6e3',textAlign:'center'}}>
-          <div className="mono" style={{fontSize:13,fontWeight:700,color:'#9a6700'}}>{P.leaseUpMonths}mo</div>
+        <div style={{flex:P.leaseUpMonths||1,padding:'8px 10px',background:'var(--warn-tint)',textAlign:'center'}}>
+          <div className="mono" style={{fontSize:13,fontWeight:700,color:'var(--warn)'}}>{P.leaseUpMonths}mo</div>
           <div style={{fontSize:10,color:'var(--muted)'}}>Lease-Up</div>
         </div>
-        <div style={{flex:6,padding:'8px 10px',background:'#e6f4ea',borderRadius:'0 6px 6px 0',textAlign:'center'}}>
-          <div className="mono" style={{fontSize:13,fontWeight:700,color:'#1a7f37'}}>Stabilized Hold &rarr; Exit</div>
+        <div style={{flex:6,padding:'8px 10px',background:'var(--pos-tint)',borderRadius:'0 6px 6px 0',textAlign:'center'}}>
+          <div className="mono" style={{fontSize:13,fontWeight:700,color:'var(--pos)'}}>Stabilized Hold &rarr; Exit</div>
           <div style={{fontSize:10,color:'var(--muted)'}}>{Math.round(P.totalMonths/12*10)/10} yrs total</div>
         </div>
       </div>
@@ -336,7 +338,7 @@ function ProjectTimelinePanel({P}){
 
 function AfterTaxPanel({A}){
   if(!A)return null;
-  const G='#0e7c5a';
+  const G='var(--pos)';
   const drop=A.preTaxIRR-A.atIRR;
   return(
     <div className="glass" style={{padding:'22px 24px',marginBottom:22,borderTop:'3px solid '+G}}>
@@ -362,7 +364,7 @@ function AfterTaxPanel({A}){
         <div>
           <div style={{fontSize:11,fontWeight:700,color:G,letterSpacing:'.5px',marginBottom:6}}>SALE TAX</div>
           {[['Adjusted basis at sale',f.$(A.adjBasis)],['Total gain',f.$(A.saleGain)],['Depreciation recapture tax',f.$(A.recaptureTax)],['Capital gains tax',f.$(A.capGainTax)],['Total tax on sale',f.$(A.saleTax)],['After-tax sale proceeds',f.$(A.atProceeds)]].map((r,i)=>(
-            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid #ececec',fontSize:13}}>
+            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--border)',fontSize:13}}>
               <span style={{color:'var(--muted)'}}>{r[0]}</span><span className="mono" style={{fontWeight:600}}>{r[1]}</span>
             </div>
           ))}
@@ -370,7 +372,7 @@ function AfterTaxPanel({A}){
         <div>
           <div style={{fontSize:11,fontWeight:700,color:G,letterSpacing:'.5px',marginBottom:6}}>ANNUAL DEPRECIATION SHIELD</div>
           {[['Depreciable basis',f.$(A.deprBasis)],['Annual depreciation',f.$(A.annualDep)],['Accumulated at exit',f.$(A.accumDep)],['Ordinary tax rate',(A.taxRate*100).toFixed(0)+'%']].map((r,i)=>(
-            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid #ececec',fontSize:13}}>
+            <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--border)',fontSize:13}}>
               <span style={{color:'var(--muted)'}}>{r[0]}</span><span className="mono" style={{fontWeight:600}}>{r[1]}</span>
             </div>
           ))}
@@ -383,21 +385,21 @@ function AfterTaxPanel({A}){
 
 function WaterfallPanel({W}){
   if(!W)return null;
-  const GP='#3a5bf0', LPc='#56687a';
+  const GP='var(--accent)', LPc='var(--muted)';
   const f0=f.$;
   const box=(label,lp,gp)=>(
-    <div style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid #ececec',fontSize:13.5}}>
-      <span style={{color:'#5f5f5f'}}>{label}</span>
+    <div style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid var(--border)',fontSize:13.5}}>
+      <span style={{color:'var(--muted)'}}>{label}</span>
       <span style={{display:'flex',gap:24}}>
-        <span style={{width:92,textAlign:'right',color:'#3f3f3f',fontWeight:600}}>{lp}</span>
-        <span style={{width:92,textAlign:'right',color:'#3f3f3f',fontWeight:600}}>{gp}</span>
+        <span style={{width:92,textAlign:'right',color:'var(--text)',fontWeight:600}}>{lp}</span>
+        <span style={{width:92,textAlign:'right',color:'var(--text)',fontWeight:600}}>{gp}</span>
       </span>
     </div>
   );
   return(
     <div className="glass" style={{padding:'22px 24px',marginBottom:22,borderTop:'3px solid '+GP}}>
       <div className="sect-lbl" style={{color:GP}}>Equity Waterfall &mdash; LP / GP Returns</div>
-      <div style={{display:'flex',justifyContent:'flex-end',gap:24,fontSize:11,fontWeight:700,letterSpacing:'.5px',color:'#8c8c8c',marginBottom:4,marginTop:2}}>
+      <div style={{display:'flex',justifyContent:'flex-end',gap:24,fontSize:11,fontWeight:700,letterSpacing:'.5px',color:'var(--muted2)',marginBottom:4,marginTop:2}}>
         <span style={{width:92,textAlign:'right'}}>LIMITED PARTNER</span>
         <span style={{width:92,textAlign:'right'}}>SPONSOR (GP)</span>
       </div>
@@ -407,41 +409,41 @@ function WaterfallPanel({W}){
       {box('IRR',f.pct(W.lpIRR,1),f.pct(W.gpIRR,1))}
       {box('Equity multiple',f.x(W.lpEM),f.x(W.gpEM))}
       <div style={{display:'flex',gap:14,marginTop:16,flexWrap:'wrap'}}>
-        <div style={{flex:1,minWidth:150,padding:'12px 16px',background:'#eef1fe',borderRadius:4,border:'1px solid #d6e3f0'}}>
-          <div style={{fontSize:11,color:'#8c8c8c',marginBottom:3}}>GP Promote (above pro-rata)</div>
+        <div style={{flex:1,minWidth:150,padding:'12px 16px',background:'var(--accent-tint)',borderRadius:4,border:'1px solid var(--accent-brd)'}}>
+          <div style={{fontSize:11,color:'var(--muted2)',marginBottom:3}}>GP Promote (above pro-rata)</div>
           <div style={{fontSize:18,fontWeight:800,color:GP}}>{f0(W.gpPromote)}</div>
         </div>
-        <div style={{flex:1,minWidth:150,padding:'12px 16px',background:'#eef1fe',borderRadius:4,border:'1px solid #d6e3f0'}}>
-          <div style={{fontSize:11,color:'#8c8c8c',marginBottom:3}}>Structure</div>
-          <div style={{fontSize:14,fontWeight:700,color:'#191919'}}>{(W.lpShare*100).toFixed(0)}/{(W.gpShare*100).toFixed(0)} equity &middot; {(W.pref*100).toFixed(0)}% pref</div>
+        <div style={{flex:1,minWidth:150,padding:'12px 16px',background:'var(--accent-tint)',borderRadius:4,border:'1px solid var(--accent-brd)'}}>
+          <div style={{fontSize:11,color:'var(--muted2)',marginBottom:3}}>Structure</div>
+          <div style={{fontSize:14,fontWeight:700,color:'var(--text)'}}>{(W.lpShare*100).toFixed(0)}/{(W.gpShare*100).toFixed(0)} equity &middot; {(W.pref*100).toFixed(0)}% pref</div>
         </div>
       </div>
       <div style={{marginTop:14}}>
         <div style={{fontSize:11,fontWeight:700,color:GP,letterSpacing:'.5px',marginBottom:6}}>PROMOTE TIERS (LP SHARE OF CASH)</div>
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
           {W.tiers.map((t,i)=>(
-            <div key={i} style={{flex:1,minWidth:120,padding:'8px 10px',background:'#f7f7f7',borderRadius:4,textAlign:'center'}}>
-              <div style={{fontSize:11,color:'#8c8c8c'}}>{t.label}</div>
-              <div style={{fontSize:14,fontWeight:700,color:'#191919'}}>{(t.sL*100).toFixed(0)} / {(100-t.sL*100).toFixed(0)}</div>
+            <div key={i} style={{flex:1,minWidth:120,padding:'8px 10px',background:'var(--surface2)',borderRadius:4,textAlign:'center'}}>
+              <div style={{fontSize:11,color:'var(--muted2)'}}>{t.label}</div>
+              <div style={{fontSize:14,fontWeight:700,color:'var(--text)'}}>{(t.sL*100).toFixed(0)} / {(100-t.sL*100).toFixed(0)}</div>
             </div>
           ))}
         </div>
       </div>
-      <p style={{fontSize:12,color:'#737373',marginTop:14,lineHeight:1.5}}>Return of capital and the preferred return are paid first; the sponsor earns its promote on cash flow above each LP IRR hurdle. LP and GP figures are computed from the deal's levered cash flows.</p>
+      <p style={{fontSize:12,color:'var(--muted)',marginTop:14,lineHeight:1.5}}>Return of capital and the preferred return are paid first; the sponsor earns its promote on cash flow above each LP IRR hurdle. LP and GP figures are computed from the deal's levered cash flows.</p>
     </div>
   );
 }
 
 function LihtcPanel({L,res}){
-  const PUR='#7a5195';
+  const PUR='var(--purple)';
   const row=(label,val,opts={})=>(
-    <div style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid #ececec',fontSize:13.5}}>
-      <span style={{color:opts.bold?'#191919':'#5f5f5f',fontWeight:opts.bold?700:400,paddingLeft:opts.indent?14:0}}>{label}</span>
-      <span style={{color:opts.color||(opts.bold?'#191919':'#3f3f3f'),fontWeight:opts.bold?700:600}}>{val}</span>
+    <div style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid var(--border)',fontSize:13.5}}>
+      <span style={{color:opts.bold?'var(--text)':'var(--muted)',fontWeight:opts.bold?700:400,paddingLeft:opts.indent?14:0}}>{label}</span>
+      <span style={{color:opts.color||(opts.bold?'var(--text)':'var(--text)'),fontWeight:opts.bold?700:600}}>{val}</span>
     </div>
   );
   const gap=L.fundingGap;
-  const gapColor=Math.abs(gap)<1?'#1a7f37':(gap>0?'#b42318':'#9a6700');
+  const gapColor=Math.abs(gap)<1?'var(--pos)':(gap>0?'var(--neg)':'var(--warn)');
   const gapLabel=Math.abs(gap)<1?'Balanced':(gap>0?'Funding shortfall':'Surplus');
   return(
     <div className="glass" style={{padding:'22px 24px',marginBottom:22,borderTop:'3px solid '+PUR}}>
@@ -476,20 +478,20 @@ function LihtcPanel({L,res}){
         </div>
       </div>
       <div style={{display:'flex',gap:14,marginTop:16,flexWrap:'wrap'}}>
-        <div style={{flex:1,minWidth:160,padding:'12px 16px',background:'#f4f0f8',borderRadius:4,border:'1px solid #e0d8ec'}}>
-          <div style={{fontSize:11,color:'#8c8c8c',marginBottom:3}}>Financing Gap</div>
+        <div style={{flex:1,minWidth:160,padding:'12px 16px',background:'var(--purple-tint)',borderRadius:4,border:'1px solid var(--purple-brd)'}}>
+          <div style={{fontSize:11,color:'var(--muted2)',marginBottom:3}}>Financing Gap</div>
           <div style={{fontSize:18,fontWeight:800,color:gapColor}}>{f.$(Math.abs(gap))} <span style={{fontSize:12,fontWeight:600}}>{gapLabel}</span></div>
         </div>
-        <div style={{flex:1,minWidth:160,padding:'12px 16px',background:'#f4f0f8',borderRadius:4,border:'1px solid #e0d8ec'}}>
-          <div style={{fontSize:11,color:'#8c8c8c',marginBottom:3}}>Developer Fee Paid in Cash</div>
-          <div style={{fontSize:18,fontWeight:800,color:'#191919'}}>{f.$(L.cashDevFee)}</div>
+        <div style={{flex:1,minWidth:160,padding:'12px 16px',background:'var(--purple-tint)',borderRadius:4,border:'1px solid var(--purple-brd)'}}>
+          <div style={{fontSize:11,color:'var(--muted2)',marginBottom:3}}>Developer Fee Paid in Cash</div>
+          <div style={{fontSize:18,fontWeight:800,color:'var(--text)'}}>{f.$(L.cashDevFee)}</div>
         </div>
-        <div style={{flex:1,minWidth:160,padding:'12px 16px',background:'#f4f0f8',borderRadius:4,border:'1px solid #e0d8ec'}}>
-          <div style={{fontSize:11,color:'#8c8c8c',marginBottom:3}}>Equity as % of Total Uses</div>
+        <div style={{flex:1,minWidth:160,padding:'12px 16px',background:'var(--purple-tint)',borderRadius:4,border:'1px solid var(--purple-brd)'}}>
+          <div style={{fontSize:11,color:'var(--muted2)',marginBottom:3}}>Equity as % of Total Uses</div>
           <div style={{fontSize:18,fontWeight:800,color:PUR}}>{L.totalUses>0?(L.lihtcEquity/L.totalUses*100).toFixed(1):0}%</div>
         </div>
       </div>
-      <p style={{fontSize:12,color:'#7a5195',marginTop:14,lineHeight:1.5}}>The permanent loan is sized to your minimum DSCR on stabilized NOI. This analysis covers the credit calculation and capital stack; the operating metrics below reflect stabilized cash flow. Full LP and GP partnership returns with credit delivery are a separate analysis.</p>
+      <p style={{fontSize:12,color:'var(--purple)',marginTop:14,lineHeight:1.5}}>The permanent loan is sized to your minimum DSCR on stabilized NOI. This analysis covers the credit calculation and capital stack; the operating metrics below reflect stabilized cash flow. Full LP and GP partnership returns with credit delivery are a separate analysis.</p>
     </div>
   );
 }
@@ -500,54 +502,71 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
   const {rows,ret,sum,exit,equity,totalCost,acqC,LF}=res;
   const t=inp.assetType.toLowerCase();
   const y1=rows[0];
-  const irrC=ret.irr>0.18?'#1a7f37':ret.irr>0.12?'#9a6700':'#b42318';
-  const cocC=sum.coc>0.08?'#1a7f37':sum.coc>0.05?'#9a6700':'#b42318';
-  const dscrC=!sum.dscr?'#666666':sum.dscr>1.4?'#1a7f37':sum.dscr>1.2?'#9a6700':'#b42318';
-  const capC=sum.capR>0.07?'#1a7f37':sum.capR>0.05?'#9a6700':'#b42318';
-  const npvC=ret.npv>0?'#1a7f37':'#b42318';
+  // Color is reserved for figures that actually need attention. A healthy deal
+  // renders entirely neutral, so anything tinted genuinely means something.
+  const irrC=!isFinite(ret.irr)||ret.irr<0?'var(--neg)':ret.irr<0.08?'var(--warn)':null;
+  const dscrC=!sum.dscr?null:sum.dscr<1.15?'var(--neg)':sum.dscr<1.25?'var(--warn)':null;
+  const npvC=ret.npv>=0?null:'var(--neg)';
+  const cocC=sum.coc<0?'var(--neg)':sum.coc<0.02?'var(--warn)':null;
+  const beC=sum.beOcc>0.95?'var(--neg)':sum.beOcc>0.90?'var(--warn)':null;
   const chartData=rows.slice(0,hp).map(r=>({yr:`Yr ${r.yr}`,NOI:Math.round(r.noi),'Cash Flow':Math.round(r.cfbt)}));
   const ratesData=rows.slice(0,hp).map(r=>({yr:`Yr ${r.yr}`,'Cap Rate':+(r.capR*100).toFixed(2),'CoC Return':+(r.coc*100).toFixed(2)}));
   const balData=rows.slice(0,hp).map(r=>({yr:`Yr ${r.yr}`,'Loan Balance':Math.round(r.bal/1000)*1000,'NOI':Math.round(r.noi)}));
-  const KPIS=[
-    {l:'IRR',v:f.pct(ret.irr,1),sub:`${hp}-yr hold`,c:irrC,tt:'Internal Rate of Return on invested equity'},
-    {l:'Equity Multiple',v:f.x(ret.em),sub:f.$(ret.profit)+' profit',c:'#56687a',tt:'Total equity returned ÷ equity invested'},
-    {l:'Year 1 Cap Rate',v:f.pct(sum.capR,2),sub:t==='development'?'NOI / Total Dev Cost':'NOI / Purchase Price',c:capC,tt:'Unlevered return based on Year 1 NOI'},
-    {l:'Cash-on-Cash Yr 1',v:f.pct(sum.coc,2),sub:f.$(sum.cf)+' cash flow',c:cocC,tt:'Yr 1 cash flow ÷ equity invested'},
-    {l:'DSCR Yr 1',v:sum.dscr?`${sum.dscr.toFixed(2)}x`:'N/A',sub:'NOI / Debt Service',c:dscrC,tt:'Lenders typically require > 1.25x'},
-    {l:'NPV',v:f.$(ret.npv),sub:`@ ${inp.discountRate}% discount`,c:npvC,tt:'Net present value at your target return'},
-    {l:'Break-Even Occ.',v:f.pct(sum.beOcc,1),sub:'Min occupancy for +CF',c:'#9a6700',tt:'Occupancy needed to cover all cash outflows'},
-    {l:'Net Sale Proceeds',v:f.$(exit.proceeds),sub:`Exit at ${inp.exitCapRate}% cap`,c:'#3a5bf0',tt:'Net proceeds after selling costs & loan payoff'},
-    ...(t==='development'?[{l:'Return on Cost',v:f.pct(y1.noi/(sum.devCost||1),2),sub:'Stabilized NOI / TDC',c:'#b54708',tt:'Stabilized NOI over total development cost (development yield)'}]:[]),
+  const HERO=[
+    {l:'Levered IRR',v:f.pct(ret.irr,1),sub:`${hp}-year hold`,c:irrC,tt:'Internal Rate of Return on invested equity'},
+    {l:'Equity Multiple',v:f.x(ret.em),sub:`${f.$(ret.profit)} total profit on ${f.$(equity)} equity`,tt:'Total equity returned ÷ equity invested'},
+  ];
+  const REST=[
+    {l:'Year 1 Cap Rate',v:f.pct(sum.capR,2),sub:t==='development'?'NOI / total dev cost':'NOI / purchase price',tt:'Unlevered return based on Year 1 NOI'},
+    {l:'Cash-on-Cash Yr 1',v:f.pct(sum.coc,2),sub:`${f.$(sum.cf)} cash flow`,c:cocC,tt:'Yr 1 cash flow ÷ equity invested'},
+    {l:'DSCR Yr 1',v:sum.dscr?`${sum.dscr.toFixed(2)}x`:'N/A',sub:'NOI / debt service',c:dscrC,tt:'Lenders typically require above 1.25x'},
+    {l:'NPV',v:f.$(ret.npv),sub:`at ${inp.discountRate}% discount`,c:npvC,tt:'Net present value at your target return'},
+    {l:'Break-Even Occ.',v:f.pct(sum.beOcc,1),sub:'min occupancy for +CF',c:beC,tt:'Occupancy needed to cover all cash outflows'},
+    {l:'Net Sale Proceeds',v:f.$(exit.proceeds),sub:`exit at ${inp.exitCapRate}% cap`,tt:'Net proceeds after selling costs & loan payoff'},
+    ...(t==='development'?[{l:'Return on Cost',v:f.pct(y1.noi/(sum.devCost||1),2),sub:'stabilized NOI / TDC',tt:'Stabilized NOI over total development cost (development yield)'}]:[]),
   ];
   return(
     <div className="fu">
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:24,flexWrap:'wrap',gap:12}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20,flexWrap:'wrap',gap:14}}>
         <div>
-          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6,flexWrap:'wrap'}}>
-            <button onClick={onBack} style={{background:'#efeeec',border:'none',borderRadius:8,padding:'5px 13px',color:'#5f5f5f',cursor:'pointer',fontSize:12}}>← Edit</button>
-            <Chip color='#3a5bf0'>{inp.assetType}</Chip>
-            <Chip color='#56687a'>{hp}-Year Hold</Chip>
-            {inp.address&&<Chip color='#737373'>{inp.address}</Chip>}
+          <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:9,flexWrap:'wrap'}}>
+            <button className="btn-q" onClick={onBack}>← Edit</button>
+            <Chip tone="accent">{inp.assetType}</Chip>
+            <Chip>{hp}-Year Hold</Chip>
+            {inp.address&&<Chip>{inp.address}</Chip>}
           </div>
-          <h2 style={{fontSize:22,fontWeight:800}}>{inp.propertyName||'Pro Forma Analysis'}</h2>
+          <h2 style={{fontSize:'var(--fs-9)',fontWeight:700}}>{inp.propertyName||'Pro Forma Analysis'}</h2>
         </div>
-        <div style={{display:'flex',gap:10,flexShrink:0}}>
+        <div style={{display:'flex',gap:8,flexShrink:0,flexWrap:'wrap'}}>
           <button className="btn-s" onClick={onSave}>Save deal</button>
-          <button className="btn-s" onClick={()=>openMemo(res,inp)}>Deal Memo</button>
-          <button className="btn-s" onClick={()=>downloadMemo(res,inp)}>Memo .md</button>
+          <button className="btn-s" onClick={()=>openMemo(res,inp)}>View memo</button>
+          <button className="btn-s" onClick={()=>downloadMemo(res,inp)}>Download memo</button>
           <button className="btn-p" onClick={onExport}>Export Excel</button>
         </div>
       </div>
 
-      <div className="glass g4" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',marginBottom:24,overflow:'hidden'}}>
-        {KPIS.map(k=>(
-          <div key={k.l} className="kpi tooltip-w">
+      {/* two headline returns get real prominence; the rest support them */}
+      <div className="hair g2" style={{gridTemplateColumns:'1fr 1fr',marginBottom:14}}>
+        {HERO.map(k=>(
+          <div key={k.l} className="metric tooltip-w" style={{padding:'20px 22px'}}>
             <div className="tt">{k.tt}</div>
-            <div style={{fontSize:20,fontWeight:800,color:k.c}}>{k.v}</div>
-            <div style={{fontSize:11.5,color:'#666666',marginTop:4,fontWeight:600}}>{k.l}</div>
-            {k.sub&&<div style={{fontSize:10.5,color:'#8c8c8c',marginTop:2}}>{k.sub}</div>}
+            <div className="metric-l" style={{fontSize:'var(--fs-4)'}}>{k.l}</div>
+            <div className="metric-v" style={{fontSize:'var(--fs-10)',color:k.c||'var(--text)'}}>{k.v}</div>
+            {k.sub&&<div className="metric-s" style={{fontSize:'var(--fs-3)'}}>{k.sub}</div>}
           </div>
         ))}
+      </div>
+      <div className="hair g4" style={{gridTemplateColumns:'repeat(4,1fr)',marginBottom:24}}>
+        {REST.map(k=>(
+          <div key={k.l} className="metric tooltip-w">
+            <div className="tt">{k.tt}</div>
+            <div className="metric-l">{k.l}</div>
+            <div className="metric-v" style={k.c?{color:k.c}:undefined}>{k.v}</div>
+            {k.sub&&<div className="metric-s">{k.sub}</div>}
+          </div>
+        ))}
+        {/* fillers keep the hairline grid from leaving a half-drawn row */}
+        {fillCells(REST.length,4).map(i=><div key={'fill'+i}/>)}
       </div>
 
       {res.lihtc&&<LihtcPanel L={res.lihtc} res={res}/>}
@@ -572,11 +591,11 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
       {!res.lihtc&&inp.afterTax&&<AfterTaxPanel A={calcAfterTax(res,inp)}/>}
 
       <div className="glass" style={{padding:'20px 24px',marginBottom:22}}>
-        <div className="sect-lbl">Analyst Notes<span style={{fontWeight:400,letterSpacing:0,textTransform:'none',fontSize:10.5,color:'#737373'}}>auto-generated from your inputs</span></div>
+        <div className="sect-lbl">Analyst Notes<span style={{fontWeight:400,letterSpacing:0,textTransform:'none',fontSize:10.5,color:'var(--muted)'}}>auto-generated from your inputs</span></div>
         {analystNotes(res,inp).map((n,i)=>(
-          <p key={i} style={{fontSize:13.5,color:'#3f3f3f',lineHeight:1.65,marginBottom:i===analystNotes(res,inp).length-1?0:9}}>{n}</p>
+          <p key={i} style={{fontSize:13.5,color:'var(--text)',lineHeight:1.65,marginBottom:i===analystNotes(res,inp).length-1?0:9}}>{n}</p>
         ))}
-        {t==='development'&&<p style={{fontSize:12,color:'#9a6700',marginTop:10,lineHeight:1.5}}>Note: the headline IRR is the stabilized-operations return. See the Construction &amp; Lease-Up panel for the project-level IRR that accounts for the build period, lease-up ramp, and capitalized interest.</p>}
+        {t==='development'&&<p style={{fontSize:12,color:'var(--warn)',marginTop:10,lineHeight:1.5}}>Note: the headline IRR is the stabilized-operations return. See the Construction &amp; Lease-Up panel for the project-level IRR that accounts for the build period, lease-up ramp, and capitalized interest.</p>}
       </div>
 
       <div style={{display:'flex',gap:7,marginBottom:22,flexWrap:'wrap'}}>
@@ -591,27 +610,27 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
             <div className="sect-lbl">Annual NOI & Cash Flow: {hp}-Year Projection</div>
             {ResponsiveContainer?<ResponsiveContainer width="100%" height={260}>
               <ComposedChart data={chartData} margin={{top:4,right:10,left:0,bottom:0}}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e8e6e1"/>
-                <XAxis dataKey="yr" tick={{fill:'#666666',fontSize:12}}/>
-                <YAxis tick={{fill:'#666666',fontSize:11}} tickFormatter={v=>f.$(v)}/>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e6f0"/>
+                <XAxis dataKey="yr" tick={{fill:'#5a6478',fontSize:12}}/>
+                <YAxis tick={{fill:'#5a6478',fontSize:11}} tickFormatter={v=>f.$(v)}/>
                 <Tooltip content={<ChartTip/>}/>
-                <Legend wrapperStyle={{fontSize:13,color:'#5f5f5f'}}/>
+                <Legend wrapperStyle={{fontSize:13,color:'var(--muted)'}}/>
                 <Bar dataKey="NOI" fill="#3a5bf0" opacity={0.85} radius={[4,4,0,0]}/>
-                <Bar dataKey="Cash Flow" fill="#1a7f37" opacity={0.85} radius={[4,4,0,0]}/>
+                <Bar dataKey="Cash Flow" fill="#0e9f6e" opacity={0.85} radius={[4,4,0,0]}/>
               </ComposedChart>
-            </ResponsiveContainer>:<p style={{color:'#b42318',fontSize:13}}>Chart library failed to load. Refresh the page to retry.</p>}
+            </ResponsiveContainer>:<p style={{color:'var(--neg)',fontSize:13}}>Chart library failed to load. Refresh the page to retry.</p>}
           </div>
           <div className="glass" style={{padding:22}}>
             <div className="sect-lbl">Cap Rate & Cash-on-Cash Trend</div>
             {ResponsiveContainer&&<ResponsiveContainer width="100%" height={210}>
               <LineChart data={ratesData} margin={{top:4,right:10,left:0,bottom:0}}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e8e6e1"/>
-                <XAxis dataKey="yr" tick={{fill:'#666666',fontSize:12}}/>
-                <YAxis tick={{fill:'#666666',fontSize:11}} tickFormatter={v=>`${v}%`}/>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e6f0"/>
+                <XAxis dataKey="yr" tick={{fill:'#5a6478',fontSize:12}}/>
+                <YAxis tick={{fill:'#5a6478',fontSize:11}} tickFormatter={v=>`${v}%`}/>
                 <Tooltip content={<ChartTip/>}/>
-                <Legend wrapperStyle={{fontSize:13,color:'#5f5f5f'}}/>
-                <Line type="monotone" dataKey="Cap Rate" stroke="#56687a" strokeWidth={2.5} dot={{fill:'#56687a',r:3.5}}/>
-                <Line type="monotone" dataKey="CoC Return" stroke="#1a7f37" strokeWidth={2.5} dot={{fill:'#1a7f37',r:3.5}}/>
+                <Legend wrapperStyle={{fontSize:13,color:'var(--muted)'}}/>
+                <Line type="monotone" dataKey="Cap Rate" stroke="#5a6478" strokeWidth={2.5} dot={{fill:'#5a6478',r:3.5}}/>
+                <Line type="monotone" dataKey="CoC Return" stroke="#0e9f6e" strokeWidth={2.5} dot={{fill:'#0e9f6e',r:3.5}}/>
               </LineChart>
             </ResponsiveContainer>}
           </div>
@@ -635,12 +654,12 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
                 {l:'Acquisition Costs',v:acqC},
                 ...(LF>0?[{l:'Loan Fees',v:LF}]:[]),
                 {l:'Total All-In Cost',v:totalCost,bold:true},
-                {l:'  Debt (Loan)',v:inp.loanAmount,c:'#b42318'},
-                {l:'  Equity',v:equity,c:'#1a7f37',bold:true},
+                {l:'  Debt (Loan)',v:inp.loanAmount,c:'var(--neg)'},
+                {l:'  Equity',v:equity,c:'var(--pos)',bold:true},
               ].map((r,i)=>(
-                <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid #ececec',fontSize:13.5}}>
-                  <span style={{color:r.bold?'#191919':'#666666',fontWeight:r.bold?700:400}}>{r.l}</span>
-                  <span style={{color:r.c||(r.bold?'#191919':'#3f3f3f'),fontWeight:r.bold?700:400}}>{f.$f(r.v)}</span>
+                <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid var(--border)',fontSize:13.5}}>
+                  <span style={{color:r.bold?'var(--text)':'var(--muted)',fontWeight:r.bold?700:400}}>{r.l}</span>
+                  <span style={{color:r.c||(r.bold?'var(--text)':'var(--text)'),fontWeight:r.bold?700:400}}>{f.$f(r.v)}</span>
                 </div>
               ))}
             </div>
@@ -653,11 +672,11 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
                 {l:'  Less: Selling Costs',v:`(${f.$f(exit.sellAmt)})`},
                 {l:'Net Sale Price',v:f.$f(exit.netSale)},
                 {l:'  Less: Loan Payoff',v:`(${f.$f(exit.payoff)})`},
-                {l:'Net Proceeds to Equity',v:f.$f(exit.proceeds),bold:true,c:'#1a7f37'},
+                {l:'Net Proceeds to Equity',v:f.$f(exit.proceeds),bold:true,c:'var(--pos)'},
               ].map((r,i)=>(
-                <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid #ececec',fontSize:13.5}}>
-                  <span style={{color:r.bold?'#191919':'#666666',fontWeight:r.bold?700:400}}>{r.l}</span>
-                  <span style={{color:r.c||(r.bold?'#191919':'#3f3f3f'),fontWeight:r.bold?700:400}}>{r.v}</span>
+                <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid var(--border)',fontSize:13.5}}>
+                  <span style={{color:r.bold?'var(--text)':'var(--muted)',fontWeight:r.bold?700:400}}>{r.l}</span>
+                  <span style={{color:r.c||(r.bold?'var(--text)':'var(--text)'),fontWeight:r.bold?700:400}}>{r.v}</span>
                 </div>
               ))}
             </div>
@@ -666,16 +685,16 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
             <div className="sect-lbl">Total Returns Summary</div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}} className="g3">
               {[
-                {l:'Equity Invested',v:f.$f(equity),c:'#3a5bf0'},
-                {l:'Total Cash Distributions',v:f.$f(ret.totalCF),c:'#56687a'},
-                {l:'Net Sale Proceeds',v:f.$f(exit.proceeds),c:'#1a7f37'},
-                {l:'Total Capital Returned',v:f.$f(ret.totalCF+exit.proceeds),c:'#9a6700'},
-                {l:'Net Profit',v:f.$f(ret.profit),c:ret.profit>0?'#1a7f37':'#b42318'},
-                {l:'Equity Multiple',v:f.x(ret.em),c:'#56687a'},
+                {l:'Equity Invested',v:f.$f(equity),c:'var(--accent)'},
+                {l:'Total Cash Distributions',v:f.$f(ret.totalCF),c:'var(--muted)'},
+                {l:'Net Sale Proceeds',v:f.$f(exit.proceeds),c:'var(--pos)'},
+                {l:'Total Capital Returned',v:f.$f(ret.totalCF+exit.proceeds),c:'var(--warn)'},
+                {l:'Net Profit',v:f.$f(ret.profit),c:ret.profit>0?'var(--pos)':'var(--neg)'},
+                {l:'Equity Multiple',v:f.x(ret.em),c:'var(--muted)'},
               ].map((i,k)=>(
-                <div key={k} style={{textAlign:'center',padding:'16px 12px',background:'#f9f9f8',borderRadius:3}}>
+                <div key={k} style={{textAlign:'center',padding:'16px 12px',background:'var(--surface2)',borderRadius:3}}>
                   <div style={{fontSize:19,fontWeight:800,color:i.c}}>{i.v}</div>
-                  <div style={{fontSize:11.5,color:'#737373',marginTop:4}}>{i.l}</div>
+                  <div style={{fontSize:11.5,color:'var(--muted)',marginTop:4}}>{i.l}</div>
                 </div>
               ))}
             </div>
