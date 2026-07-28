@@ -505,7 +505,7 @@ function LihtcPanel({L,res}){
   );
 }
 
-function Dashboard({res,inp,onExport,onBack,onSave}){
+function Dashboard({res,inp,onExport,onBack,onSave,onShare}){
   const [tab,setTab]=useState('charts');
   const hp=inp.holdingPeriod||7;
   const {rows,ret,sum,exit,equity,totalCost,acqC,LF}=res;
@@ -546,10 +546,13 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
           </div>
           <h2 style={{fontSize:'var(--fs-9)',fontWeight:700}}>{inp.propertyName||'Pro Forma Analysis'}</h2>
         </div>
-        <div style={{display:'flex',gap:8,flexShrink:0,flexWrap:'wrap'}}>
+        {/* must be allowed to shrink, or flexWrap never engages and the last
+            action is clipped off the right edge on a phone */}
+        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
           <button className="btn-s" onClick={onSave}>Save deal</button>
-          <button className="btn-s" onClick={()=>openMemo(res,inp)}>View memo</button>
-          <button className="btn-s" onClick={()=>downloadMemo(res,inp)}>Download memo</button>
+          {onShare&&<button className="btn-s" onClick={onShare}>Share link</button>}
+          <button className="btn-s" onClick={()=>openMemo(res,inp)}>Memo / PDF</button>
+          <button className="btn-s" onClick={()=>downloadMemo(res,inp)}>Markdown</button>
           <button className="btn-p" onClick={onExport}>Export Excel</button>
         </div>
       </div>

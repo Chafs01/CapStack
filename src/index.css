@@ -160,8 +160,32 @@ input[type=range]{accent-color:var(--accent);width:100%}
   .g4{grid-template-columns:1fr 1fr!important}
   .g3{grid-template-columns:1fr!important}
   .g2{grid-template-columns:1fr!important}
-  .hair.g4{grid-template-columns:1fr 1fr!important}
+  /* 1fr tracks refuse to shrink past their content, so a metric's label and
+     value stayed side by side and overran the screen. Let the tracks shrink,
+     tighten the gutter, and stack each metric label over its number. */
+  .hair,.hair.g4{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;column-gap:18px}
+  .metric{grid-template-columns:minmax(0,1fr);grid-template-areas:"l" "v" "s";column-gap:0}
+  .metric-v{font-size:var(--fs-6)}
   .seg-wrap{flex-wrap:wrap}.seg{flex:1 1 30%}
   .hide-m{display:none!important}
   .card-bd{padding:16px}
 }
+
+/* Sample-deal banner — flags borrowed numbers so they are never mistaken
+   for the user's own, and offers the two ways out of demo mode. */
+.demo-bar{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  background:var(--surface2);border:1px solid var(--border2);border-left:3px solid var(--text);
+  padding:11px 16px;margin-bottom:22px;font-size:var(--fs-3);color:var(--muted);line-height:1.5}
+.demo-bar strong{color:var(--text)}
+.demo-bar button{background:none;border:none;border-bottom:1px solid var(--text);border-radius:0;
+  padding:2px 0;font-size:var(--fs-3);font-weight:600;color:var(--text);cursor:pointer;font-family:'Inter',sans-serif}
+@media(max-width:640px){.demo-bar{font-size:var(--fs-2)}}
+
+/* Hover tooltips are absolutely positioned and sit half-off the viewport on a
+   narrow screen, which gave the whole page a horizontal scroll. A touch device
+   can never trigger them, so there they are removed from layout entirely. */
+@media(hover:none){.tt{display:none}}
+.tt{max-width:min(220px,calc(100vw - 28px))}
+/* Belt and braces for narrow non-touch windows: clip decorative overflow
+   without creating a scroll container (which would break the sticky header). */
+body{overflow-x:clip}

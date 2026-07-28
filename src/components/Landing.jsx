@@ -35,7 +35,7 @@ function Row({label,text}){
   );
 }
 
-function Landing({onStart,onSample}){
+function Landing({onStart,onSample,onDemo}){
   const r=buildPF(DEFS.multifamily);
   const link={padding:'5px 0',fontSize:'var(--fs-4)',background:'none',color:'var(--text)',border:'none',
     borderBottom:'1px solid var(--text)',borderRadius:0,fontWeight:500,cursor:'pointer',fontFamily:"'Inter',sans-serif"};
@@ -50,6 +50,7 @@ function Landing({onStart,onSample}){
             <p style={{fontSize:'var(--fs-6)',color:'var(--muted)',lineHeight:1.6,marginBottom:32,maxWidth:480}}>SmartCapStack turns your assumptions into a discounted cash flow, levered returns, an equity waterfall, and a sensitivity matrix &mdash; then exports a live Excel workbook.</p>
             <div style={{display:'flex',gap:26,flexWrap:'wrap',alignItems:'baseline',marginBottom:34}}>
               <button style={{...link,fontWeight:600}} onClick={onStart}>Run a deal &rarr;</button>
+              <button style={{...link}} onClick={onDemo}>See a finished analysis</button>
               <button style={{...link,color:'var(--muted)',borderBottomColor:'transparent'}} onClick={onSample}>Download sample model</button>
             </div>
             <div className="eyebrow">Multifamily&nbsp; / &nbsp;Commercial&nbsp; / &nbsp;Mixed-Use&nbsp; / &nbsp;Development&nbsp; / &nbsp;LIHTC</div>
@@ -138,7 +139,10 @@ function Landing({onStart,onSample}){
         <div style={{...WRAP,padding:'64px 24px 80px'}}>
           <h2 style={{fontSize:'clamp(24px,3.4vw,36px)',fontWeight:600,letterSpacing:'-.028em',lineHeight:1.15,marginBottom:14,maxWidth:620}}>Underwrite your next deal in minutes.</h2>
           <p style={{color:'var(--muted)',fontSize:'var(--fs-5)',marginBottom:28,maxWidth:560,lineHeight:1.6}}>Free while in early access. Runs entirely in your browser &mdash; nothing to install.</p>
-          <button style={{...link,fontWeight:600,fontSize:'var(--fs-5)'}} onClick={onStart}>Run a deal &rarr;</button>
+          <div style={{display:'flex',gap:26,flexWrap:'wrap',alignItems:'baseline'}}>
+            <button style={{...link,fontWeight:600,fontSize:'var(--fs-5)'}} onClick={onStart}>Run a deal &rarr;</button>
+            <button style={{...link,fontSize:'var(--fs-5)'}} onClick={onDemo}>See a finished analysis</button>
+          </div>
         </div>
       </div>
     </div>

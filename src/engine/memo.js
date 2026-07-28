@@ -1,5 +1,13 @@
 import{f}from'./format.js';
 // ─── DEAL MEMO GENERATOR ──────────────────────────────────────────────────
+// The memo is assembled as an HTML string and handed to document.write, so
+// every value that originated with a user has to be escaped. This matters
+// because a deal can now arrive from a shared link: without escaping, a
+// crafted property name would run script on our own origin in the reader's
+// browser, with access to their session.
+const esc=v=>String(v==null?'':v)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 function generateMemo(res,inp){
   const t=(inp.assetType||'').toLowerCase();
   const isAff=t==='affordable';
@@ -55,7 +63,9 @@ function openMemo(res,inp){
   const sections=generateMemo(res,inp);
   const t=(inp.assetType||'').toLowerCase();
   const isAff=t==='affordable';
-  const name=inp.propertyName||'Pro Forma Analysis';
+  const name=esc(inp.propertyName||'Pro Forma Analysis');
+  const address=esc(inp.address||'');
+  const assetType=esc(inp.assetType||'');
   const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
   const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
   const metric=(l,v)=>`<tr><td>${l}</td><td style="text-align:right;font-weight:600">${v}</td></tr>`;
@@ -65,28 +75,56 @@ function openMemo(res,inp){
   }else{
     metricsRows=[metric('Levered IRR',f.pct(res.ret.irr,1)),metric('Equity Multiple',f.x(res.ret.em)),metric('Equity Required',f.$(res.equity)),metric('Year 1 Cap Rate',f.pct(res.sum.capR,2)),metric('Year 1 Cash-on-Cash',f.pct(res.sum.coc,1)),metric('Year 1 DSCR',res.sum.dscr?res.sum.dscr.toFixed(2)+'x':'n/a'),metric('Net Sale Proceeds',f.$(res.exit.proceeds)),metric('Hold Period',hp+' Years')].join('');
   }
-  const body=sections.map(([h,p])=>`<h2>${h}</h2><p>${p}</p>`).join('');
+  const body=sections.map(([h,p])=>`<h2>${esc(h)}</h2><p>${esc(p)}</p>`).join('');
+  // A memo that gets forwarded to a partner or lender needs the cash flows,
+  // not just the narrative — otherwise the reader has to take the headline
+  // returns on faith. Held to the hold period so it stays a one-pager.
+  const cfRows=(res.rows||[]).filter(r=>r.yr>=1&&r.yr<=hp);
+  const cfTable=cfRows.length?`
+  <div class="mtitle">ANNUAL CASH FLOW</div>
+  <table class="cf">
+    <thead><tr><th>Year</th><th>EGI</th><th>OpEx</th><th>NOI</th><th>Debt Service</th><th>Cash Flow</th><th>DSCR</th></tr></thead>
+    <tbody>${cfRows.map(r=>`<tr><td>${r.yr}</td><td>${f.$(r.egi)}</td><td>${f.$(r.opex)}</td><td>${f.$(r.noi)}</td><td>${f.$(r.ds)}</td><td>${f.$(r.cfbt)}</td><td>${r.dscr?r.dscr.toFixed(2)+'x':'n/a'}</td></tr>`).join('')}</tbody>
+  </table>
+  <div class="mtitle">EXIT</div>
+  <table>
+    ${metric(res.exit.method==='ppu'?`Gross Sale (${f.$(res.exit.ppu)}/unit &times; ${res.exit.units} units, ${f.pct(res.exit.appr,1)}/yr)`:'Gross Sale Price',f.$(res.exit.grossSale))}
+    ${metric('Selling Costs',f.$(-res.exit.sellAmt))}
+    ${metric('Loan Payoff',f.$(-res.exit.payoff))}
+    ${metric('<b>Net Proceeds to Equity</b>',f.$(res.exit.proceeds))}
+  </table>`:'';
   const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${name} — Investment Memo</title>
   <style>
     @page{margin:1in;}
-    body{font-family:Georgia,'Times New Roman',serif;color:#1a1a1a;line-height:1.55;max-width:760px;margin:40px auto;padding:0 24px;}
-    .hdr{border-bottom:2px solid #1f3864;padding-bottom:14px;margin-bottom:24px;}
-    .hdr h1{font-size:24px;color:#1f3864;margin:0 0 4px;}
+    /* The memo is a document, not a themed page: it pins itself to light so a
+       reader in dark mode doesn't get near-black text on a near-black ground. */
+    :root{color-scheme:light;}
+    html{background:#fff;}
+    body{font-family:Georgia,'Times New Roman',serif;color:#1a1a1a;background:#fff;line-height:1.55;max-width:760px;margin:40px auto;padding:0 24px;}
+    .hdr{border-bottom:2px solid #181716;padding-bottom:14px;margin-bottom:24px;}
+    .hdr h1{font-size:24px;color:#181716;margin:0 0 4px;}
     .hdr .sub{font-size:13px;color:#666;}
-    h2{font-size:15px;color:#1f3864;margin:22px 0 6px;border-bottom:1px solid #ddd;padding-bottom:3px;}
+    h2{font-size:15px;color:#181716;margin:22px 0 6px;border-bottom:1px solid #ddd;padding-bottom:3px;}
     p{font-size:13.5px;margin:0 0 10px;text-align:justify;}
     table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-family:Arial,sans-serif;}
     td{padding:6px 10px;border-bottom:1px solid #eee;font-size:13px;}
-    .mtitle{font-size:12px;font-weight:700;color:#1f3864;letter-spacing:.5px;margin:18px 0 4px;font-family:Arial,sans-serif;}
+    table.cf{font-size:11.5px;}
+    table.cf th{padding:5px 7px;border-bottom:1px solid #181716;font-size:10.5px;text-align:right;
+      letter-spacing:.4px;text-transform:uppercase;color:#555;}
+    table.cf th:first-child,table.cf td:first-child{text-align:left;}
+    table.cf td{padding:5px 7px;text-align:right;font-variant-numeric:tabular-nums;}
+    table.cf tbody tr:last-child td{border-bottom:1px solid #181716;}
+    .mtitle{font-size:12px;font-weight:700;color:#181716;letter-spacing:.5px;margin:18px 0 4px;font-family:Arial,sans-serif;}
     .foot{margin-top:30px;padding-top:12px;border-top:1px solid #ddd;font-size:11px;color:#999;}
     .noprint{margin-bottom:20px;}
     @media print{.noprint{display:none;}body{margin:0;}}
-    button{background:#3a5bf0;color:#fff;border:none;border-radius:4px;padding:9px 18px;font-size:14px;cursor:pointer;font-family:Arial,sans-serif;}
+    button{background:#181716;color:#fff;border:none;border-radius:4px;padding:9px 18px;font-size:14px;cursor:pointer;font-family:Arial,sans-serif;}
   </style></head><body>
-  <div class="noprint"><button onclick="window.print()">Print or Save as PDF</button></div>
-  <div class="hdr"><h1>${name}</h1><div class="sub">${inp.assetType} Investment Memorandum${inp.address?' &nbsp;|&nbsp; '+inp.address:''} &nbsp;|&nbsp; ${today}</div></div>
+  <div class="noprint"><button onclick="window.print()">Print / Save as PDF</button></div>
+  <div class="hdr"><h1>${name}</h1><div class="sub">${assetType} Investment Memorandum${address?' &nbsp;|&nbsp; '+address:''} &nbsp;|&nbsp; ${today}</div></div>
   <div class="mtitle">KEY METRICS</div>
   <table>${metricsRows}</table>
+  ${cfTable}
   ${body}
   <div class="foot">Prepared with SmartCapStack. This memorandum is generated from user-supplied assumptions and is for informational purposes only. It does not constitute investment advice, an offer, or a solicitation.</div>
   </body></html>`;
@@ -98,6 +136,8 @@ function openMemo(res,inp){
 function downloadMemo(res,inp){
   const sections=generateMemo(res,inp);
   const isAff=(inp.assetType||'').toLowerCase()==='affordable';
+  // Markdown output, not HTML — escaping entities here would corrupt the file
+  // ("Smith & Co" becoming "Smith &amp; Co"), so values stay raw.
   const name=inp.propertyName||'Pro Forma Analysis';
   const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
   const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});

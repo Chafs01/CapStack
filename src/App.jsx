@@ -12,6 +12,7 @@ import{Step4}from'./components/Step4.jsx';
 import{AuthModal,ResetPasswordModal,SaveModal,Toast}from'./components/modals.jsx';
 import{Legal}from'./components/Legal.jsx';
 import{initTelemetry}from'./lib/telemetry.js';
+import{encodeDeal,decodeDeal,shareURL,readDealFromHash,clearHash}from'./lib/share.js';
 // The dashboard carries the charting library and only renders after a pro
 // forma is generated, so it loads as its own chunk.
 const Dashboard=lazy(()=>import('./components/Dashboard.jsx').then(m=>({default:m.Dashboard})));
@@ -30,11 +31,33 @@ function App(){
   const [showReset,setShowReset]=useState(false);
   const [showSave,setShowSave]=useState(false);
   const [currentDealId,setCurrentDealId]=useState(null);
+  const [isDemo,setIsDemo]=useState(false);
+  const [isShared,setIsShared]=useState(false);
   const [toast,setToast]=useState('');
   const [legalTab,setLegalTab]=useState('privacy');
   const notify=useCallback(m=>{setToast(m);setTimeout(()=>setToast(''),2600);},[]);
 
   useEffect(()=>{initTelemetry();},[]);
+
+  // A shared link carries the whole deal in its hash. Open it directly on the
+  // results, and drop the hash so a later reload doesn't resurrect someone
+  // else's deal over work the visitor has since started.
+  useEffect(()=>{
+    const payload=readDealFromHash();
+    if(!payload)return;
+    let cancelled=false;
+    decodeDeal(payload).then(shared=>{
+      if(cancelled||!shared)return;
+      try{
+        const r=buildPF(shared);
+        setInp(shared);
+        setAssetType(shared.propClass||(shared.assetType||'multifamily').toLowerCase());
+        setRes(r);setStep(4);setView('app');setIsShared(true);setIsDemo(false);
+        clearHash();
+      }catch(e){notify('That shared link could not be opened.');}
+    });
+    return()=>{cancelled=true;};
+  },[notify]);
 
   useEffect(()=>{
     if(!sb)return; // no Supabase config — calculator still works standalone
@@ -52,6 +75,8 @@ function App(){
     setAssetType(a);
     setInp(BLANKS[a]||BLANKS.multifamily);
     setCurrentDealId(null);
+    setIsDemo(false);
+    setIsShared(false);
   },[]);
 
   const handleCalc=()=>{
@@ -60,17 +85,50 @@ function App(){
     setLoading(true);
     try{
       const r=buildPF(inp);
-      setRes(r);setStep(4);
+      setRes(r);setStep(4);setIsDemo(false);setIsShared(false);
       window.scrollTo({top:0,behavior:'smooth'});
     }catch(e){notify('Could not build the pro forma: '+e.message);}
     setLoading(false);
   };
+
+  // A visitor should be able to see what the tool produces before typing
+  // anything. This drops them straight on a finished dashboard with a real
+  // deal loaded, which they can then edit into their own.
+  const handleDemo=useCallback(()=>{
+    const sd={...DEFS.multifamily,propertyName:'Sample — 40-Unit Multifamily'};
+    setAssetType('multifamily');
+    setInp(sd);
+    setCurrentDealId(null);
+    setIsDemo(true);
+    setIsShared(false);
+    setRes(buildPF(sd));
+    setStep(4);
+    setView('app');
+    window.scrollTo({top:0});
+  },[]);
+
+  // Sharing writes the whole deal into the link, so it works signed-out and
+  // the recipient needs no account to open it.
+  const handleShare=useCallback(async()=>{
+    try{
+      const url=shareURL(await encodeDeal(inp));
+      try{
+        await navigator.clipboard.writeText(url);
+        notify('Share link copied to clipboard');
+      }catch(e){
+        // clipboard blocked (insecure context, or permission denied)
+        window.prompt('Copy this link to share the deal:',url);
+      }
+    }catch(e){notify('Could not build a share link.');}
+  },[inp,notify]);
 
   const handleSave=()=>setShowSave(true);
   const handleLoadDeal=(d)=>{
     setAssetType(d.inp&&d.inp.propClass?d.inp.propClass:(d.assetType?d.assetType.toLowerCase():'multifamily'));
     setInp(d.inp);
     setCurrentDealId(d.id);
+    setIsDemo(false);
+    setIsShared(false);
     try{const r=buildPF(d.inp);setRes(r);setStep(4);setView('app');}
     catch(e){setStep(1);setView('app');}
   };
@@ -84,7 +142,7 @@ function App(){
         </div>
         <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap',justifyContent:'flex-end'}}>
           {view!=='landing'&&step<4&&step>0&&<span className="mono hide-m" style={{fontSize:'var(--fs-2)',color:'var(--on-dark-dim)'}}>STEP {step}/{STEPS.length}</span>}
-          {view==='landing'&&<button className="btn-p" style={{padding:'7px 18px',fontSize:'var(--fs-4)'}} onClick={()=>setView('app')}>Start an analysis</button>}
+          {view==='landing'&&<button className="btn-p" style={{padding:'7px 18px',fontSize:'var(--fs-4)'}} onClick={()=>{setIsDemo(false);setView('app');}}>Start an analysis</button>}
           <button onClick={()=>setView('saved')} style={{background:'none',border:'none',cursor:'pointer',fontSize:'var(--fs-3)',color:view==='saved'?'var(--on-dark-accent)':'var(--on-dark-muted)',fontWeight:view==='saved'?700:500,padding:0,fontFamily:"'Inter',sans-serif"}}>Saved deals</button>
           {user?(
             <div style={{display:'flex',alignItems:'center',gap:8}}>
@@ -101,10 +159,30 @@ function App(){
         </div>
       </div>
 
-      {view==='landing'&&<Landing onStart={()=>setView('app')} onSample={()=>{const sd={...DEFS.multifamily,propertyName:'Sample Deal'};exportXLSX(buildPF(sd),sd);}}/>}
+      {view==='landing'&&<Landing onStart={()=>{setIsDemo(false);setView('app');}} onDemo={handleDemo}
+        onSample={()=>{const sd={...DEFS.multifamily,propertyName:'Sample Deal'};exportXLSX(buildPF(sd),sd);}}/>}
       {view==='saved'&&<SavedDeals onLoad={handleLoadDeal} onClose={()=>{setView('app');setStep(0);}} user={user} onSignIn={()=>setShowAuth(true)} notify={notify}/>}
       {view==='legal'&&<Legal tab={legalTab} onTab={setLegalTab} onBack={()=>setView('landing')}/>}
       <div style={{maxWidth:step<4?720:1080,margin:'0 auto',padding:'40px 24px 72px',display:(view==='app')?'block':'none'}}>
+        {/* Sample numbers must never be mistaken for the user's own deal. */}
+        {isShared&&(
+          <div className="demo-bar">
+            <span><strong>Shared deal.</strong> Someone sent you this underwriting. Nothing is saved to your account &mdash; edit it freely and it becomes yours.</span>
+            <span style={{display:'flex',gap:18,flexShrink:0}}>
+              <button onClick={()=>{setStep(0);window.scrollTo({top:0});}}>Edit these assumptions</button>
+              <button onClick={()=>{handleAsset('multifamily');setRes(null);setStep(0);window.scrollTo({top:0});}}>Start my own</button>
+            </span>
+          </div>
+        )}
+        {isDemo&&(
+          <div className="demo-bar">
+            <span><strong>Sample deal.</strong> Real figures from a 40-unit multifamily, so you can see the output before entering anything.</span>
+            <span style={{display:'flex',gap:18,flexShrink:0}}>
+              <button onClick={()=>{setStep(0);window.scrollTo({top:0});}}>Edit these assumptions</button>
+              <button onClick={()=>{handleAsset('multifamily');setRes(null);setStep(0);window.scrollTo({top:0});}}>Start my own</button>
+            </span>
+          </div>
+        )}
         {step<4?(
           <>
             <div className="eyebrow" style={{marginBottom:14}}>Step {step+1} of {STEPS.length}</div>
@@ -129,7 +207,7 @@ function App(){
         ):(
           res&&(
             <Suspense fallback={<div style={{padding:'80px 24px',textAlign:'center',color:'var(--muted2)',fontSize:'var(--fs-5)'}}>Preparing results…</div>}>
-              <Dashboard res={res} inp={inp} onExport={()=>exportXLSX(res,inp)} onBack={()=>setStep(3)} onSave={handleSave}/>
+              <Dashboard res={res} inp={inp} onExport={()=>exportXLSX(res,inp)} onBack={()=>setStep(3)} onSave={handleSave} onShare={handleShare}/>
             </Suspense>
           )
         )}
