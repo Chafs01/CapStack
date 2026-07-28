@@ -165,6 +165,22 @@ function App(){
     window.scrollTo({top:0});
   },[draft]);
 
+  // "Start an analysis" means start one — not resume wherever the last click
+  // left off. Without resetting the step, arriving from the sample deal (which
+  // parks you on step 4) dropped you straight back onto that finished
+  // dashboard. Borrowed inputs are cleared too; the user's own entry is left
+  // alone, since it is still theirs and autosave is holding a copy.
+  const startFresh=useCallback(()=>{
+    setStep(0);
+    setRes(null);
+    setCurrentDealId(null);
+    if(isDemo||isShared)setInp(BLANKS[assetType]||BLANKS.multifamily);
+    setIsDemo(false);
+    setIsShared(false);
+    setView('app');
+    window.scrollTo({top:0});
+  },[isDemo,isShared,assetType]);
+
   const handleSave=()=>setShowSave(true);
   const handleLoadDeal=(d)=>{
     setAssetType(d.inp&&d.inp.propClass?d.inp.propClass:(d.assetType?d.assetType.toLowerCase():'multifamily'));
@@ -185,7 +201,7 @@ function App(){
         </div>
         <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap',justifyContent:'flex-end'}}>
           {view!=='landing'&&step<4&&step>0&&<span className="mono hide-m" style={{fontSize:'var(--fs-2)',color:'var(--on-dark-dim)'}}>STEP {step}/{STEPS.length}</span>}
-          {view==='landing'&&<button className="btn-p" style={{padding:'7px 18px',fontSize:'var(--fs-4)'}} onClick={()=>{setIsDemo(false);setView('app');}}>Start an analysis</button>}
+          {view==='landing'&&<button className="btn-p" style={{padding:'7px 18px',fontSize:'var(--fs-4)'}} onClick={startFresh}>Start an analysis</button>}
           <button onClick={()=>setView('saved')} style={{background:'none',border:'none',cursor:'pointer',fontSize:'var(--fs-3)',color:view==='saved'?'var(--on-dark-accent)':'var(--on-dark-muted)',fontWeight:view==='saved'?700:500,padding:0,fontFamily:"'Inter',sans-serif"}}>Saved deals</button>
           {user?(
             <div style={{display:'flex',alignItems:'center',gap:8}}>
@@ -202,7 +218,7 @@ function App(){
         </div>
       </div>
 
-      {view==='landing'&&<Landing onStart={()=>{setIsDemo(false);setView('app');}} onDemo={handleDemo}
+      {view==='landing'&&<Landing onStart={startFresh} onDemo={handleDemo}
         onSample={()=>{const sd={...DEFS.multifamily,propertyName:'Sample Deal'};exportXLSX(buildPF(sd),sd);}}/>}
       {view==='saved'&&<SavedDeals onLoad={handleLoadDeal} onClose={()=>{setView('app');setStep(0);}} user={user} onSignIn={()=>setShowAuth(true)} notify={notify}/>}
       {view==='legal'&&<Legal tab={legalTab} onTab={setLegalTab} onBack={()=>setView('landing')}/>}
