@@ -27,6 +27,7 @@ jobs:
       # golden-fixture engine tests gate every deploy
       - run: node tests/verify.mjs
       - run: node tests/verify-excel.mjs
+      - run: node tests/verify-excel-ppu.mjs
       - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

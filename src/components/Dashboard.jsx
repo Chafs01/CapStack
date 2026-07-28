@@ -79,9 +79,14 @@ function PFTable({rows,hp}){
 
 // ─── SENSITIVITY TABLE ─────────────────────────────────────────────────────
 function SensTable({inp}){
-  const [caps,setCaps]=useState([4.5,5.0,5.5,6.0,6.5,7.0]);
+  // a comp-priced deal has no exit cap, so the column axis becomes $/unit
+  const isPPU=inp.exitMethod==='ppu';
+  const basePPU=inp.exitPPU||0;
+  const [caps,setCaps]=useState(isPPU
+    ?[0.85,0.925,1,1.075,1.15,1.225].map(m=>Math.round(basePPU*m/500)*500)
+    :[4.5,5.0,5.5,6.0,6.5,7.0]);
   const [growths,setGrowths]=useState([1,2,3,4,5]);
-  const getIRR=(rg,ec)=>buildPF({...inp,revenueGrowth:rg,exitCapRate:ec}).ret.irr;
+  const getIRR=(rg,ec)=>buildPF({...inp,revenueGrowth:rg,...(isPPU?{exitPPU:ec}:{exitCapRate:ec})}).ret.irr;
   const setCap=(i,v)=>setCaps(caps.map((c,j)=>j===i?(parseFloat(v)||0):c));
   const setGr=(i,v)=>setGrowths(growths.map((g,j)=>j===i?(parseFloat(v)||0):g));
   // both axes are editable — they need to actually be legible on the light
@@ -91,15 +96,15 @@ function SensTable({inp}){
   return(
     <div>
       <div className="sect-lbl" style={{marginBottom:6}}>Levered IRR Sensitivity</div>
-      <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginBottom:6}}>Each cell is the deal's levered IRR at that revenue growth and exit cap. Edit any axis value below and the grid recalculates live. All other inputs held constant.</p>
+      <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginBottom:6}}>{`Each cell is the deal's levered IRR at that revenue growth and ${isPPU?'comparable sale price per unit':'exit cap'}.`} Edit any axis value below and the grid recalculates live. All other inputs held constant.</p>
       <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginBottom:14}}><span style={{color:'var(--pos)'}}>&#9632; &gt;15%</span>  <span style={{color:'var(--warn)',marginLeft:8}}>&#9632; 10-15%</span>  <span style={{color:'var(--neg)',marginLeft:8}}>&#9632; &lt;10%</span></p>
       <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
-        <span style={{fontSize:'var(--fs-2)',fontWeight:700,color:'var(--muted2)',letterSpacing:'.5px'}}>EXIT CAP RATE &rarr; (columns, editable)</span>
+        <span style={{fontSize:'var(--fs-2)',fontWeight:700,color:'var(--muted2)',letterSpacing:'.5px'}}>{isPPU?'EXIT $ / UNIT':'EXIT CAP RATE'} &rarr; (columns, editable)</span>
       </div>
       <div className="xscroll">
         <table className="tbl">
           <thead><tr>
-            <th style={{textAlign:'left',minWidth:140}}>Revenue Growth &darr;<br/><span style={{fontWeight:400,color:'var(--muted2)'}}>vs. Exit Cap &rarr;</span></th>
+            <th style={{textAlign:'left',minWidth:140}}>Revenue Growth &darr;<br/><span style={{fontWeight:400,color:'var(--muted2)'}}>vs. {isPPU?'$ / Unit':'Exit Cap'} &rarr;</span></th>
             {caps.map((c,i)=><th key={i}><input value={c} onChange={e=>setCap(i,e.target.value)} style={axIn} inputMode="decimal"/></th>)}
           </tr></thead>
           <tbody>{growths.map((g,gi)=>(
@@ -135,7 +140,7 @@ function analystNotes(res,inp){
   const totalRet=ret.totalCF+exit.proceeds;
   if(totalRet>0){
     const saleShare=exit.proceeds/totalRet;
-    if(saleShare>0.7)notes.push(`${f.pct(saleShare,0)} of total capital returned comes from the exit sale, so the headline IRR is highly sensitive to the ${inp.exitCapRate}% exit cap assumption. Review the sensitivity table before relying on it.`);
+    if(saleShare>0.7)notes.push(`${f.pct(saleShare,0)} of total capital returned comes from the exit sale, so the headline IRR is highly sensitive to the ${inp.exitMethod==='ppu'?f.$(inp.exitPPU||0)+'/unit comp assumption':inp.exitCapRate+'% exit cap assumption'}. Review the sensitivity table before relying on it.`);
     else if(saleShare>0)notes.push(`Returns are reasonably balanced between operating cash flow (${f.pct(1-saleShare,0)}) and exit proceeds (${f.pct(saleShare,0)}), which reduces dependence on the exit cap assumption.`);
   }
   const occCushion=1-sum.beOcc-(inp.vacancyRate||0)/100;
@@ -523,7 +528,7 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
     {l:'DSCR Yr 1',v:sum.dscr?`${sum.dscr.toFixed(2)}x`:'N/A',sub:'NOI / debt service',c:dscrC,tt:'Lenders typically require above 1.25x'},
     {l:'NPV',v:f.$(ret.npv),sub:`at ${inp.discountRate}% discount`,c:npvC,tt:'Net present value at your target return'},
     {l:'Break-Even Occ.',v:f.pct(sum.beOcc,1),sub:'min occupancy for +CF',c:beC,tt:'Occupancy needed to cover all cash outflows'},
-    {l:'Net Sale Proceeds',v:f.$(exit.proceeds),sub:`exit at ${inp.exitCapRate}% cap`,tt:'Net proceeds after selling costs & loan payoff'},
+    {l:'Net Sale Proceeds',v:f.$(exit.proceeds),sub:inp.exitMethod==='ppu'?`comp exit at ${f.$(inp.exitPPU||0)}/unit`:`exit at ${inp.exitCapRate}% cap`,tt:'Net proceeds after selling costs & loan payoff'},
     ...(t==='development'?[{l:'Return on Cost',v:f.pct(y1.noi/(sum.devCost||1),2),sub:'stabilized NOI / TDC',tt:'Stabilized NOI over total development cost (development yield)'}]:[]),
   ];
   return(

@@ -9,7 +9,10 @@ function calcRefinance(res,inp){
   const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
   const ry=Math.min(Math.max(Math.round(inp.refiYear||3),1),hp-1);
   const refiCap=(inp.refiCapRate!=null?inp.refiCapRate:(inp.exitCapRate||5.5))/100;
-  const value=refiCap>0?res.rows[ry].noi/refiCap:0;
+  // mid-hold value follows the same appraisal method as the exit
+  const value=(inp.exitMethod==='ppu')
+    ? (inp.exitPPU||0)*(inp.numUnits||0)*Math.pow(1+((inp.apprRate!=null?inp.apprRate:3)/100),ry)
+    : (refiCap>0?res.rows[ry].noi/refiCap:0);
   const refiLTV=(inp.refiLTV!=null?inp.refiLTV:70)/100;
   const newLoan=Math.max(0,value*refiLTV);
   const oldBal=res.rows[ry-1].bal;

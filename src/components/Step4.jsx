@@ -91,11 +91,33 @@ function Step4({inp,onChange}){
       </Card>
 
       <Card title="Hold & Exit" sub="Growth, hold period, and exit pricing">
+        <div className="eyebrow" style={{marginBottom:9}}>How the exit is priced</div>
+        <div style={{display:'flex',gap:10,marginBottom:6,flexWrap:'wrap'}}>
+          {[['cap','Income \u2014 cap rate','Values the property off forward NOI. Standard for 5+ unit and commercial assets.'],
+            ['ppu','Sales comparables \u2014 $ per unit','How 1\u20134 unit residential is actually appraised.']].map(([k,lab,help])=>{
+            const on=(inp.exitMethod==='ppu'?'ppu':'cap')===k;
+            return(
+              <button key={k} type="button" onClick={()=>onChange({exitMethod:k})}
+                style={{flex:'1 1 240px',textAlign:'left',padding:'13px 15px',cursor:'pointer',borderRadius:0,
+                  background:on?'var(--accent-tint)':'none',border:'1px solid '+(on?'var(--accent)':'var(--border)'),
+                  fontFamily:"'Inter',sans-serif"}}>
+                <div style={{fontSize:'var(--fs-4)',fontWeight:on?600:500,marginBottom:3}}>{lab}</div>
+                <div style={{fontSize:'var(--fs-3)',color:'var(--muted)',lineHeight:1.5}}>{help}</div>
+              </button>
+            );
+          })}
+        </div>
+        {inp.exitMethod==='ppu'&&(
+          <div style={G2} className="g2">
+            <Fld label="Exit Price per Unit" prefix="$" hint="comparable sale value today" value={inp.exitPPU!=null?inp.exitPPU:0} onChange={v=>onChange({exitPPU:pn(v)})}/>
+            <Fld label="Annual Appreciation" suffix="%" hint="applied over the hold" value={inp.apprRate!=null?inp.apprRate:3} onChange={v=>onChange({apprRate:parseFloat(v)||0})}/>
+          </div>
+        )}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 28px'}} className="g2">
           <Slider label="Revenue Growth Rate" min={0} max={8} step={0.25} value={inp.revenueGrowth||3} onChange={v=>onChange({revenueGrowth:v})} fmt2={v=>`${v}% / yr`}/>
           <Slider label="Expense Growth Rate" min={0} max={8} step={0.25} value={inp.expenseGrowth||2.5} onChange={v=>onChange({expenseGrowth:v})} fmt2={v=>`${v}% / yr`}/>
           <Slider label="Holding Period" min={3} max={10} step={1} value={inp.holdingPeriod||7} onChange={v=>onChange({holdingPeriod:v})} fmt2={v=>`${v} yrs`}/>
-          <Slider label="Exit Cap Rate" min={3.5} max={10} step={0.25} value={inp.exitCapRate||5.5} onChange={v=>onChange({exitCapRate:v})} fmt2={v=>`${v}%`}/>
+          {inp.exitMethod!=='ppu'&&<Slider label="Exit Cap Rate" min={3.5} max={10} step={0.25} value={inp.exitCapRate||5.5} onChange={v=>onChange({exitCapRate:v})} fmt2={v=>`${v}%`}/>}
           <Slider label="Selling Costs" min={1} max={6} step={0.25} value={inp.sellingCostsPct||3} onChange={v=>onChange({sellingCostsPct:v})} fmt2={v=>`${v}%`}/>
           <Slider label="Discount Rate (NPV)" min={4} max={15} step={0.25} value={inp.discountRate||8} onChange={v=>onChange({discountRate:v})} fmt2={v=>`${v}%`}/>
         </div>

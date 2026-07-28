@@ -12,6 +12,9 @@ async function buildWorkbook(res,inp,withResults=true){
   const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
   const t=(inp.assetType||'').toLowerCase();
   const isDev=t==='development';
+  // sales-comp exit prices per unit and appreciates; income exit uses the cap
+  const isPPU=inp.exitMethod==='ppu';
+  const exPPU=inp.exitPPU||0, exAppr=(inp.apprRate!=null?inp.apprRate:3)/100;
   const name=inp.propertyName||'Untitled Property';
   const wb=new E.Workbook();
   wb.creator='SmartCapStack';wb.created=new Date();
@@ -74,7 +77,7 @@ async function buildWorkbook(res,inp,withResults=true){
   const basisVal=isDev?getDevCost(inp):(inp.purchasePrice||0);
   const LA=inp.loanAmount||0, IR=(inp.interestRate||0)/100, AY=inp.amortYears||30, IO=inp.ioPeriod||0;
   const ltvVal=basisVal>0?LA/basisVal:0;
-  const sizeLine=isDev?[null,'Gross Buildable SF',inp.grossBuildableSF||0,FN,true]:(t==='commercial'?[null,'Total SF',inp.totalSF||0,FN,true]:[null,'Units',inp.numUnits||0,FN,true]);
+  const sizeLine=isDev?[null,'Gross Buildable SF',inp.grossBuildableSF||0,FN,true]:(t==='commercial'?[null,'Total SF',inp.totalSF||0,FN,true]:['units','Units',inp.numUnits||0,FN,true]);
 
   const pdRows=[
     [null,'Asset Type',inp.assetType,null,true],sizeLine,
@@ -86,9 +89,11 @@ async function buildWorkbook(res,inp,withResults=true){
     ['fees','Loan Fees',{f:'X',r:0},F$,false],
     ['tcap','Total Capitalization',{f:'X',r:res.totalCost},F$,false],
     ['hold','Holding Period (Years)',hp,FN,true],
-    ['ecap','Exit Cap Rate',(inp.exitCapRate||0)/100,FP2,true],
-    ['sell','Selling Costs',(inp.sellingCostsPct||0)/100,FP,true],
-  ]));
+  ].concat(isPPU
+    ?[['ppu','Exit Price per Unit (comp)',exPPU,F$,true],
+      ['appr','Annual Appreciation',exAppr,FP,true]]
+    :[['ecap','Exit Cap Rate',(inp.exitCapRate||0)/100,FP2,true]])
+   .concat([['sell','Selling Costs',(inp.sellingCostsPct||0)/100,FP,true]])));
   if(!isDev)refs.basis=refs.price;
   block('L','FINANCING',[
     ['loan','Loan Amount',LA,F$,true],
@@ -215,14 +220,16 @@ async function buildWorkbook(res,inp,withResults=true){
     [null,'Break-Even Occupancy',{f:`IF(${PFQ}$D$${rowIdx.gpi}=0,0,(-${PFQ}$D$${rowIdx.opx}-${PFQ}$D$${rowIdx.ds})/${PFQ}$D$${rowIdx.gpi})`,r:res.sum.beOcc},FP,false],
   ]);
   block('R','EXIT ANALYSIS (YEAR '+hp+')',[
-    ['fnoi','Forward NOI (Year '+(hp+1)+')',{f:`${PFQ}$${fwdL}$${rowIdx.noi}`,r:res.rows[hp].noi},F$,false],
+    ...(isPPU?[]:[['fnoi','Forward NOI (Year '+(hp+1)+')',{f:`${PFQ}$${fwdL}$${rowIdx.noi}`,r:res.rows[hp].noi},F$,false]]),
     ['gross','Gross Sale Price',{f:'X',r:res.exit.grossSale},F$,false],
     ['scost','Selling Costs',{f:'X',r:-res.exit.sellAmt},F$N,false],
     ['nsale','Net Sale Price',{f:'X',r:res.exit.netSale},F$,false],
     ['poff','Loan Payoff',{f:`-${PFQ}$${lastYr}$${rowIdx.bal}`,r:-res.exit.payoff},F$N,false],
     ['proc','Net Sale Proceeds',{f:'X',r:res.exit.proceeds},F$,false],
   ]);
-  setRef('gross',`IF(${refs.ecap}=0,0,${refs.fnoi}/${refs.ecap})`,res.exit.grossSale);
+  setRef('gross', isPPU
+    ? `${refs.ppu}*${refs.units}*(1+${refs.appr})^${refs.hold}`
+    : `IF(${refs.ecap}=0,0,${refs.fnoi}/${refs.ecap})`, res.exit.grossSale);
   setRef('scost',`-${refs.gross}*${refs.sell}`,-res.exit.sellAmt);
   setRef('nsale',`${refs.gross}+${refs.scost}`,res.exit.netSale);
   setRef('proc',`${refs.nsale}+${refs.poff}`,res.exit.proceeds);
@@ -245,22 +252,27 @@ async function buildWorkbook(res,inp,withResults=true){
 
   // ============ SENSITIVITY ============
   const sn=wb.addWorksheet('Sensitivity',{views:[{showGridLines:false}]});
-  const growths=[1,2,3,4,5],caps=[4.5,5.0,5.5,6.0,6.5,7.0];
+  const growths=[1,2,3,4,5];
+  // comp-priced deals have no exit cap to flex, so the column axis becomes the
+  // comparable sale price per unit
+  const caps=isPPU
+    ?[0.85,0.925,1.0,1.075,1.15,1.225].map(m=>Math.round(exPPU*m/500)*500)
+    :[4.5,5.0,5.5,6.0,6.5,7.0];
   const nC=caps.length, lastCol=2+nC;
   sn.columns=[{width:2},{width:22}].concat(caps.map(()=>({width:11})));
-  banner(sn,2,2,lastCol,'LEVERED IRR SENSITIVITY','How the deal\'s levered IRR moves with revenue growth and exit cap rate. All other inputs held constant.');
+  banner(sn,2,2,lastCol,'LEVERED IRR SENSITIVITY','How the deal\'s levered IRR moves with revenue growth and '+(isPPU?'the comparable sale price per unit':'exit cap rate')+'. All other inputs held constant.');
 
   // Column-axis label band: EXIT CAP RATE -> spanning the cap columns
   sn.mergeCells(4,3,4,lastCol);
-  Object.assign(sn.getCell(4,3),{value:'EXIT CAP RATE \u2192',font:{name:'Calibri',size:9.5,bold:true,color:{argb:'FF181716'}},fill:fill(HDR),alignment:{horizontal:'center'},border:box});
+  Object.assign(sn.getCell(4,3),{value:(isPPU?'EXIT PRICE PER UNIT \u2192':'EXIT CAP RATE \u2192'),font:{name:'Calibri',size:9.5,bold:true,color:{argb:'FF181716'}},fill:fill(HDR),alignment:{horizontal:'center'},border:box});
   sn.getCell(4,2).border=box; sn.getCell(4,2).fill=fill(HDR);
 
   // Header row: corner label + editable cap values
   const sh=sn.getRow(5);
-  Object.assign(sh.getCell(2),{value:'Rev Growth \u2193  /  Exit Cap \u2192',font:{name:'Calibri',size:9,bold:true,italic:true,color:{argb:WHITE}},fill:fill(NAVY2),border:box,alignment:{horizontal:'center',wrapText:true}});
+  Object.assign(sh.getCell(2),{value:'Rev Growth \u2193  /  '+(isPPU?'$ per Unit':'Exit Cap')+' \u2192',font:{name:'Calibri',size:9,bold:true,italic:true,color:{argb:WHITE}},fill:fill(NAVY2),border:box,alignment:{horizontal:'center',wrapText:true}});
   caps.forEach((c,i)=>{
     const cc=sh.getCell(3+i);
-    cc.value=c/100;cc.numFmt=FP2;
+    cc.value=isPPU?c:c/100;cc.numFmt=isPPU?F$:FP2;
     Object.assign(cc,{font:{name:'Calibri',size:11,bold:true,color:{argb:'FF0070C0'}},fill:fill('FFEAF1FB'),border:box,alignment:{horizontal:'center'}});
   });
   sh.height=26;
@@ -287,13 +299,15 @@ async function buildWorkbook(res,inp,withResults=true){
       for(let k=1;k<=hp;k++){
         let fla=`${noiF(G,k)}+${dsRef(k)}`;
         if(k===hp){
-          const sale=`(${noiF(G,hp+1)})/${C}*(1-${refs.sell})-${balRef}`;
+          const sale=isPPU
+            ?`${C}*${refs.units}*(1+${refs.appr})^${refs.hold}*(1-${refs.sell})-${balRef}`
+            :`(${noiF(G,hp+1)})/${C}*(1-${refs.sell})-${balRef}`;
           fla=`${fla}+(${sale})`;
         }
         const cc=sn.getCell(calcRow,2+k);
         cc.value={formula:fla}; cc.numFmt=F$N;
       }
-      const irrSnap=buildPF(Object.assign({},inp,{revenueGrowth:g,exitCapRate:c})).ret.irr;
+      const irrSnap=buildPF(Object.assign({},inp,{revenueGrowth:g},isPPU?{exitPPU:c}:{exitCapRate:c})).ret.irr;
       const rng=`B${calcRow}:${CL(2+hp)}${calcRow}`;
       const cell=row.getCell(3+ci);
       cell.value=isFinite(irrSnap)?{formula:`IRR(${rng})`,result:irrSnap}:{formula:`IRR(${rng})`};

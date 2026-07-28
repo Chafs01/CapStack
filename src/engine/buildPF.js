@@ -77,7 +77,17 @@ function buildPF(inp){
 
   const ex=rows[hp-1];
   const exitNOI=rows[hp].noi;
-  const grossSale=eCapR>0?exitNOI/eCapR:0;
+  // Two ways to price the exit. Income approach (cap rate) is right for
+  // commercial assets; 1-4 unit residential is appraised off sales comparables,
+  // so it prices per unit and grows with appreciation instead. Absent an
+  // explicit method the cap-rate path runs exactly as before.
+  const exitMethod=inp.exitMethod==='ppu'?'ppu':'cap';
+  const exUnits=inp.numUnits||0;
+  const exPPU=inp.exitPPU||0;
+  const apprR=(inp.apprRate!=null?inp.apprRate:3)/100;
+  const grossSale=exitMethod==='ppu'
+    ? exPPU*exUnits*Math.pow(1+apprR,hp)
+    : (eCapR>0?exitNOI/eCapR:0);
   const sellAmt=grossSale*sellC;
   const netSale=grossSale-sellAmt;
   const payoff=ex.bal;
@@ -95,7 +105,7 @@ function buildPF(inp){
   const retOnCost=devCost>0?y1.noi/devCost:0;
 
   return{inp,equity,totalCost,acqC,LF,rows,
-    exit:{grossSale,sellAmt,netSale,payoff,proceeds},
+    exit:{grossSale,sellAmt,netSale,payoff,proceeds,method:exitMethod,ppu:exPPU,units:exUnits,appr:apprR},
     ret:{irr,em:em2,npv,profit,totalCF,retOnCost},
     sum:{capR:y1.capR,coc:y1.coc,dscr:y1.dscr,noi:y1.noi,cf:y1.cfbt,beOcc,devCost},lihtc,debtSizing};
 }
