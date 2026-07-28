@@ -1,5 +1,48 @@
 # How many users does SmartCapStack have?
 
+## Before anything: does the table exist?
+
+Telemetry swallows every error on purpose — it must never break the app or slow
+it down. The cost of that is a silent failure mode: if the `events` table is
+missing, inserts fail quietly and you see zero rows, which looks identical to
+having no visitors.
+
+Check first:
+
+```sql
+select count(*) as events_recorded, max(created_at) as most_recent from events;
+```
+
+If that errors with *relation "events" does not exist*, run this once:
+
+```sql
+create table if not exists public.events (
+  id         bigserial primary key,
+  created_at timestamptz not null default now(),
+  type       text not null,
+  path       text,
+  referrer   text,
+  message    text,
+  meta       jsonb,
+  ua         text
+);
+
+alter table public.events enable row level security;
+
+-- The browser may write events and nothing else. There is deliberately no
+-- select policy, so the client cannot read anyone's data back out; you read it
+-- here in the dashboard, which bypasses RLS.
+drop policy if exists "client can insert events" on public.events;
+create policy "client can insert events"
+  on public.events for insert
+  to anon, authenticated
+  with check (true);
+```
+
+Then reload the site once and re-run the count — you should see a `pageview`.
+
+---
+
 Everything below runs in the Supabase **SQL Editor** on your own project. No
 third-party analytics account, no dashboard to pay for.
 
