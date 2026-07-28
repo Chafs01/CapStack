@@ -33,8 +33,17 @@ const check = (label, a, b) => {
   else { failures++; console.log('  FAIL', label, '\n    new:', JSON.stringify(a)?.slice(0, 200), '\n    old:', JSON.stringify(b)?.slice(0, 200)); }
 };
 
+// Sheets deliberately rebuilt since the migration, and so no longer expected
+// to match the legacy output. The legacy versions were blocks of hardcoded
+// numbers — the one place the workbook stopped being a model — and were
+// replaced with year-by-year schedules driven by live formulas. Their
+// correctness is checked against the engine in verify-excel-waterfall.mjs,
+// which is stricter than this parity check ever was.
+const REBUILT = new Set(['Equity Waterfall', 'After-Tax']);
+
 check('sheet names', wbNew.worksheets.map(w => w.name), wbOld.worksheets.map(w => w.name));
 for (const name of wbOld.worksheets.map(w => w.name)) {
+  if (REBUILT.has(name)) { console.log(`  SKIP sheet "${name}" — rebuilt as a live model, see verify-excel-waterfall.mjs`); continue; }
   const a = wbNew.getWorksheet(name), b = wbOld.getWorksheet(name);
   const cells = (ws) => {
     const out = [];
@@ -42,6 +51,18 @@ for (const name of wbOld.worksheets.map(w => w.name)) {
     return out;
   };
   check(`sheet "${name}" cell values+formulas`, cells(a), cells(b));
+}
+
+// A skip is only defensible if the replacement really is live. Guard against
+// the exclusion above quietly covering a regression back to hardcoded values.
+for (const name of REBUILT) {
+  const ws = wbNew.getWorksheet(name);
+  if (!ws) continue;
+  let formulas = 0;
+  ws.eachRow({ includeEmpty: false }, (row) => row.eachCell({ includeEmpty: false }, (cell) => {
+    if (cell.value && typeof cell.value === 'object' && cell.value.formula) formulas++;
+  }));
+  check(`rebuilt sheet "${name}" is formula-driven (${formulas} formulas)`, formulas > 20, true);
 }
 
 fs.unlinkSync(tmp);

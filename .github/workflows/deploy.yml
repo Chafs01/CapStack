@@ -33,6 +33,7 @@ jobs:
       - run: node tests/verify-draft.mjs
       - run: node tests/verify-health.mjs
       - run: node tests/verify-robustness.mjs
+      - run: node tests/verify-excel-waterfall.mjs
       - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

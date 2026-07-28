@@ -36,9 +36,12 @@ function Legal({tab='privacy',onTab,onBack}){
             <b>If you create an account,</b> we collect your email address, and — if you sign in
             with Google — your name and profile photo, through our authentication provider
             (Supabase). Deals you choose to save are stored in our database and tied to your account.<br/><br/>
-            <b>Usage data.</b> We record basic, non-identifying events such as page views and
-            technical error reports to keep the site working and understand overall usage. This
-            does not include your deal figures.
+            <b>Usage data.</b> We record basic, non-identifying events &mdash; page views, which
+            features are used, and technical error reports &mdash; to keep the site working and
+            understand overall usage. So that we can tell one returning visitor from several new
+            ones, a random identifier is stored in your browser. It is not linked to your name or
+            email, it is never shared, and clearing your browser storage resets it. None of this
+            includes your deal figures.
           </Section>
           <Section title="How we use it">
             To provide the service — authenticate you, store and load your saved deals, keep the

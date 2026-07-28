@@ -12,7 +12,7 @@ import{Step4}from'./components/Step4.jsx';
 import{AuthModal,ResetPasswordModal,SaveModal,Toast}from'./components/modals.jsx';
 import{Legal}from'./components/Legal.jsx';
 import{ErrorBoundary}from'./components/ErrorBoundary.jsx';
-import{initTelemetry}from'./lib/telemetry.js';
+import{initTelemetry,track}from'./lib/telemetry.js';
 import{encodeDeal,decodeDeal,shareURL,readDealFromHash,clearHash}from'./lib/share.js';
 import{saveDraft,loadDraft,clearDraft,hasContent}from'./lib/draft.js';
 // The dashboard carries the charting library and only renders after a pro
@@ -128,6 +128,7 @@ function App(){
     try{
       const r=buildPF(inp);
       setRes(r);setStep(4);setIsDemo(false);setIsShared(false);
+      track('proforma_generated',{assetType:inp.assetType,exit:inp.exitMethod||'cap'});
       window.scrollTo({top:0,behavior:'smooth'});
     }catch(e){notify('Could not build the pro forma: '+e.message);}
     setLoading(false);
@@ -146,6 +147,7 @@ function App(){
     setRes(buildPF(sd));
     setStep(4);
     setView('app');
+    track('demo_viewed');
     window.scrollTo({top:0});
   },[]);
 
@@ -156,6 +158,7 @@ function App(){
       const url=shareURL(await encodeDeal(inp));
       try{
         await navigator.clipboard.writeText(url);
+        track('share_created');
         notify('Share link copied to clipboard');
       }catch(e){
         // clipboard blocked (insecure context, or permission denied)
@@ -187,6 +190,7 @@ function App(){
     setIsDemo(false);
     setIsShared(false);
     setView('app');
+    track('analysis_started');
     window.scrollTo({top:0});
   },[isDemo,isShared,assetType]);
 
@@ -302,7 +306,7 @@ function App(){
           res&&(
             <Suspense fallback={<div style={{padding:'80px 24px',textAlign:'center',color:'var(--muted2)',fontSize:'var(--fs-5)'}}>Preparing results…</div>}>
               <ErrorBoundary resetKey={res} onBack={()=>setStep(3)}>
-                <Dashboard res={res} inp={inp} onExport={()=>exportXLSX(res,inp)} onBack={()=>setStep(3)} onSave={handleSave} onShare={handleShare}/>
+                <Dashboard res={res} inp={inp} onExport={()=>{track('excel_exported');exportXLSX(res,inp);}} onBack={()=>setStep(3)} onSave={handleSave} onShare={handleShare}/>
               </ErrorBoundary>
             </Suspense>
           )
@@ -317,6 +321,7 @@ function App(){
           setCurrentDealId(id);
           setShowSave(false);
           clearDraft();setDraft(null); // the work has a real home now
+          track('deal_saved',{signedIn:!!user});
           setInp(prev=>({...prev,propertyName:name}));
           notify(mode==='updated'?'Deal updated':(user?'Saved to your account':'Saved in this browser'));
         }}
