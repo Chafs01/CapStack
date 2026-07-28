@@ -62,6 +62,12 @@ for (const name of ['residential-ppu', 'single-family-ppu']) {
     !!grossFormula && /^(Summary!)?\$[A-Z]+\$\d+\*(Summary!)?\$[A-Z]+\$\d+\*\(1\+(Summary!)?\$[A-Z]+\$\d+\)\^(Summary!)?\$[A-Z]+\$\d+$/.test(grossFormula),
     grossFormula || '(none)');
 
+  // advanced modules are opt-in: an unconfigured waterfall must not be
+  // exported, or the workbook asserts LP/GP splits the user never set
+  const sheets = wb.worksheets.map((w) => w.name);
+  check('no Equity Waterfall sheet when the module is off',
+    !inp.waterfallEnabled && !sheets.includes('Equity Waterfall'), sheets.join(', '));
+
   // the sensitivity grid must flex $/unit, not a cap rate
   const sn = wb.getWorksheet('Sensitivity');
   const axisHdr = sn.getCell(4, 3).value;

@@ -602,7 +602,7 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
         </div>
         <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginTop:12,lineHeight:1.5}}>The loan is sized to <span style={{fontWeight:700,color:'var(--text)'}}>{f.$(res.debtSizing.sizedLoan)}</span>, set by the {res.debtSizing.binding} constraint &mdash; the most restrictive of the three. Lowering it would loosen leverage; this is the maximum supportable loan under your limits.</p>
       </div>}
-      {!res.lihtc&&<WaterfallPanel W={calcWaterfall(res,inp)}/>}
+      {!res.lihtc&&inp.waterfallEnabled&&<WaterfallPanel W={calcWaterfall(res,inp)}/>}
       {!res.lihtc&&inp.afterTax&&<AfterTaxPanel A={calcAfterTax(res,inp)}/>}
 
       <div className="glass" style={{padding:'20px 24px',marginBottom:22}}>

@@ -373,7 +373,7 @@ async function buildWorkbook(res,inp,withResults=true){
       ]},
     ]);
   } else {
-    const W=calcWaterfall(res,inp);
+    const W=inp.waterfallEnabled?calcWaterfall(res,inp):null;
     if(W){
       simpleSheet('Equity Waterfall','EQUITY WATERFALL','LP / GP promote distribution',[
         {title:'STRUCTURE',rows:[

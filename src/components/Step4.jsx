@@ -55,11 +55,7 @@ function Step4({inp,onChange}){
         <p style={{color:'var(--muted)',fontSize:'var(--fs-5)',lineHeight:1.55}}>Debt structure, growth rates, and exit strategy. The summary at the bottom updates as you type.</p>
       </div>
 
-      <Card title="Loan Terms" sub="Sizing, rate, and amortization">
-        <label className={'tgl'+(inp.sizeDebt?' on':'')} style={{marginBottom:16}}>
-          <input type="checkbox" checked={!!inp.sizeDebt} onChange={e=>onChange({sizeDebt:e.target.checked})} style={{width:16,height:16,accentColor:'var(--accent)'}}/>
-          <span>Size the loan automatically &mdash; lesser of DSCR, {isDev?'LTC':'LTV'}, and debt yield</span>
-        </label>
+      <Card title="Loan Terms" sub="Your debt on the deal">
         {!inp.sizeDebt?(
           <div style={G2} className="g2">
             <Fld label="Loan Amount" prefix="$" value={inp.loanAmount} onChange={v=>onChange({loanAmount:pn(v)})}/>
@@ -128,7 +124,29 @@ function Step4({inp,onChange}){
         </div>
       </Card>
 
-      {t!=='affordable'?(<>
+      {t!=='affordable'&&(
+        <Card title="Advanced modelling" sub="Optional — add only what you need">
+          <p style={{fontSize:'var(--fs-4)',color:'var(--muted)',lineHeight:1.6,marginBottom:16}}>
+            Everything above is enough for a complete pro forma. These add depth if your deal calls for it.
+          </p>
+          {[
+            ['sizeDebt','Size the loan automatically','Solve the loan from lender tests — DSCR, ' + (isDev?'LTC':'LTV') + ', and debt yield — instead of typing an amount.'],
+            ['waterfallEnabled','Equity waterfall','Split returns between a limited partner and the sponsor, with a preferred return and promote hurdles.'],
+            ['afterTax','After-tax analysis','Layer in the depreciation shield, recapture, and capital gains at sale.'],
+            ['refiEnabled','Mid-hold refinance','Pull equity out partway through the hold and re-lever on new debt.'],
+          ].map(([key,label,help])=>(
+            <label key={key} className={'tgl'+(inp[key]?' on':'')} style={{marginBottom:8,alignItems:'flex-start'}}>
+              <input type="checkbox" checked={!!inp[key]} onChange={e=>onChange({[key]:e.target.checked})} style={{width:16,height:16,marginTop:2,accentColor:'var(--accent)'}}/>
+              <span style={{display:'block'}}>
+                {label}
+                <span style={{display:'block',fontWeight:400,color:'var(--muted)',fontSize:'var(--fs-3)',marginTop:3,lineHeight:1.5}}>{help}</span>
+              </span>
+            </label>
+          ))}
+        </Card>
+      )}
+
+      {t!=='affordable'&&inp.waterfallEnabled&&(
         <Card title="Equity Waterfall" sub="LP / GP promote structure">
           <p style={{fontSize:'var(--fs-4)',color:'var(--muted)',lineHeight:1.6,marginBottom:16}}>Splits levered cash flow between a limited partner and the sponsor. Return of capital and preferred return first, then tiered promote above each LP IRR hurdle.</p>
           <div style={G3} className="g3">
@@ -143,37 +161,29 @@ function Step4({inp,onChange}){
             <Fld label="LP Share, Above H3" suffix="%" value={inp.lpTier4!=null?inp.lpTier4:60} onChange={v=>onChange({lpTier4:pn(v)})}/>
           </div>
         </Card>
+      )}
 
-        <Card title="After-Tax Analysis" sub="Optional">
-          <label className={'tgl'+(inp.afterTax?' on':'')} style={{marginBottom:inp.afterTax?16:0}}>
-            <input type="checkbox" checked={!!inp.afterTax} onChange={e=>onChange({afterTax:e.target.checked})} style={{width:16,height:16,accentColor:'var(--accent)'}}/>
-            <span>Add after-tax analysis &mdash; depreciation shield, recapture, and capital gains</span>
-          </label>
-          {inp.afterTax&&<div style={G3} className="g3">
+      {t!=='affordable'&&inp.afterTax&&(
+        <Card title="After-Tax Analysis" sub="Depreciation, recapture, capital gains">
+          <div style={G3} className="g3">
             {!isDev&&<Fld label="Land (non-depreciable)" suffix="%" hint="of cost" value={inp.landPct!=null?inp.landPct:20} onChange={v=>onChange({landPct:pn(v)})}/>}
             <Fld label="Depreciation Period" suffix="yrs" hint="27.5 resi / 39 comm" value={inp.depYears!=null?inp.depYears:(t==='commercial'?39:27.5)} onChange={v=>onChange({depYears:parseFloat(v)||0})}/>
             <Fld label="Ordinary Tax Rate" suffix="%" value={inp.taxRate!=null?inp.taxRate:37} onChange={v=>onChange({taxRate:parseFloat(v)||0})}/>
             <Fld label="Capital Gains Rate" suffix="%" value={inp.capGainsRate!=null?inp.capGainsRate:20} onChange={v=>onChange({capGainsRate:parseFloat(v)||0})}/>
             <Fld label="Depr. Recapture Rate" suffix="%" value={inp.recaptureRate!=null?inp.recaptureRate:25} onChange={v=>onChange({recaptureRate:parseFloat(v)||0})}/>
-          </div>}
+          </div>
         </Card>
+      )}
 
-        <Card title="Refinance / Cash-Out" sub="Optional">
-          <label className={'tgl'+(inp.refiEnabled?' on':'')} style={{marginBottom:inp.refiEnabled?16:0}}>
-            <input type="checkbox" checked={!!inp.refiEnabled} onChange={e=>onChange({refiEnabled:e.target.checked})} style={{width:16,height:16,accentColor:'var(--accent)'}}/>
-            <span>Model a mid-hold refinance &mdash; pull equity out and re-lever</span>
-          </label>
-          {inp.refiEnabled&&<div style={G3} className="g3">
+      {t!=='affordable'&&inp.refiEnabled&&(
+        <Card title="Refinance / Cash-Out" sub="Mid-hold re-lever">
+          <div style={G3} className="g3">
             <Fld label="Refinance in Year" value={inp.refiYear!=null?inp.refiYear:3} onChange={v=>onChange({refiYear:pn(v)})}/>
             <Fld label="Refi LTV" suffix="%" value={inp.refiLTV!=null?inp.refiLTV:70} onChange={v=>onChange({refiLTV:pn(v)})}/>
-            <Fld label="Refi Cap Rate" suffix="%" hint="values the property" value={inp.refiCapRate!=null?inp.refiCapRate:(inp.exitCapRate||5.5)} onChange={v=>onChange({refiCapRate:parseFloat(v)||0})}/>
+            {inp.exitMethod!=='ppu'&&<Fld label="Refi Cap Rate" suffix="%" hint="values the property" value={inp.refiCapRate!=null?inp.refiCapRate:(inp.exitCapRate||5.5)} onChange={v=>onChange({refiCapRate:parseFloat(v)||0})}/>}
             <Fld label="New Interest Rate" suffix="%" value={inp.refiRate!=null?inp.refiRate:(inp.interestRate||6)} onChange={v=>onChange({refiRate:parseFloat(v)||0})}/>
             <Fld label="Refi Costs" suffix="%" hint="of new loan" value={inp.refiCostPct!=null?inp.refiCostPct:1} onChange={v=>onChange({refiCostPct:parseFloat(v)||0})}/>
-          </div>}
-        </Card>
-      </>):(
-        <Card title="Partnership Economics">
-          <p style={{fontSize:'var(--fs-4)',color:'var(--muted)',lineHeight:1.65}}>The LP/GP promote waterfall is not applied to affordable / LIHTC deals. Tax-credit partnership economics are driven by credit delivery, and are shown in the LIHTC analysis instead.</p>
+          </div>
         </Card>
       )}
 
