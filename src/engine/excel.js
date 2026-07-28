@@ -16,11 +16,11 @@ async function buildWorkbook(res,inp,withResults=true){
   const wb=new E.Workbook();
   wb.creator='SmartCapStack';wb.created=new Date();
 
-  const NAVY='FF1F3864',NAVY2='FF2E4F87',HDR='FFD9E1F2',BAND='FFF7F7F7',WHITE='FFFFFFFF',FWDBG='FFF0F0EE';
+  const NAVY='FF181716',NAVY2='FF3A3733',HDR='FFEAE6DD',BAND='FFF3EFE8',WHITE='FFFFFFFF',FWDBG='FFEFECE4';
   const GREENBG='FFE2EFDA',AMBERBG='FFFFF2CC',REDBG='FFFBE0DE';
   const thin={style:'thin',color:{argb:'FFD0D0D0'}};
   const box={top:thin,left:thin,bottom:thin,right:thin};
-  const boxT={top:{style:'thin',color:{argb:'FF1F3864'}},left:thin,bottom:thin,right:thin};
+  const boxT={top:{style:'thin',color:{argb:'FF181716'}},left:thin,bottom:thin,right:thin};
   const F$='$#,##0';const F$N='$#,##0;($#,##0)';const FP='0.0%';const FP2='0.00%';const FX='0.00"x"';const FN='#,##0';
   const fill=c=>({type:'pattern',pattern:'solid',fgColor:{argb:c}});
   const lblF={name:'Calibri',size:10,color:{argb:'FF333333'}};
@@ -50,7 +50,7 @@ async function buildWorkbook(res,inp,withResults=true){
     const c1=side==='L'?2:5,c2=c1+1;
     let r=side==='L'?rL:rR;
     ws.mergeCells(r,c1,r,c2);
-    Object.assign(ws.getCell(r,c1),{value:title,font:{name:'Calibri',size:10,bold:true,color:{argb:'FF1F3864'}},fill:fill(HDR),alignment:{vertical:'middle',indent:1},border:box});
+    Object.assign(ws.getCell(r,c1),{value:title,font:{name:'Calibri',size:10,bold:true,color:{argb:'FF181716'}},fill:fill(HDR),alignment:{vertical:'middle',indent:1},border:box});
     ws.getRow(r).height=17;r++;
     entries.forEach((e,i)=>{
       const[key,label,val,fm,isInput]=e;
@@ -137,7 +137,7 @@ async function buildWorkbook(res,inp,withResults=true){
   const rowIdx={};
   const sect=ttl=>{
     pf.mergeCells(pr,2,pr,fwdC);
-    Object.assign(pf.getCell(pr,2),{value:ttl,font:{name:'Calibri',size:9.5,bold:true,color:{argb:'FF1F3864'}},fill:fill(HDR),alignment:{indent:1},border:box});
+    Object.assign(pf.getCell(pr,2),{value:ttl,font:{name:'Calibri',size:9.5,bold:true,color:{argb:'FF181716'}},fill:fill(HDR),alignment:{indent:1},border:box});
     pf.getRow(pr).height=16;pr++;
   };
   // cells: array over columns 3..fwdC; entry null=blank, number=value, {f,r}=formula
@@ -252,7 +252,7 @@ async function buildWorkbook(res,inp,withResults=true){
 
   // Column-axis label band: EXIT CAP RATE -> spanning the cap columns
   sn.mergeCells(4,3,4,lastCol);
-  Object.assign(sn.getCell(4,3),{value:'EXIT CAP RATE \u2192',font:{name:'Calibri',size:9.5,bold:true,color:{argb:'FF1F3864'}},fill:fill(HDR),alignment:{horizontal:'center'},border:box});
+  Object.assign(sn.getCell(4,3),{value:'EXIT CAP RATE \u2192',font:{name:'Calibri',size:9.5,bold:true,color:{argb:'FF181716'}},fill:fill(HDR),alignment:{horizontal:'center'},border:box});
   sn.getCell(4,2).border=box; sn.getCell(4,2).fill=fill(HDR);
 
   // Header row: corner label + editable cap values
@@ -317,7 +317,7 @@ async function buildWorkbook(res,inp,withResults=true){
     let r=5;
     sections.forEach(sec=>{
       sh.mergeCells(r,2,r,3);
-      Object.assign(sh.getCell(r,2),{value:sec.title,font:{name:'Calibri',size:10,bold:true,color:{argb:'FF1F3864'}},fill:fill(HDR),border:box,alignment:{indent:1,vertical:'middle'}});
+      Object.assign(sh.getCell(r,2),{value:sec.title,font:{name:'Calibri',size:10,bold:true,color:{argb:'FF181716'}},fill:fill(HDR),border:box,alignment:{indent:1,vertical:'middle'}});
       sh.getRow(r).height=16;r++;
       sec.rows.forEach(rw=>{
         const[label,val,fm,bold]=rw;

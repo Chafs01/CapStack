@@ -3,7 +3,8 @@ import{Card}from'./ui.jsx';
 // Categorical identity colors for the five asset types — deliberately literal
 // hexes, not semantic tokens, since they encode "which asset" not "good/bad".
 const ASSETS=[
-  {id:'multifamily',abbr:'MF',label:'Multifamily',sub:'Apartments, condos, townhomes',c:'#181716'},
+  {id:'residential',abbr:'2-4',label:'Residential 2\u20134 Units',sub:'Duplex, triplex, fourplex \u2014 residential financing',c:'#181716'},
+  {id:'multifamily',abbr:'MF',label:'Multifamily 5+ Units',sub:'Apartments \u2014 commercial financing',c:'#181716'},
   {id:'commercial',abbr:'CRE',label:'Commercial',sub:'Office, retail, industrial NNN',c:'#3a3733'},
   {id:'mixed-use',abbr:'MXU',label:'Mixed-Use',sub:'Residential + commercial floors',c:'#5c554c'},
   {id:'development',abbr:'DEV',label:'Development',sub:'Ground-up construction / value-add',c:'#7a7268'},
@@ -11,6 +12,10 @@ const ASSETS=[
 ];
 
 const ASSET_DESC={
+  residential:{
+    what:'Two-to-four unit residential property \u2014 a duplex, triplex or fourplex. Legally residential, so it finances like a house rather than a commercial building.',
+    models:'Underwritten on the same rent-roll and cash-flow engine as larger multifamily, with residential loan defaults (higher LTV, 30-year fully amortising, no balloon). Note that exit value is still calculated from your cap rate; a 2\u20134 unit property is normally appraised off sales comparables, so treat the exit figure as a yield check rather than an appraisal.'
+  },
   multifamily:{
     what:'Apartment and rental-housing acquisitions, underwritten on stabilized operations.',
     models:'You build a unit-mix rent roll, set vacancy and operating expenses, and the model runs a ten-year levered return with exit at your cap rate.'
@@ -68,4 +73,11 @@ function Step1({val,onChange}){
   );
 }
 
-export{ASSETS,ASSET_DESC,Step1};
+// inp carries assetType for the engine and propClass for the finer UI label
+function dealTypeLabel(inp){
+  const id=inp&&inp.propClass?inp.propClass:String(inp&&inp.assetType||'').toLowerCase();
+  const a=ASSETS.find(x=>x.id===id);
+  return a?a.label:(inp&&inp.assetType)||'';
+}
+
+export{ASSETS,ASSET_DESC,Step1,dealTypeLabel};

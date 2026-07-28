@@ -68,7 +68,7 @@ function App(){
 
   const handleSave=()=>setShowSave(true);
   const handleLoadDeal=(d)=>{
-    setAssetType(d.assetType?d.assetType.toLowerCase():'multifamily');
+    setAssetType(d.inp&&d.inp.propClass?d.inp.propClass:(d.assetType?d.assetType.toLowerCase():'multifamily'));
     setInp(d.inp);
     setCurrentDealId(d.id);
     try{const r=buildPF(d.inp);setRes(r);setStep(4);setView('app');}
@@ -110,7 +110,7 @@ function App(){
             <div className="eyebrow" style={{marginBottom:14}}>Step {step+1} of {STEPS.length}</div>
 
             {step===0&&<Step1 val={assetType} onChange={handleAsset}/>}
-            {step===1&&<Step2 inp={inp} onChange={update} assetType={assetType}/>}
+            {step===1&&<Step2 inp={inp} onChange={update} assetType={inp.assetType}/>}
             {step===2&&<Step3 inp={inp} onChange={update}/>}
             {step===3&&<Step4 inp={inp} onChange={update}/>}
 

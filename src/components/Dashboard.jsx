@@ -10,6 +10,7 @@ import{calcScenarios}from'../engine/scenarios.js';
 import{calcDevCredits}from'../engine/devCredits.js';
 import{openMemo,downloadMemo}from'../engine/memo.js';
 import{Chip,fillCells}from'./ui.jsx';
+import{dealTypeLabel}from'./Step1.jsx';
 // ─── RESULTS CHARTS ────────────────────────────────────────────────────────
 function ChartTip({active,payload,label}){
   if(!active||!payload||!payload.length)return null;
@@ -531,7 +532,7 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
         <div>
           <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:9,flexWrap:'wrap'}}>
             <button className="btn-q" onClick={onBack}>← Edit</button>
-            <Chip tone="accent">{inp.assetType}</Chip>
+            <Chip tone="accent">{dealTypeLabel(inp)}</Chip>
             <Chip>{hp}-Year Hold</Chip>
             {inp.address&&<Chip>{inp.address}</Chip>}
           </div>

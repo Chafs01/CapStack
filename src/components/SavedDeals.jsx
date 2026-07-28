@@ -2,7 +2,7 @@ import{useState,useEffect}from'react';
 import{f}from'../engine/format.js';
 import{calcIRR}from'../engine/finance.js';
 import{buildPF}from'../engine/buildPF.js';
-import{ASSETS}from'./Step1.jsx';
+import{ASSETS,dealTypeLabel}from'./Step1.jsx';
 import{loadDeals,loadDealsLocal,renameDeal,deleteDeal,migrateLocalDeals,updateDealNotes}from'../lib/deals.js';
 function DealNotes({id,initial,user}){
   const [val,setVal]=useState(initial);
@@ -22,10 +22,10 @@ function calcPortfolio(deals){
   const byType={}; const pooled=[];
   deals.forEach(d=>{
     let res; try{res=buildPF(d.inp);}catch(e){return;}
-    const at=(d.inp.assetType||'').toLowerCase();
+    const at=d.inp.propClass||(d.inp.assetType||'').toLowerCase();
     byType[at]=byType[at]||{count:0,equity:0,label:(ASSETS.find(a=>a.id===at)||{}).label||at};
     byType[at].count++;
-    if(at==='affordable'){
+    if((d.inp.assetType||'').toLowerCase()==='affordable'){
       affCount++; const eq=res.lihtc?res.lihtc.lihtcEquity:0; affEquity+=eq; affUses+=res.lihtc?res.lihtc.totalUses:0; byType[at].equity+=eq;
     } else {
       stdCount++; const eq=res.equity||0; stdEquity+=eq;
@@ -195,7 +195,7 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify}){
                             style={{background:'none',border:'none',cursor:'pointer',color:'var(--muted2)',fontSize:'var(--fs-4)',padding:0,lineHeight:1}}>✎</button>
                         </div>
                       )}
-                      <div style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>{d.assetType} &middot; saved {fmtDate(d.savedAt)}</div>
+                      <div style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>{dealTypeLabel(d.inp)} &middot; saved {fmtDate(d.savedAt)}</div>
                     </div>
                     <div style={{display:'flex',gap:20,fontSize:'var(--fs-4)',flexShrink:0}}>
                       {s.type==='affordable'?(

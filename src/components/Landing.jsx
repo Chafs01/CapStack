@@ -46,7 +46,7 @@ function Landing({onStart,onSample}){
         <div className="g2" style={{display:'grid',gridTemplateColumns:'1.05fr .95fr',gap:56,alignItems:'start'}}>
           <div>
             <div className="eyebrow" style={{marginBottom:22}}>SmartCapStack &mdash; Real Estate Pro Forma</div>
-            <h1 style={{fontSize:'clamp(34px,5.4vw,60px)',fontWeight:600,lineHeight:1.06,letterSpacing:'-.03em',marginBottom:22}}>Underwrite any deal<br/>like an institution.</h1>
+            <h1 style={{fontSize:'clamp(34px,5.4vw,60px)',fontWeight:600,lineHeight:1.06,letterSpacing:'-.03em',marginBottom:22,maxWidth:520,textWrap:'balance'}}>Underwrite any deal like an institution.</h1>
             <p style={{fontSize:'var(--fs-6)',color:'var(--muted)',lineHeight:1.6,marginBottom:32,maxWidth:480}}>SmartCapStack turns your assumptions into a discounted cash flow, levered returns, an equity waterfall, and a sensitivity matrix &mdash; then exports a live Excel workbook.</p>
             <div style={{display:'flex',gap:26,flexWrap:'wrap',alignItems:'baseline',marginBottom:34}}>
               <button style={{...link,fontWeight:600}} onClick={onStart}>Run a deal &rarr;</button>
@@ -106,7 +106,7 @@ function Landing({onStart,onSample}){
       <Sec eyebrow="Excel export" title={<>The export isn't a report.<br/>It's the model.</>}
         foot={<button style={{...link,fontWeight:600}} onClick={onSample}>Download sample model &rarr;</button>}>
         <p style={{fontSize:'var(--fs-4)',color:'var(--muted)',lineHeight:1.7,marginBottom:10}}>Most tools hand you a PDF or a wall of hardcoded numbers. SmartCapStack writes a real workbook: every output is a live Excel formula wired to the input cells, including the IRR sensitivity grid.</p>
-        <p style={{fontSize:'var(--fs-4)',color:'var(--muted)',lineHeight:1.7,marginBottom:26}}>Input cells stay editable and every other figure is a formula. Change an assumption in Excel and the whole model &mdash; pro forma, returns, sensitivity &mdash; recalculates. Send it straight to a lender or LP.</p>
+        <p style={{fontSize:'var(--fs-4)',color:'var(--muted)',lineHeight:1.7,marginBottom:26}}>Blue cells are inputs; every other figure is a live formula. Change an assumption in Excel and the whole model &mdash; pro forma, returns, sensitivity &mdash; recalculates. Send it straight to a lender or LP.</p>
         <div style={{border:'1px solid var(--border2)',background:'var(--surface)'}}>
           <div style={{display:'flex',alignItems:'center',gap:9,padding:'11px 16px',borderBottom:'1px solid var(--border)'}}>
             <span className="eyebrow">SmartCapStack_Model.xlsx</span>
@@ -115,11 +115,11 @@ function Landing({onStart,onSample}){
             <span style={{fontStyle:'italic',fontWeight:600}}>fx</span>
             <span style={{fontVariantNumeric:'tabular-nums'}}>=IRR($C$45:$J$45)</span>
           </div>
-          {[['Purchase Price','$7,750,000'],['Exit Cap Rate','5.75%'],['Vacancy & Credit Loss','5.0%'],
-            ['Net Operating Income','=C12+C16'],['Levered IRR',f.pct(r.ret.irr,1)],['Equity Multiple',f.x(r.ret.em)]].map((row,i)=>(
+          {[['Purchase Price','$7,750,000',1],['Exit Cap Rate','5.75%',1],['Vacancy & Credit Loss','5.0%',1],
+            ['Net Operating Income','=C12+C16',0],['Levered IRR',f.pct(r.ret.irr,1),0],['Equity Multiple',f.x(r.ret.em),0]].map((row,i)=>(
             <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'10px 16px',borderBottom:i<5?'1px solid var(--border)':'none',fontSize:'var(--fs-3)'}}>
               <span style={{color:'var(--muted)'}}>{row[0]}</span>
-              <span style={{fontVariantNumeric:'tabular-nums',color:'var(--text)'}}>{row[1]}</span>
+              <span style={{fontVariantNumeric:'tabular-nums',color:row[2]?'#0070c0':'var(--text)',fontWeight:row[2]?600:400}}>{row[1]}</span>
             </div>
           ))}
         </div>
