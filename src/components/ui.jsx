@@ -9,7 +9,11 @@ function Fld({label,hint,value,onChange,prefix,suffix,disabled,type='text',align
   const [foc,setFoc]=useState(false);
   useEffect(()=>{if(!foc)setTxt(value==null?'':String(value))},[value,foc]);
   const numeric=typeof value==='number';
-  const idle=value==null?'':(numeric&&Math.abs(value)>=1000?value.toLocaleString('en-US'):String(value));
+  // An unfilled numeric field shows nothing, not a 0 you have to select and
+  // delete before typing. A greyed 0 placeholder keeps it obvious the field
+  // takes a number, and a blank entry still reads back as 0.
+  const empty=value==null||(numeric&&value===0);
+  const idle=empty?'':(numeric&&Math.abs(value)>=1000?value.toLocaleString('en-US'):String(value));
   const right=align==='right'||(align===undefined&&numeric);
   return(
     <div style={{marginBottom:16}}>
@@ -19,8 +23,9 @@ function Fld({label,hint,value,onChange,prefix,suffix,disabled,type='text',align
       <div style={{position:'relative',display:'flex',alignItems:'center'}}>
         {prefix&&<span className="fld-fix" style={{left:12}}>{prefix}</span>}
         <input type={type} className="input-f" data-num={right?'1':'0'} disabled={disabled}
+          placeholder={numeric?'0':undefined}
           value={foc?txt:idle}
-          onFocus={()=>{setFoc(true);setTxt(value==null?'':String(value))}}
+          onFocus={()=>{setFoc(true);setTxt(empty?'':String(value))}}
           onChange={e=>{setTxt(e.target.value);onChange(e.target.value)}}
           onBlur={()=>setFoc(false)}
           style={{paddingLeft:prefix?26:13,paddingRight:suffix?36:13}}/>
