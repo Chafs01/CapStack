@@ -7,6 +7,10 @@ function calcRefinance(res,inp){
   const t=(inp.assetType||'').toLowerCase();
   if(!inp.refiEnabled||t==='affordable')return null;
   const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  // A mid-hold refinance needs a hold to be in the middle of. With a one-year
+  // hold the refi year clamps to 0 and the balance lookup runs off the front
+  // of the schedule, which threw and took the whole dashboard down with it.
+  if(hp<2)return null;
   const ry=Math.min(Math.max(Math.round(inp.refiYear||3),1),hp-1);
   const refiCap=(inp.refiCapRate!=null?inp.refiCapRate:(inp.exitCapRate||5.5))/100;
   // mid-hold value follows the same appraisal method as the exit

@@ -1,14 +1,13 @@
 import{sb}from'./supabase.js';
+import{DEALS_KEY,isDealLike,loadDealsLocal,saveDealsLocal}from'./dealStore.js';
 // ─── SAVED DEALS (Supabase + localStorage fallback) ───────────────────────
-const DEALS_KEY='proforma_saved_deals';
-function loadDealsLocal(){try{return JSON.parse(localStorage.getItem(DEALS_KEY)||'[]');}catch(e){return[];}}
-function saveDealsLocal(d){try{localStorage.setItem(DEALS_KEY,JSON.stringify(d));}catch(e){}}
+
 function normalizeDeal(r){return{id:r.id,name:r.name,assetType:r.asset_type||r.assetType,savedAt:r.saved_at||r.savedAt,inp:r.inp_data||r.inp,summary:r.summary,notes:r.notes||''};}
 async function loadDeals(user){
   if(user&&sb){
     try{
       const{data,error}=await sb.from('deals').select('*').order('saved_at',{ascending:false});
-      if(!error&&data)return data.map(normalizeDeal);
+      if(!error&&data)return data.map(normalizeDeal).filter(isDealLike);
     }catch(e){/* network down — fall through to local */}
   }
   return loadDealsLocal();
@@ -86,4 +85,4 @@ async function updateDealNotes(id,notes,user){
   else{const d=loadDealsLocal();const x=d.find(r=>r.id===id);if(x){x.notes=notes;saveDealsLocal(d);}}
 }
 
-export{DEALS_KEY,loadDealsLocal,saveDealsLocal,normalizeDeal,loadDeals,renameDeal,deleteDeal,dealSummary,persistDeal,migrateLocalDeals,updateDealNotes};
+export{DEALS_KEY,isDealLike,loadDealsLocal,saveDealsLocal,normalizeDeal,loadDeals,renameDeal,deleteDeal,dealSummary,persistDeal,migrateLocalDeals,updateDealNotes};

@@ -158,7 +158,15 @@ function dealHealth(res, inp) {
   if (basis && loan !== null && basis > 0 && loan > 0) {
     const lev = loan / basis;
     const lbl = (t === 'development' || t === 'affordable') ? 'LTC' : 'LTV';
-    if (lev > T.ltvHigh) {
+    if (lev > 1) {
+      // Not aggressive leverage — arithmetically impossible. Borrowing more
+      // than the asset costs drives equity negative and makes every return
+      // below meaningless, so it is called what it is rather than reported as
+      // a very large percentage.
+      add('leverage', 'fail', `The loan is larger than the ${(t === 'development' || t === 'affordable') ? 'development cost' : 'purchase price'}`,
+        `A ${lbl} of ${(lev * 100).toFixed(0)}% means the debt exceeds the asset, so required equity is negative and the returns below cannot be relied on.`,
+        'Check the loan amount — it is probably off by a digit.');
+    } else if (lev > T.ltvHigh) {
       add('leverage', 'warn', `${lbl} of ${(lev * 100).toFixed(0)}% is aggressive`,
         'Leverage above 80% narrows the margin for error and limits lender appetite.',
         'Confirm a lender will actually fund at this level.');

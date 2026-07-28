@@ -11,6 +11,7 @@ import{Step3}from'./components/Step3.jsx';
 import{Step4}from'./components/Step4.jsx';
 import{AuthModal,ResetPasswordModal,SaveModal,Toast}from'./components/modals.jsx';
 import{Legal}from'./components/Legal.jsx';
+import{ErrorBoundary}from'./components/ErrorBoundary.jsx';
 import{initTelemetry}from'./lib/telemetry.js';
 import{encodeDeal,decodeDeal,shareURL,readDealFromHash,clearHash}from'./lib/share.js';
 import{saveDraft,loadDraft,clearDraft,hasContent}from'./lib/draft.js';
@@ -239,7 +240,11 @@ function App(){
 
       {view==='landing'&&<Landing onStart={startFresh} onDemo={handleDemo}
         onSample={()=>{const sd={...DEFS.multifamily,propertyName:'Sample Deal'};exportXLSX(buildPF(sd),sd);}}/>}
-      {view==='saved'&&<SavedDeals onLoad={handleLoadDeal} onClose={()=>{setView('app');setStep(0);}} user={user} onSignIn={()=>setShowAuth(true)} notify={notify}/>}
+      {view==='saved'&&(
+        <ErrorBoundary resetKey={view} onBack={()=>{setView('app');setStep(0);}}>
+          <SavedDeals onLoad={handleLoadDeal} onClose={()=>{setView('app');setStep(0);}} user={user} onSignIn={()=>setShowAuth(true)} notify={notify}/>
+        </ErrorBoundary>
+      )}
       {view==='legal'&&<Legal tab={legalTab} onTab={setLegalTab} onBack={()=>setView('landing')}/>}
       <div style={{maxWidth:step<4?720:1080,margin:'0 auto',padding:'40px 24px 72px',display:(view==='app')?'block':'none'}}>
         {/* Sample numbers must never be mistaken for the user's own deal. */}
@@ -296,7 +301,9 @@ function App(){
         ):(
           res&&(
             <Suspense fallback={<div style={{padding:'80px 24px',textAlign:'center',color:'var(--muted2)',fontSize:'var(--fs-5)'}}>Preparing results…</div>}>
-              <Dashboard res={res} inp={inp} onExport={()=>exportXLSX(res,inp)} onBack={()=>setStep(3)} onSave={handleSave} onShare={handleShare}/>
+              <ErrorBoundary resetKey={res} onBack={()=>setStep(3)}>
+                <Dashboard res={res} inp={inp} onExport={()=>exportXLSX(res,inp)} onBack={()=>setStep(3)} onSave={handleSave} onShare={handleShare}/>
+              </ErrorBoundary>
             </Suspense>
           )
         )}
