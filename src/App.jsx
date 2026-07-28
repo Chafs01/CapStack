@@ -13,11 +13,22 @@ import{AuthModal,ResetPasswordModal,SaveModal,Toast}from'./components/modals.jsx
 import{Legal}from'./components/Legal.jsx';
 import{initTelemetry}from'./lib/telemetry.js';
 import{encodeDeal,decodeDeal,shareURL,readDealFromHash,clearHash}from'./lib/share.js';
+import{saveDraft,loadDraft,clearDraft}from'./lib/draft.js';
 // The dashboard carries the charting library and only renders after a pro
 // forma is generated, so it loads as its own chunk.
 const Dashboard=lazy(()=>import('./components/Dashboard.jsx').then(m=>({default:m.Dashboard})));
 // ─── MAIN APP ─────────────────────────────────────────────────────────────
 const STEPS=['Asset Type','Property Info','Income & Expenses','Financing'];
+
+function draftAge(at){
+  const mins=Math.max(0,Math.round((Date.now()-at)/60000));
+  if(mins<2)return'a moment ago';
+  if(mins<60)return`${mins} minutes ago`;
+  const hrs=Math.round(mins/60);
+  if(hrs<24)return hrs===1?'an hour ago':`${hrs} hours ago`;
+  const days=Math.round(hrs/24);
+  return days===1?'yesterday':`${days} days ago`;
+}
 
 function App(){
   const [view,setView]=useState('landing');
@@ -33,30 +44,52 @@ function App(){
   const [currentDealId,setCurrentDealId]=useState(null);
   const [isDemo,setIsDemo]=useState(false);
   const [isShared,setIsShared]=useState(false);
+  const [draft,setDraft]=useState(null);
   const [toast,setToast]=useState('');
   const [legalTab,setLegalTab]=useState('privacy');
   const notify=useCallback(m=>{setToast(m);setTimeout(()=>setToast(''),2600);},[]);
 
   useEffect(()=>{initTelemetry();},[]);
 
+  // Offer to restore rather than restoring silently — reappearing numbers the
+  // user did not just type are more alarming than helpful. A shared link takes
+  // priority, since that is an explicit request to look at someone else's deal.
+  useEffect(()=>{if(!readDealFromHash())setDraft(loadDraft());},[]);
+
+  // Mirror in-progress entry to localStorage. Debounced so typing does not
+  // write on every keystroke, and never while a demo or a shared deal is on
+  // screen — neither is the user's own work.
+  useEffect(()=>{
+    if(view!=='app'||step>=4||isDemo||isShared)return;
+    const id=setTimeout(()=>saveDraft(inp,step),400);
+    return()=>clearTimeout(id);
+  },[inp,step,view,isDemo,isShared]);
+
   // A shared link carries the whole deal in its hash. Open it directly on the
   // results, and drop the hash so a later reload doesn't resurrect someone
   // else's deal over work the visitor has since started.
   useEffect(()=>{
-    const payload=readDealFromHash();
-    if(!payload)return;
     let cancelled=false;
-    decodeDeal(payload).then(shared=>{
-      if(cancelled||!shared)return;
-      try{
-        const r=buildPF(shared);
-        setInp(shared);
-        setAssetType(shared.propClass||(shared.assetType||'multifamily').toLowerCase());
-        setRes(r);setStep(4);setView('app');setIsShared(true);setIsDemo(false);
-        clearHash();
-      }catch(e){notify('That shared link could not be opened.');}
-    });
-    return()=>{cancelled=true;};
+    const open=()=>{
+      const payload=readDealFromHash();
+      if(!payload)return;
+      decodeDeal(payload).then(shared=>{
+        if(cancelled||!shared)return;
+        try{
+          const r=buildPF(shared);
+          setInp(shared);
+          setAssetType(shared.propClass||(shared.assetType||'multifamily').toLowerCase());
+          setRes(r);setStep(4);setView('app');setIsShared(true);setIsDemo(false);
+          clearHash();
+          window.scrollTo({top:0});
+        }catch(e){notify('That shared link could not be opened.');}
+      });
+    };
+    open();
+    // Following a shared link while already on the site only changes the hash —
+    // no remount — so without this the link would appear to do nothing.
+    window.addEventListener('hashchange',open);
+    return()=>{cancelled=true;window.removeEventListener('hashchange',open);};
   },[notify]);
 
   useEffect(()=>{
@@ -122,6 +155,16 @@ function App(){
     }catch(e){notify('Could not build a share link.');}
   },[inp,notify]);
 
+  const restoreDraft=useCallback(()=>{
+    if(!draft)return;
+    setInp(draft.inp);
+    setAssetType(draft.inp.propClass||(draft.inp.assetType||'multifamily').toLowerCase());
+    setStep(Math.min(Math.max(draft.step||0,0),3));
+    setIsDemo(false);setIsShared(false);setRes(null);
+    setView('app');setDraft(null);
+    window.scrollTo({top:0});
+  },[draft]);
+
   const handleSave=()=>setShowSave(true);
   const handleLoadDeal=(d)=>{
     setAssetType(d.inp&&d.inp.propClass?d.inp.propClass:(d.assetType?d.assetType.toLowerCase():'multifamily'));
@@ -165,6 +208,15 @@ function App(){
       {view==='legal'&&<Legal tab={legalTab} onTab={setLegalTab} onBack={()=>setView('landing')}/>}
       <div style={{maxWidth:step<4?720:1080,margin:'0 auto',padding:'40px 24px 72px',display:(view==='app')?'block':'none'}}>
         {/* Sample numbers must never be mistaken for the user's own deal. */}
+        {draft&&!isDemo&&!isShared&&(
+          <div className="demo-bar">
+            <span><strong>You have an unfinished deal.</strong> Entry from {draftAge(draft.at)} is still here if you want it.</span>
+            <span style={{display:'flex',gap:18,flexShrink:0}}>
+              <button onClick={restoreDraft}>Pick up where I left off</button>
+              <button onClick={()=>{clearDraft();setDraft(null);}}>Discard</button>
+            </span>
+          </div>
+        )}
         {isShared&&(
           <div className="demo-bar">
             <span><strong>Shared deal.</strong> Someone sent you this underwriting. Nothing is saved to your account &mdash; edit it freely and it becomes yours.</span>
@@ -220,6 +272,7 @@ function App(){
         onSaved={(id,mode,name)=>{
           setCurrentDealId(id);
           setShowSave(false);
+          clearDraft();setDraft(null); // the work has a real home now
           setInp(prev=>({...prev,propertyName:name}));
           notify(mode==='updated'?'Deal updated':(user?'Saved to your account':'Saved in this browser'));
         }}

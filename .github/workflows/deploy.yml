@@ -30,6 +30,8 @@ jobs:
       - run: node tests/verify-excel-ppu.mjs
       - run: node tests/verify-share.mjs
       - run: node tests/verify-figures.mjs
+      - run: node tests/verify-draft.mjs
+      - run: node tests/verify-health.mjs
       - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

@@ -9,7 +9,8 @@ import{calcRefinance}from'../engine/refinance.js';
 import{calcScenarios}from'../engine/scenarios.js';
 import{calcDevCredits}from'../engine/devCredits.js';
 import{openMemo,downloadMemo}from'../engine/memo.js';
-import{Chip,fillCells}from'./ui.jsx';
+import{dealHealth,isResidential1to4,HEALTH_THRESHOLDS as HT}from'../engine/health.js';
+import{Chip,fillCells,Card}from'./ui.jsx';
 import{dealTypeLabel}from'./Step1.jsx';
 // ─── RESULTS CHARTS ────────────────────────────────────────────────────────
 function ChartTip({active,payload,label}){
@@ -136,24 +137,77 @@ function analystNotes(res,inp){
   }
   notes.push(`This deal projects a ${f.pct(ret.irr,1)} levered IRR and a ${f.x(ret.em)} equity multiple over a ${hp}-year hold, returning ${f.$f(ret.totalCF+exit.proceeds)} on ${f.$f(equity)} of invested equity.`);
   if(sum.dscr!=null){
-    if(sum.dscr<1.20)notes.push(`Year 1 DSCR of ${sum.dscr.toFixed(2)}x is below the 1.20x to 1.25x minimum most lenders require. As structured, this loan amount is unlikely to be financeable without more income or less leverage.`);
-    else if(sum.dscr<1.40)notes.push(`Year 1 DSCR of ${sum.dscr.toFixed(2)}x clears typical lender minimums but leaves a thin cushion. A modest income shortfall or expense overrun would pressure coverage.`);
+    // Same thresholds the health panel uses, including the residential
+    // distinction — otherwise the prose and the panel contradict each other
+    // on the same screen for a 1-4 unit deal.
+    const resi=isResidential1to4(inp);
+    const failAt=resi?HT.dscrFailResi:HT.dscrFail, thinAt=resi?HT.dscrThinResi:HT.dscrThin;
+    if(sum.dscr<failAt)notes.push(resi
+      ?`Year 1 DSCR of ${sum.dscr.toFixed(2)}x is below 1.00x, so the rent does not cover the mortgage before vacancy is even considered.`
+      :`Year 1 DSCR of ${sum.dscr.toFixed(2)}x is below the ${HT.dscrFail.toFixed(2)}x to 1.25x minimum most commercial lenders require. As structured, this loan amount is unlikely to be financeable without more income or less leverage.`);
+    else if(sum.dscr<thinAt)notes.push(`Year 1 DSCR of ${sum.dscr.toFixed(2)}x clears typical lender minimums but leaves a thin cushion. A modest income shortfall or expense overrun would pressure coverage.`);
     else notes.push(`Year 1 DSCR of ${sum.dscr.toFixed(2)}x provides healthy debt coverage with room to absorb underperformance.`);
   }
   const totalRet=ret.totalCF+exit.proceeds;
   if(totalRet>0){
     const saleShare=exit.proceeds/totalRet;
-    if(saleShare>0.7)notes.push(`${f.pct(saleShare,0)} of total capital returned comes from the exit sale, so the headline IRR is highly sensitive to the ${inp.exitMethod==='ppu'?f.$(inp.exitPPU||0)+'/unit comp assumption':inp.exitCapRate+'% exit cap assumption'}. Review the sensitivity table before relying on it.`);
+    if(saleShare>HT.exitDependence)notes.push(`${f.pct(saleShare,0)} of total capital returned comes from the exit sale, so the headline IRR is highly sensitive to the ${inp.exitMethod==='ppu'?f.$(inp.exitPPU||0)+'/unit comp assumption':inp.exitCapRate+'% exit cap assumption'}. Review the sensitivity table before relying on it.`);
     else if(saleShare>0)notes.push(`Returns are reasonably balanced between operating cash flow (${f.pct(1-saleShare,0)}) and exit proceeds (${f.pct(saleShare,0)}), which reduces dependence on the exit cap assumption.`);
   }
   const occCushion=1-sum.beOcc-(inp.vacancyRate||0)/100;
   if(sum.beOcc>0){
-    if(occCushion<0.05)notes.push(`Break-even occupancy of ${f.pct(sum.beOcc,1)} leaves very little margin versus the ${inp.vacancyRate}% vacancy assumption. Small leasing setbacks would turn cash flow negative.`);
+    if(occCushion<HT.occCushion)notes.push(`Break-even occupancy of ${f.pct(sum.beOcc,1)} leaves very little margin versus the ${inp.vacancyRate}% vacancy assumption. Small leasing setbacks would turn cash flow negative.`);
     else notes.push(`Break-even occupancy of ${f.pct(sum.beOcc,1)} leaves a comfortable cushion against the underwritten ${inp.vacancyRate}% vacancy.`);
   }
   const y1=rows[0];
-  if(y1&&y1.expR>0.55)notes.push(`A ${f.pct(y1.expR,0)} expense ratio is high for this profile. Verify the tax, insurance, and maintenance inputs reflect actuals rather than placeholders.`);
+  if(y1&&y1.expR>HT.expenseHigh)notes.push(`A ${f.pct(y1.expR,0)} expense ratio is high for this profile. Verify the tax, insurance, and maintenance inputs reflect actuals rather than placeholders.`);
   return notes;
+}
+
+// ─── DEAL HEALTH PANEL ────────────────────────────────────────────────────
+// Findings the user must act on are always open. Passing checks are collapsed
+// behind a count, so the panel reads as a short list of problems rather than a
+// wall of green that buries the two lines that matter.
+const HEALTH_TONE={fail:'neg',warn:'warn',pass:'pos',na:'muted2'};
+const HEALTH_MARK={fail:'\u2715',warn:'\u0021',pass:'\u2713',na:'\u2013'};
+function HealthPanel({res,inp}){
+  const H=dealHealth(res,inp);
+  const [openPass,setOpenPass]=useState(false);
+  if(!H.ready)return null;
+  const issues=H.checks.filter(c=>c.status==='fail'||c.status==='warn');
+  const rest=H.checks.filter(c=>c.status==='pass'||c.status==='na');
+  const head=H.verdict==='needs-work'
+    ?{t:'This deal has a problem to fix',s:'Something here would stop a lender or partner. Details below.'}
+    :H.verdict==='review'
+    ?{t:'Worth a second look',s:'Nothing disqualifying, but these are the points a reviewer would press on.'}
+    :{t:'No issues found',s:'Every check this model runs came back clean.'};
+  const Row=({c})=>(
+    <div style={{display:'flex',gap:12,padding:'12px 0',borderTop:'1px solid var(--border)',alignItems:'flex-start'}}>
+      <span aria-hidden="true" style={{color:`var(--${HEALTH_TONE[c.status]})`,fontWeight:700,fontSize:'var(--fs-4)',lineHeight:1.5,width:14,flexShrink:0,textAlign:'center'}}>{HEALTH_MARK[c.status]}</span>
+      <div style={{minWidth:0}}>
+        <div style={{fontSize:'var(--fs-4)',fontWeight:600,color:'var(--text)',lineHeight:1.45}}>{c.label}</div>
+        <div style={{fontSize:'var(--fs-3)',color:'var(--muted)',lineHeight:1.55,marginTop:3}}>{c.detail}</div>
+        {c.fix&&<div style={{fontSize:'var(--fs-3)',color:'var(--text)',lineHeight:1.55,marginTop:5}}><b>What to do:</b> {c.fix}</div>}
+      </div>
+    </div>
+  );
+  return(
+    <Card title="Deal health" sub={`${H.checks.length} checks run against this underwriting`}>
+      <div style={{marginBottom:issues.length?14:0}}>
+        <div style={{fontSize:'var(--fs-6)',fontWeight:600,color:'var(--text)',letterSpacing:'-.01em'}}>{head.t}</div>
+        <div style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginTop:4,lineHeight:1.55}}>{head.s}</div>
+      </div>
+      {issues.map(c=><Row key={c.id} c={c}/>)}
+      {rest.length>0&&(
+        <div style={{borderTop:'1px solid var(--border)',paddingTop:12,marginTop:issues.length?4:12}}>
+          <button className="btn-s" onClick={()=>setOpenPass(v=>!v)} style={{fontSize:'var(--fs-3)'}}>
+            {openPass?'Hide':'Show'} {rest.length} check{rest.length===1?'':'s'} that passed
+          </button>
+          {openPass&&<div style={{marginTop:4}}>{rest.map(c=><Row key={c.id} c={c}/>)}</div>}
+        </div>
+      )}
+    </Card>
+  );
 }
 
 // ─── RESULTS DASHBOARD ────────────────────────────────────────────────────
@@ -518,6 +572,7 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare}){
   const npvC=ret.npv>=0?null:'var(--neg)';
   const cocC=sum.coc<0?'var(--neg)':sum.coc<0.02?'var(--warn)':null;
   const beC=sum.beOcc>0.95?'var(--neg)':sum.beOcc>0.90?'var(--warn)':null;
+  const NOTES=analystNotes(res,inp);
   const chartData=rows.slice(0,hp).map(r=>({yr:`Yr ${r.yr}`,NOI:Math.round(r.noi),'Cash Flow':Math.round(r.cfbt)}));
   const ratesData=rows.slice(0,hp).map(r=>({yr:`Yr ${r.yr}`,'Cap Rate':+(r.capR*100).toFixed(2),'CoC Return':+(r.coc*100).toFixed(2)}));
   const balData=rows.slice(0,hp).map(r=>({yr:`Yr ${r.yr}`,'Loan Balance':Math.round(r.bal/1000)*1000,'NOI':Math.round(r.noi)}));
@@ -557,11 +612,7 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare}){
         </div>
       </div>
 
-      {inp.exitMethod==='ppu'&&!(inp.exitPPU>0)&&(
-        <div style={{background:'var(--neg-tint)',border:'1px solid var(--neg-brd)',padding:'13px 16px',marginBottom:16,fontSize:'var(--fs-4)',color:'var(--neg)',lineHeight:1.5}}>
-          <b>No exit price entered.</b> This deal is priced on sales comparables, but the price per unit is zero &mdash; so the model is selling it for nothing and every return below is meaningless. Go back to Financing and set a comparable $/unit.
-        </div>
-      )}
+      <HealthPanel res={res} inp={inp}/>
 
       {/* two headline returns get real prominence; the rest support them */}
       <div className="hair g2" style={{gridTemplateColumns:'1fr 1fr',marginBottom:14}}>
@@ -610,8 +661,8 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare}){
 
       <div className="glass" style={{padding:'20px 24px',marginBottom:22}}>
         <div className="sect-lbl">Analyst Notes<span style={{fontWeight:400,letterSpacing:0,textTransform:'none',fontSize:'var(--fs-2)',color:'var(--muted)'}}>auto-generated from your inputs</span></div>
-        {analystNotes(res,inp).map((n,i)=>(
-          <p key={i} style={{fontSize:'var(--fs-4)',color:'var(--text)',lineHeight:1.65,marginBottom:i===analystNotes(res,inp).length-1?0:9}}>{n}</p>
+        {NOTES.map((n,i)=>(
+          <p key={i} style={{fontSize:'var(--fs-4)',color:'var(--text)',lineHeight:1.65,marginBottom:i===NOTES.length-1?0:9}}>{n}</p>
         ))}
         {t==='development'&&<p style={{fontSize:'var(--fs-3)',color:'var(--warn)',marginTop:10,lineHeight:1.5}}>Note: the headline IRR is the stabilized-operations return. See the Construction &amp; Lease-Up panel for the project-level IRR that accounts for the build period, lease-up ramp, and capitalized interest.</p>}
       </div>
