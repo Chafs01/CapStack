@@ -85,7 +85,7 @@ function SensTable({inp}){
   const setGr=(i,v)=>setGrowths(growths.map((g,j)=>j===i?(parseFloat(v)||0):g));
   // both axes are editable — they need to actually be legible on the light
   // header (these were white-on-white and effectively invisible)
-  const axIn={width:'100%',border:'1px solid var(--border2)',borderRadius:'var(--r-sm)',background:'var(--surface)',color:'var(--text)',fontWeight:700,fontSize:'var(--fs-4)',textAlign:'center',outline:'none',fontFamily:"'JetBrains Mono',monospace",padding:'4px 2px'};
+  const axIn={width:'100%',border:'1px solid var(--border2)',borderRadius:'var(--r-sm)',background:'var(--surface)',color:'var(--text)',fontWeight:700,fontSize:'var(--fs-4)',textAlign:'center',outline:'none',fontFamily:"ui-monospace,'SF Mono',Menlo,monospace",padding:'4px 2px'};
   const axInL={...axIn,width:52};
   return(
     <div>
@@ -202,7 +202,7 @@ function DevCreditsPanel({D}){
 
 function ScenarioPanel({S}){
   if(!S||!S.base)return null;
-  const cols=[['Downside',S.downside,'var(--neg)'],['Base',S.base,'var(--accent)'],['Upside',S.upside,'var(--pos)']];
+  const cols=[['Downside',S.downside,'var(--neg)'],['Base',S.base,'var(--text)'],['Upside',S.upside,'var(--muted)']];
   const row=(label,fn)=>(
     <tr>
       <td style={{fontWeight:600,color:'var(--muted)'}}>{label}</td>
@@ -578,10 +578,10 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
         <div className="sect-lbl">Debt Sizing &mdash; Lesser-of Test</div>
         <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
           {res.debtSizing.constraints.map((c,i)=>(
-            <div key={i} style={{flex:1,minWidth:130,padding:'12px 14px',borderRadius:9,background:c.binds?'var(--ink)':'var(--surface2)',border:'1px solid '+(c.binds?'var(--ink)':'var(--border)')}}>
-              <div style={{fontSize:'var(--fs-2)',color:c.binds?'#aab3c9':'var(--muted)'}}>{c.name} <span style={{opacity:.7}}>({c.basis})</span></div>
-              <div className="mono" style={{fontSize:'var(--fs-6)',fontWeight:700,color:c.binds?'#fff':'var(--text)',marginTop:3}}>{f.$(c.loan)}</div>
-              {c.binds&&<div style={{fontSize:'var(--fs-1)',color:'#7d93ff',fontWeight:700,letterSpacing:'.5px',marginTop:3}}>BINDING CONSTRAINT</div>}
+            <div key={i} style={{flex:1,minWidth:130,padding:'12px 14px',borderRadius:9,background:'none',border:'1px solid '+(c.binds?'var(--accent)':'var(--border)')}}>
+              <div style={{fontSize:'var(--fs-2)',color:c.binds?'var(--on-dark-muted)':'var(--muted)'}}>{c.name} <span style={{opacity:.7}}>({c.basis})</span></div>
+              <div className="mono" style={{fontSize:'var(--fs-6)',fontWeight:700,color:c.binds?'var(--accent)':'var(--text)',marginTop:3}}>{f.$(c.loan)}</div>
+              {c.binds&&<div style={{fontSize:'var(--fs-1)',color:'var(--on-dark-accent)',fontWeight:700,letterSpacing:'.5px',marginTop:3}}>BINDING CONSTRAINT</div>}
             </div>
           ))}
         </div>
@@ -610,13 +610,13 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
             <div className="sect-lbl">Annual NOI & Cash Flow: {hp}-Year Projection</div>
             {ResponsiveContainer?<ResponsiveContainer width="100%" height={260}>
               <ComposedChart data={chartData} margin={{top:4,right:10,left:0,bottom:0}}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e6f0"/>
-                <XAxis dataKey="yr" tick={{fill:'#5a6478',fontSize:'var(--fs-3)'}}/>
-                <YAxis tick={{fill:'#5a6478',fontSize:'var(--fs-2)'}} tickFormatter={v=>f.$(v)}/>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ded9cf"/>
+                <XAxis dataKey="yr" tick={{fill:'#8a8279',fontSize:'var(--fs-3)'}}/>
+                <YAxis tick={{fill:'#8a8279',fontSize:'var(--fs-2)'}} tickFormatter={v=>f.$(v)}/>
                 <Tooltip content={<ChartTip/>}/>
                 <Legend wrapperStyle={{fontSize:'var(--fs-4)',color:'var(--muted)'}}/>
-                <Bar dataKey="NOI" fill="#3a5bf0" opacity={0.85} radius={[4,4,0,0]}/>
-                <Bar dataKey="Cash Flow" fill="#0e9f6e" opacity={0.85} radius={[4,4,0,0]}/>
+                <Bar dataKey="NOI" fill="#181716" opacity={0.85} radius={[4,4,0,0]}/>
+                <Bar dataKey="Cash Flow" fill="#8a8279" opacity={0.85} radius={[4,4,0,0]}/>
               </ComposedChart>
             </ResponsiveContainer>:<p style={{color:'var(--neg)',fontSize:'var(--fs-4)'}}>Chart library failed to load. Refresh the page to retry.</p>}
           </div>
@@ -624,13 +624,13 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
             <div className="sect-lbl">Cap Rate & Cash-on-Cash Trend</div>
             {ResponsiveContainer&&<ResponsiveContainer width="100%" height={210}>
               <LineChart data={ratesData} margin={{top:4,right:10,left:0,bottom:0}}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e6f0"/>
-                <XAxis dataKey="yr" tick={{fill:'#5a6478',fontSize:'var(--fs-3)'}}/>
-                <YAxis tick={{fill:'#5a6478',fontSize:'var(--fs-2)'}} tickFormatter={v=>`${v}%`}/>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ded9cf"/>
+                <XAxis dataKey="yr" tick={{fill:'#8a8279',fontSize:'var(--fs-3)'}}/>
+                <YAxis tick={{fill:'#8a8279',fontSize:'var(--fs-2)'}} tickFormatter={v=>`${v}%`}/>
                 <Tooltip content={<ChartTip/>}/>
                 <Legend wrapperStyle={{fontSize:'var(--fs-4)',color:'var(--muted)'}}/>
-                <Line type="monotone" dataKey="Cap Rate" stroke="#5a6478" strokeWidth={2.5} dot={{fill:'#5a6478',r:3.5}}/>
-                <Line type="monotone" dataKey="CoC Return" stroke="#0e9f6e" strokeWidth={2.5} dot={{fill:'#0e9f6e',r:3.5}}/>
+                <Line type="monotone" dataKey="Cap Rate" stroke="#8a8279" strokeWidth={2.5} dot={{fill:'#8a8279',r:3.5}}/>
+                <Line type="monotone" dataKey="CoC Return" stroke="#8a8279" strokeWidth={2.5} dot={{fill:'#8a8279',r:3.5}}/>
               </LineChart>
             </ResponsiveContainer>}
           </div>

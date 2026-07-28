@@ -6,7 +6,7 @@ const CONTACT='support@smartcapstack.com';
 function Section({title,children}){
   return(
     <div style={{marginBottom:26}}>
-      <h3 style={{fontSize:'var(--fs-6)',fontWeight:700,marginBottom:8,fontFamily:"'Space Grotesk',sans-serif"}}>{title}</h3>
+      <h3 style={{fontSize:'var(--fs-6)',fontWeight:700,marginBottom:8,fontFamily:"'Inter',sans-serif"}}>{title}</h3>
       <div style={{fontSize:'var(--fs-5)',color:'var(--muted)',lineHeight:1.65}}>{children}</div>
     </div>
   );

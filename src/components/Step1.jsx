@@ -3,11 +3,11 @@ import{Card}from'./ui.jsx';
 // Categorical identity colors for the five asset types — deliberately literal
 // hexes, not semantic tokens, since they encode "which asset" not "good/bad".
 const ASSETS=[
-  {id:'multifamily',abbr:'MF',label:'Multifamily',sub:'Apartments, condos, townhomes',c:'#3a5bf0'},
-  {id:'commercial',abbr:'CRE',label:'Commercial',sub:'Office, retail, industrial NNN',c:'#5a6478'},
-  {id:'mixed-use',abbr:'MXU',label:'Mixed-Use',sub:'Residential + commercial floors',c:'#0e9f6e'},
-  {id:'development',abbr:'DEV',label:'Development',sub:'Ground-up construction / value-add',c:'#c27803'},
-  {id:'affordable',abbr:'LIHTC',label:'Affordable / LIHTC',sub:'Tax-credit & syndication underwriting',c:'#7a5195'},
+  {id:'multifamily',abbr:'MF',label:'Multifamily',sub:'Apartments, condos, townhomes',c:'#181716'},
+  {id:'commercial',abbr:'CRE',label:'Commercial',sub:'Office, retail, industrial NNN',c:'#3a3733'},
+  {id:'mixed-use',abbr:'MXU',label:'Mixed-Use',sub:'Residential + commercial floors',c:'#5c554c'},
+  {id:'development',abbr:'DEV',label:'Development',sub:'Ground-up construction / value-add',c:'#7a7268'},
+  {id:'affordable',abbr:'LIHTC',label:'Affordable / LIHTC',sub:'Tax-credit & syndication underwriting',c:'#958c83'},
 ];
 
 const ASSET_DESC={
@@ -43,28 +43,27 @@ function Step1({val,onChange}){
         <p style={{color:'var(--muted)',fontSize:'var(--fs-5)',lineHeight:1.55}}>Pick the asset type and the model adapts its inputs and outputs to match.</p>
       </div>
 
-      <div className="eyebrow" style={{marginBottom:9}}>Asset type</div>
-      <div className="seg-wrap" style={{marginBottom:18}}>
+      {/* full-width stacked rows; the selected one carries the oxblood rule */}
+      <div style={{display:'grid',gap:10,marginBottom:26}}>
         {ASSETS.map(a=>{
           const on=a.id===cur.id;
           return(
-            <button key={a.id} className={'seg'+(on?' on':'')} onClick={()=>onChange(a.id)} type="button">
-              <span className="seg-abbr" style={on?undefined:{background:a.c+'1a',color:a.c}}>{a.abbr}</span>
-              <span className="seg-label">{a.label}</span>
+            <button key={a.id} onClick={()=>onChange(a.id)} type="button"
+              style={{textAlign:'left',padding:'16px 18px',cursor:'pointer',
+                background:on?'var(--accent-tint)':'none',
+                border:'1px solid '+(on?'var(--accent)':'var(--border)'),
+                borderRadius:0,fontFamily:"'Inter',sans-serif",transition:'all .15s'}}>
+              <div style={{fontSize:'var(--fs-5)',fontWeight:on?600:500,color:on?'var(--accent)':'var(--text)',marginBottom:3}}>{a.label}</div>
+              <div style={{fontSize:'var(--fs-3)',color:'var(--muted)'}}>{a.sub}</div>
             </button>
           );
         })}
       </div>
 
-      <Card>
-        <div style={{display:'flex',alignItems:'center',gap:11,marginBottom:14}}>
-          <span style={{width:10,height:10,borderRadius:3,background:cur.c,flexShrink:0}}/>
-          <div style={{fontSize:'var(--fs-7)',fontWeight:600,fontFamily:"'Space Grotesk',sans-serif"}}>{cur.label}</div>
-          <span className="eyebrow" style={{marginLeft:'auto'}}>{cur.sub}</span>
-        </div>
-        <p style={{fontSize:'var(--fs-5)',color:'var(--text)',lineHeight:1.65,marginBottom:10,maxWidth:640}}>{d.what}</p>
-        <p style={{fontSize:'var(--fs-4)',color:'var(--muted)',lineHeight:1.7,maxWidth:640}}>{d.models}</p>
-      </Card>
+      <div style={{borderTop:'1px solid var(--border)',paddingTop:18}}>
+        <p style={{fontSize:'var(--fs-5)',color:'var(--text)',lineHeight:1.65,marginBottom:10}}>{d.what}</p>
+        <p style={{fontSize:'var(--fs-4)',color:'var(--muted)',lineHeight:1.7}}>{d.models}</p>
+      </div>
     </div>
   );
 }

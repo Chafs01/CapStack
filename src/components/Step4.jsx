@@ -15,10 +15,10 @@ function SizedDebtPreview({inp}){
       <div className="eyebrow" style={{marginBottom:10}}>Sizing test &mdash; loan is the lesser of</div>
       <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
         {ds.constraints.map((c,i)=>(
-          <div key={i} style={{flex:1,minWidth:130,padding:'10px 12px',borderRadius:'var(--r-md)',background:c.binds?'var(--ink)':'var(--surface)',border:'1px solid '+(c.binds?'var(--ink)':'var(--border)')}}>
-            <div style={{fontSize:'var(--fs-2)',color:c.binds?'#aab3c9':'var(--muted)'}}>{c.name} <span style={{opacity:.7}}>({c.basis})</span></div>
-            <div className="mono" style={{fontSize:'var(--fs-6)',fontWeight:700,color:c.binds?'#fff':'var(--text)',marginTop:3}}>{f.$(c.loan)}</div>
-            {c.binds&&<div style={{fontSize:'var(--fs-1)',color:'#7d93ff',fontWeight:700,letterSpacing:'.1em',marginTop:3}}>BINDING</div>}
+          <div key={i} style={{flex:1,minWidth:130,padding:'10px 12px',borderRadius:'var(--r-md)',background:'none',border:'1px solid '+(c.binds?'var(--accent)':'var(--border)')}}>
+            <div style={{fontSize:'var(--fs-2)',color:c.binds?'var(--on-dark-muted)':'var(--muted)'}}>{c.name} <span style={{opacity:.7}}>({c.basis})</span></div>
+            <div className="mono" style={{fontSize:'var(--fs-6)',fontWeight:700,color:c.binds?'var(--accent)':'var(--text)',marginTop:3}}>{f.$(c.loan)}</div>
+            {c.binds&&<div style={{fontSize:'var(--fs-1)',color:'var(--on-dark-accent)',fontWeight:700,letterSpacing:'.1em',marginTop:3}}>BINDING</div>}
           </div>
         ))}
       </div>

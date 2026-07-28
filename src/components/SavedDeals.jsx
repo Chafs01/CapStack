@@ -8,12 +8,12 @@ function DealNotes({id,initial,user}){
   const [val,setVal]=useState(initial);
   const [open,setOpen]=useState(!!initial);
   if(!open)return(
-    <button onClick={()=>setOpen(true)} style={{marginTop:10,marginLeft:33,background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontSize:'var(--fs-3)',padding:0,fontFamily:"'Sora',sans-serif"}}>+ Add notes</button>
+    <button onClick={()=>setOpen(true)} style={{marginTop:10,marginLeft:33,background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontSize:'var(--fs-3)',padding:0,fontFamily:"'Inter',sans-serif"}}>+ Add notes</button>
   );
   return(
     <textarea value={val} placeholder="Notes: address, broker, thesis, next steps..."
       onChange={e=>{setVal(e.target.value);updateDealNotes(id,e.target.value,user);}}
-      style={{marginTop:10,marginLeft:33,width:'calc(100% - 33px)',minHeight:54,padding:'9px 12px',border:'1px solid var(--border2)',borderRadius:8,fontSize:'var(--fs-4)',fontFamily:"'Sora',sans-serif",color:'var(--text)',resize:'vertical',outline:'none',background:'var(--surface2)'}}/>
+      style={{marginTop:10,marginLeft:33,width:'calc(100% - 33px)',minHeight:54,padding:'9px 12px',border:'1px solid var(--border2)',borderRadius:8,fontSize:'var(--fs-4)',fontFamily:"'Inter',sans-serif",color:'var(--text)',resize:'vertical',outline:'none',background:'var(--surface2)'}}/>
   );
 }
 

@@ -78,64 +78,36 @@ function App(){
 
   return(
     <div style={{minHeight:'100vh',background:'var(--bg)'}}>
-      <div style={{background:'rgba(12,19,34,.92)',backdropFilter:'blur(10px)',borderBottom:'1px solid rgba(255,255,255,.08)',padding:'13px 24px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100}}>
-        <div style={{display:'flex',alignItems:'center',gap:11,cursor:'pointer'}} onClick={()=>setView('landing')}>
-          <svg width="34" height="34" viewBox="0 0 100 100" style={{flexShrink:0}} xmlns="http://www.w3.org/2000/svg">
-            <defs><linearGradient id="hdrAccent" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#7d93ff"/><stop offset="1" stopColor="#5a76f6"/></linearGradient></defs>
-            <rect x="20" y="64" width="60" height="14" rx="3.5" fill="#4a5a85"/>
-            <rect x="20" y="46" width="60" height="14" rx="3.5" fill="#6b7593"/>
-            <rect x="20" y="28" width="60" height="14" rx="3.5" fill="#8a93a6"/>
-            <rect x="20" y="10" width="60" height="14" rx="3.5" fill="url(#hdrAccent)"/>
-          </svg>
-          <div>
-            <div style={{fontWeight:700,fontSize:'var(--fs-6)',lineHeight:1.1,color:'#fff',fontFamily:"'Space Grotesk',sans-serif"}}>Smart<span style={{color:'#7d93ff'}}>Cap</span>Stack</div>
-            <div className="mono hide-m" style={{fontSize:'var(--fs-1)',color:'#6b7593',letterSpacing:'2px',fontWeight:600}}>REAL ESTATE PRO FORMA CREATOR</div>
-          </div>
+      <div style={{background:'var(--bg)',borderBottom:'1px solid var(--text)',padding:'13px 24px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100}}>
+        <div style={{cursor:'pointer'}} onClick={()=>setView('landing')}>
+            <div style={{fontWeight:600,fontSize:'var(--fs-5)',letterSpacing:'-.01em',color:'var(--text)'}}>SmartCapStack</div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap',justifyContent:'flex-end'}}>
-          {view!=='landing'&&step<4&&step>0&&<span className="mono hide-m" style={{fontSize:'var(--fs-2)',color:'#6b7593'}}>STEP {step}/{STEPS.length}</span>}
+          {view!=='landing'&&step<4&&step>0&&<span className="mono hide-m" style={{fontSize:'var(--fs-2)',color:'var(--on-dark-dim)'}}>STEP {step}/{STEPS.length}</span>}
           {view==='landing'&&<button className="btn-p" style={{padding:'7px 18px',fontSize:'var(--fs-4)'}} onClick={()=>setView('app')}>Start an analysis</button>}
-          <button onClick={()=>setView('saved')} style={{background:'none',border:'none',cursor:'pointer',fontSize:'var(--fs-3)',color:view==='saved'?'#7d93ff':'#aab3c9',fontWeight:view==='saved'?700:500,padding:0,fontFamily:"'Sora',sans-serif"}}>Saved deals</button>
+          <button onClick={()=>setView('saved')} style={{background:'none',border:'none',cursor:'pointer',fontSize:'var(--fs-3)',color:view==='saved'?'var(--on-dark-accent)':'var(--on-dark-muted)',fontWeight:view==='saved'?700:500,padding:0,fontFamily:"'Inter',sans-serif"}}>Saved deals</button>
           {user?(
             <div style={{display:'flex',alignItems:'center',gap:8}}>
               {user.user_metadata?.avatar_url
                 ?<img src={user.user_metadata.avatar_url} alt="" referrerPolicy="no-referrer" style={{width:24,height:24,borderRadius:'50%',border:'1px solid rgba(255,255,255,.25)'}}/>
                 :null}
-              <span className="hide-m" style={{fontSize:'var(--fs-2)',color:'#8a93a6',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.user_metadata?.full_name||user.email}</span>
-              <button onClick={async()=>{if(sb)await sb.auth.signOut();setUser(null);}} style={{background:'none',border:'1px solid rgba(255,255,255,.18)',borderRadius:6,cursor:'pointer',fontSize:'var(--fs-3)',color:'#aab3c9',padding:'4px 10px',fontFamily:"'Sora',sans-serif"}}>Sign Out</button>
+              <span className="hide-m" style={{fontSize:'var(--fs-2)',color:'var(--on-dark-dim)',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.user_metadata?.full_name||user.email}</span>
+              <button onClick={async()=>{if(sb)await sb.auth.signOut();setUser(null);}} style={{background:'none',border:'none',borderBottom:'1px solid var(--border2)',borderRadius:0,cursor:'pointer',fontSize:'var(--fs-3)',color:'var(--on-dark-muted)',padding:'4px 10px',fontFamily:"'Inter',sans-serif"}}>Sign Out</button>
             </div>
           ):(
-            <button onClick={()=>setShowAuth(true)} style={{background:'var(--accent)',border:'none',borderRadius:6,cursor:'pointer',fontSize:'var(--fs-3)',color:'#fff',padding:'5px 13px',fontWeight:600,fontFamily:"'Sora',sans-serif"}}>Sign In</button>
+            <button onClick={()=>setShowAuth(true)} style={{background:'none',border:'none',borderBottom:'2px solid var(--accent)',borderRadius:0,cursor:'pointer',fontSize:'var(--fs-3)',color:'var(--accent)',padding:'4px 0',fontWeight:600,fontFamily:"'Inter',sans-serif"}}>Sign In</button>
           )}
-          {res&&step<4&&<button className="btn-s" style={{fontSize:'var(--fs-3)',padding:'6px 14px',background:'rgba(255,255,255,.06)',color:'#fff',borderColor:'rgba(255,255,255,.2)'}} onClick={()=>setStep(4)}>View results →</button>}
+          {res&&step<4&&<button className="btn-s" style={{fontSize:'var(--fs-3)',padding:'6px 14px',background:'none',color:'var(--accent)'}} onClick={()=>setStep(4)}>View results →</button>}
         </div>
       </div>
 
       {view==='landing'&&<Landing onStart={()=>setView('app')} onSample={()=>{const sd={...DEFS.multifamily,propertyName:'Sample Deal'};exportXLSX(buildPF(sd),sd);}}/>}
       {view==='saved'&&<SavedDeals onLoad={handleLoadDeal} onClose={()=>{setView('app');setStep(0);}} user={user} onSignIn={()=>setShowAuth(true)} notify={notify}/>}
       {view==='legal'&&<Legal tab={legalTab} onTab={setLegalTab} onBack={()=>setView('landing')}/>}
-      <div style={{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px',display:(view==='app')?'block':'none'}}>
+      <div style={{maxWidth:step<4?720:1080,margin:'0 auto',padding:'40px 24px 72px',display:(view==='app')?'block':'none'}}>
         {step<4?(
           <>
-            {/* connector sits behind each dot and spans back to the previous one,
-                so it stays aligned without the old margin-bottom hack */}
-            <div style={{display:'flex',alignItems:'flex-start',marginBottom:28}}>
-              {STEPS.map((s,i)=>{
-                const done=i<step,act=i===step;
-                return(
-                  <div key={i} onClick={()=>{if(done)setStep(i);}}
-                    style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:9,position:'relative',cursor:done?'pointer':'default'}}>
-                    {i>0&&<span style={{position:'absolute',top:14,right:'50%',width:'100%',height:2,background:i<=step?'var(--accent)':'var(--border2)',transition:'background .25s'}}/>}
-                    <div className={`step-dot ${done?'done':act?'act':'idle'}`}>{done?'✓':i+1}</div>
-                    {/* labels don't fit four-across on a phone — see .only-m line below */}
-                    <span className="hide-m" style={{fontSize:'var(--fs-3)',color:act?'var(--text)':done?'var(--muted)':'var(--muted2)',fontWeight:act?700:500,whiteSpace:'nowrap'}}>{s}</span>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="only-m eyebrow" style={{textAlign:'center',marginTop:-16,marginBottom:24,color:'var(--muted)'}}>
-              Step {step+1} of {STEPS.length} &middot; {STEPS[step]}
-            </div>
+            <div className="eyebrow" style={{marginBottom:14}}>Step {step+1} of {STEPS.length}</div>
 
             {step===0&&<Step1 val={assetType} onChange={handleAsset}/>}
             {step===1&&<Step2 inp={inp} onChange={update} assetType={assetType}/>}
@@ -178,9 +150,9 @@ function App(){
       <div style={{textAlign:'center',padding:'18px 20px',borderTop:'1px solid var(--border)',color:'var(--muted2)',fontSize:'var(--fs-2)'}}>
         <span style={{color:'var(--muted)',fontWeight:600}}>SmartCapStack</span>
         <span style={{margin:'0 8px',color:'var(--border2)'}}>·</span>
-        <button onClick={()=>{setLegalTab('privacy');setView('legal');window.scrollTo(0,0);}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--accent)',fontSize:'var(--fs-2)',padding:0,fontFamily:"'Sora',sans-serif"}}>Privacy</button>
+        <button onClick={()=>{setLegalTab('privacy');setView('legal');window.scrollTo(0,0);}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--accent)',fontSize:'var(--fs-2)',padding:0,fontFamily:"'Inter',sans-serif"}}>Privacy</button>
         <span style={{margin:'0 8px',color:'var(--border2)'}}>·</span>
-        <button onClick={()=>{setLegalTab('terms');setView('legal');window.scrollTo(0,0);}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--accent)',fontSize:'var(--fs-2)',padding:0,fontFamily:"'Sora',sans-serif"}}>Terms</button>
+        <button onClick={()=>{setLegalTab('terms');setView('legal');window.scrollTo(0,0);}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--accent)',fontSize:'var(--fs-2)',padding:0,fontFamily:"'Inter',sans-serif"}}>Terms</button>
         <br/>
         <span style={{fontSize:'var(--fs-2)'}}>All projections are estimates for informational purposes only. Not financial advice.</span>
       </div>
