@@ -6,9 +6,9 @@
 :root{
   /* ── surfaces: warm, paper-like (was cool blue-grey) ── */
   --ink:#141010; --ink2:#1c1717; --ink3:#292323;      /* dark 0 10% 7/10/15% */
-  --bg:#f3efe8; --bg2:#e7e5de;                        /* 42 30% 93 / 42 16% 89 */
-  --surface:#f8f6f2; --surface2:#efece4;              /* 42 28% 96 */
-  --border:#ded9cf; --border2:#cfcabe;                /* 42 18% 84 */
+  --bg:#eae3d6; --bg2:#ded5c4;      /* the desk  */
+  --surface:#faf8f4; --surface2:#f1ece2;  /* the sheet on it */
+  --border:#d3cbba; --border2:#c2b8a3;
 
   /* ── accent: none. The palette is ink on warm off-white; emphasis comes
      from weight, rules and whitespace rather than colour ── */
@@ -48,15 +48,15 @@ h1,h2,h3,.display{font-family:'Inter',sans-serif;letter-spacing:-.018em;font-fea
 
 /* ── cards ─────────────────────────────────────────────────────────── */
 .glass{background:var(--surface);border:1px solid var(--border)}
-.card{background:none;border:none;border-top:1px solid var(--text);margin-bottom:44px;overflow:visible}
-.card-hd{padding:12px 0 0;border:none;background:none;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-top:2px solid var(--text);margin-bottom:20px;overflow:visible}
+.card-hd{padding:15px 22px 0;border:none;background:none;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .card-t{font-family:'Inter',sans-serif;font-size:var(--fs-2);font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--text)}
 .card-s{font-size:var(--fs-2);color:var(--muted2);font-weight:400;letter-spacing:.02em}
-.card-bd{padding:22px 0 0}
+.card-bd{padding:18px 22px 22px}
 
 /* hairline metric grid — no dangling borders, unlike per-cell border-right */
-.hair{display:grid;grid-template-columns:1fr 1fr;column-gap:56px;background:none;border:none;border-top:1px solid var(--text);padding-top:4px}
-.hair>*{background:none}
+.hair{display:grid;grid-template-columns:1fr 1fr;column-gap:48px;background:var(--surface);border:1px solid var(--border);border-top:2px solid var(--text);padding:4px 22px 6px}
+.hair>*{background:transparent}
 .metric{display:grid;grid-template-columns:1fr auto;grid-template-areas:"l v" "s v";align-items:baseline;column-gap:20px;padding:13px 0;border-bottom:1px solid var(--border)}
 .metric:hover{background:none}
 .metric-l{grid-area:l;font-size:var(--fs-2);color:var(--muted);font-weight:500;letter-spacing:.14em;text-transform:uppercase;margin:0}
