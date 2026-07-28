@@ -1,6 +1,7 @@
 import{f,pn}from'../engine/format.js';
 import{getGPI,getDevCost}from'../engine/income.js';
 import{Fld,Slider,Card,Metric}from'./ui.jsx';
+import{summaryFigures}from'../lib/figures.js';
 // ─── STEP 3 INCOME & EXPENSES ─────────────────────────────────────────────
 function Step3({inp,onChange}){
   const t=inp.assetType.toLowerCase();
@@ -13,12 +14,15 @@ function Step3({inp,onChange}){
   const er=egi>0?opex/egi:0;
   const capBasis=t==='development'?getDevCost(inp):(inp.purchasePrice||0);
   const capR=capBasis>0?noi/capBasis:0;
-  // Color marks an exception worth a second look — not every figure.
+  // Color marks an exception worth a second look — not every figure. An
+  // untouched form has no exceptions to mark, so nothing on it reads red.
+  const S=summaryFigures({gpi,egi,opex,noi,capBasis,capR});
+  const DASH='—';
   const cells=[
-    {label:'Gross Income',value:f.$(gpi)},
-    {label:'Eff. Gross Income',value:f.$(egi)},
-    {label:'NOI',value:f.$(noi),tone:noi>0?null:'neg'},
-    {label:'Expense Ratio',value:`${(er*100).toFixed(1)}%`,tone:er>0.6?'neg':er>0.45?'warn':null},
+    {label:'Gross Income',value:S.started?f.$(gpi):DASH},
+    {label:'Eff. Gross Income',value:S.started?f.$(egi):DASH},
+    {label:'NOI',value:S.noi.ready?f.$(noi):DASH,tone:S.noi.tone==='neg'?'neg':null},
+    {label:'Expense Ratio',value:S.started?`${(er*100).toFixed(1)}%`:DASH,tone:S.started?(er>0.6?'neg':er>0.45?'warn':null):null},
   ];
   return(
     <div className="fu">
@@ -51,11 +55,11 @@ function Step3({inp,onChange}){
         <div style={{display:'flex',gap:28,flexWrap:'wrap',alignItems:'baseline',paddingTop:16,borderTop:'1px solid var(--border)'}}>
           <div>
             <span style={{color:'var(--muted)',fontSize:'var(--fs-4)'}}>Implied Cap Rate&nbsp;&nbsp;</span>
-            <span className="mono" style={{fontWeight:700,fontSize:'var(--fs-5)',color:capR>0?'var(--text)':'var(--neg)'}}>{f.pct(capR,2)}</span>
+            <span className="mono" style={{fontWeight:700,fontSize:'var(--fs-5)',color:S.capR.tone==='neg'?'var(--neg)':S.capR.tone==='idle'?'var(--muted2)':'var(--text)'}}>{S.capR.ready?f.pct(capR,2):DASH}</span>
           </div>
           <div>
             <span style={{color:'var(--muted)',fontSize:'var(--fs-4)'}}>Year 1 NOI&nbsp;&nbsp;</span>
-            <span className="mono" style={{fontWeight:700,fontSize:'var(--fs-5)',color:noi>0?'var(--text)':'var(--neg)'}}>{f.$f(noi)}</span>
+            <span className="mono" style={{fontWeight:700,fontSize:'var(--fs-5)',color:S.noi.tone==='neg'?'var(--neg)':S.noi.tone==='idle'?'var(--muted2)':'var(--text)'}}>{S.noi.ready?f.$f(noi):DASH}</span>
           </div>
         </div>
       </Card>

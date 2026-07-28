@@ -189,3 +189,18 @@ input[type=range]{accent-color:var(--accent);width:100%}
 /* Belt and braces for narrow non-touch windows: clip decorative overflow
    without creating a scroll container (which would break the sticky header). */
 body{overflow-x:clip}
+
+/* ── TOUCH TARGETS ────────────────────────────────────────────────────────
+   The house style is text links with a bottom rule, not pills, so the visual
+   must not change — but a 28px-tall "Continue" is a poor target on a phone,
+   and every user hits it three times. The hit area is expanded with an
+   invisible overlay centred on the control: the ink stays exactly where it
+   is, the finger gets the room. Sized per control so an expanded area never
+   swallows a neighbour. */
+@media(max-width:760px){
+  .btn-p,.btn-s,.btn-q{position:relative}
+  .btn-p::after,.btn-s::after,.btn-q::after{
+    content:'';position:absolute;left:0;right:0;top:50%;transform:translateY(-50%)}
+  .btn-p::after,.btn-s::after{height:44px}
+  .btn-q::after{height:34px}
+}

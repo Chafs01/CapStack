@@ -61,7 +61,8 @@ function Step4({inp,onChange}){
             <Fld label="Loan Amount" prefix="$" value={inp.loanAmount} onChange={v=>onChange({loanAmount:pn(v)})}/>
             <div>
               <Fld label={isDev?'Loan-to-Cost':'Loan-to-Value'} suffix="%" hint="sets the loan amount" value={+lev.toFixed(1)} onChange={v=>onChange({loanAmount:Math.round((isDev?devCost:pp)*pn(v)/100)})}/>
-              <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:-8,marginBottom:16}}>
+              {/* row gap leaves room for the enlarged mobile tap area below */}
+              <div style={{display:'flex',gap:'12px 6px',flexWrap:'wrap',marginTop:-8,marginBottom:16}}>
                 {[50,60,65,70,75,80,85,90].map(p=>(
                   <button key={p} className="btn-q" onClick={()=>onChange({loanAmount:Math.round((isDev?devCost:pp)*p/100)})}>{p}%</button>
                 ))}
