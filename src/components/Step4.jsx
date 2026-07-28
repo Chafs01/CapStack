@@ -113,6 +113,11 @@ function Step4({inp,onChange}){
             <Fld label="Annual Appreciation" suffix="%" hint="applied over the hold" value={inp.apprRate!=null?inp.apprRate:3} onChange={v=>onChange({apprRate:parseFloat(v)||0})}/>
           </div>
         )}
+        {inp.exitMethod==='ppu'&&!(inp.exitPPU>0)&&(
+          <div style={{background:'var(--neg-tint)',border:'1px solid var(--neg-brd)',padding:'11px 14px',marginBottom:16,fontSize:'var(--fs-4)',color:'var(--neg)',lineHeight:1.5}}>
+            Enter a comparable price per unit. Without one the exit is valued at zero and the returns below will be meaningless.
+          </div>
+        )}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 28px'}} className="g2">
           <Slider label="Revenue Growth Rate" min={0} max={8} step={0.25} value={inp.revenueGrowth||3} onChange={v=>onChange({revenueGrowth:v})} fmt2={v=>`${v}% / yr`}/>
           <Slider label="Expense Growth Rate" min={0} max={8} step={0.25} value={inp.expenseGrowth||2.5} onChange={v=>onChange({expenseGrowth:v})} fmt2={v=>`${v}% / yr`}/>

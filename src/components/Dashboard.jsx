@@ -131,6 +131,9 @@ function analystNotes(res,inp){
   const{rows,ret,sum,exit,equity}=res;
   const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
   const notes=[];
+  if(inp.exitMethod==='ppu'&&!(inp.exitPPU>0)){
+    notes.push('No comparable price per unit has been entered, so the exit is valued at zero. Every return figure here understates the deal until that assumption is set.');
+  }
   notes.push(`This deal projects a ${f.pct(ret.irr,1)} levered IRR and a ${f.x(ret.em)} equity multiple over a ${hp}-year hold, returning ${f.$f(ret.totalCF+exit.proceeds)} on ${f.$f(equity)} of invested equity.`);
   if(sum.dscr!=null){
     if(sum.dscr<1.20)notes.push(`Year 1 DSCR of ${sum.dscr.toFixed(2)}x is below the 1.20x to 1.25x minimum most lenders require. As structured, this loan amount is unlikely to be financeable without more income or less leverage.`);
@@ -550,6 +553,12 @@ function Dashboard({res,inp,onExport,onBack,onSave}){
           <button className="btn-p" onClick={onExport}>Export Excel</button>
         </div>
       </div>
+
+      {inp.exitMethod==='ppu'&&!(inp.exitPPU>0)&&(
+        <div style={{background:'var(--neg-tint)',border:'1px solid var(--neg-brd)',padding:'13px 16px',marginBottom:16,fontSize:'var(--fs-4)',color:'var(--neg)',lineHeight:1.5}}>
+          <b>No exit price entered.</b> This deal is priced on sales comparables, but the price per unit is zero &mdash; so the model is selling it for nothing and every return below is meaningless. Go back to Financing and set a comparable $/unit.
+        </div>
+      )}
 
       {/* two headline returns get real prominence; the rest support them */}
       <div className="hair g2" style={{gridTemplateColumns:'1fr 1fr',marginBottom:14}}>
