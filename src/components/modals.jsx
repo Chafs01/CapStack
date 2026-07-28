@@ -159,9 +159,14 @@ function ResetPasswordModal({onDone}){
 }
 
 // ─── SAVE MODAL & TOAST ───────────────────────────────────────────────────
-function Toast({msg}){
+function Toast({msg,action}){
   if(!msg)return null;
-  return <div className="fu" style={{position:'fixed',bottom:26,left:'50%',transform:'translateX(-50%)',background:'var(--surface)',color:'var(--text)',border:'1px solid var(--text)',padding:'11px 22px',borderRadius:0,fontSize:'var(--fs-4)',fontWeight:600,zIndex:600,boxShadow:'var(--shadow-lg)',whiteSpace:'nowrap'}}>{msg}</div>;
+  return(
+    <div className="fu" style={{position:'fixed',bottom:26,left:'50%',transform:'translateX(-50%)',background:'var(--surface)',color:'var(--text)',border:'1px solid var(--text)',padding:'11px 22px',borderRadius:0,fontSize:'var(--fs-4)',fontWeight:600,zIndex:600,boxShadow:'var(--shadow-lg)',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:18}}>
+      <span>{msg}</span>
+      {action&&<button onClick={action.run} style={{background:'none',border:'none',borderBottom:'1px solid var(--text)',borderRadius:0,padding:'1px 0',cursor:'pointer',font:'inherit',color:'var(--text)'}}>{action.label}</button>}
+    </div>
+  );
 }
 function SaveModal({inp,res,user,existingId,onClose,onSaved,onSignIn}){
   const [name,setName]=useState(inp.propertyName||'');

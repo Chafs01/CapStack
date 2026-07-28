@@ -13,7 +13,7 @@ import{AuthModal,ResetPasswordModal,SaveModal,Toast}from'./components/modals.jsx
 import{Legal}from'./components/Legal.jsx';
 import{initTelemetry}from'./lib/telemetry.js';
 import{encodeDeal,decodeDeal,shareURL,readDealFromHash,clearHash}from'./lib/share.js';
-import{saveDraft,loadDraft,clearDraft}from'./lib/draft.js';
+import{saveDraft,loadDraft,clearDraft,hasContent}from'./lib/draft.js';
 // The dashboard carries the charting library and only renders after a pro
 // forma is generated, so it loads as its own chunk.
 const Dashboard=lazy(()=>import('./components/Dashboard.jsx').then(m=>({default:m.Dashboard})));
@@ -46,8 +46,13 @@ function App(){
   const [isShared,setIsShared]=useState(false);
   const [draft,setDraft]=useState(null);
   const [toast,setToast]=useState('');
+  const [toastAct,setToastAct]=useState(null);
   const [legalTab,setLegalTab]=useState('privacy');
-  const notify=useCallback(m=>{setToast(m);setTimeout(()=>setToast(''),2600);},[]);
+  const notify=useCallback((m,act)=>{
+    setToast(m);setToastAct(act||null);
+    // an offer to undo needs long enough to actually read and act on
+    setTimeout(()=>{setToast('');setToastAct(null);},act?7000:2600);
+  },[]);
 
   useEffect(()=>{initTelemetry();},[]);
 
@@ -106,11 +111,14 @@ function App(){
 
   const handleAsset=useCallback(a=>{
     setAssetType(a);
-    setInp(BLANKS[a]||BLANKS.multifamily);
     setCurrentDealId(null);
+    // Clicking the type you already picked is a confirming gesture, not a
+    // request to erase everything typed since. Switching type genuinely
+    // invalidates the inputs, and demo/shared data is never the user's to keep.
+    if(a!==assetType||isDemo||isShared)setInp(BLANKS[a]||BLANKS.multifamily);
     setIsDemo(false);
     setIsShared(false);
-  },[]);
+  },[assetType,isDemo,isShared]);
 
   const handleCalc=()=>{
     // the engine is synchronous and fast — no artificial delay, and errors
@@ -180,6 +188,17 @@ function App(){
     setView('app');
     window.scrollTo({top:0});
   },[isDemo,isShared,assetType]);
+
+  // Deliberate counterpart to the accidental wipe removed above. Undo rather
+  // than a confirm prompt: clearing is cheap to reverse, and a modal on every
+  // clear is worse than a moment's grace afterwards.
+  const clearFields=useCallback(()=>{
+    const prev=inp;
+    setInp(BLANKS[assetType]||BLANKS.multifamily);
+    setRes(null);
+    setCurrentDealId(null);
+    notify('Fields cleared',{label:'Undo',run:()=>{setInp(prev);notify('Restored');}});
+  },[inp,assetType,notify]);
 
   const handleSave=()=>setShowSave(true);
   const handleLoadDeal=(d)=>{
@@ -262,6 +281,8 @@ function App(){
 
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:24,paddingTop:20,borderTop:'1px solid var(--border)'}}>
               <button className="btn-s" onClick={()=>setStep(s=>Math.max(0,s-1))} disabled={step===0}>← Back</button>
+              {/* only offered once there is something to clear */}
+              {hasContent(inp)&&<button className="btn-s" onClick={clearFields} style={{color:'var(--muted2)'}}>Clear fields</button>}
               {step<STEPS.length-1?(
                 <button className="btn-p" onClick={()=>setStep(s=>s+1)}>Continue →</button>
               ):(
@@ -293,7 +314,7 @@ function App(){
           notify(mode==='updated'?'Deal updated':(user?'Saved to your account':'Saved in this browser'));
         }}
         onSignIn={()=>{setShowSave(false);setShowAuth(true);}}/>}
-      <Toast msg={toast}/>
+      <Toast msg={toast} action={toastAct}/>
       <div style={{textAlign:'center',padding:'18px 20px',borderTop:'1px solid var(--border)',color:'var(--muted2)',fontSize:'var(--fs-2)'}}>
         <span style={{color:'var(--muted)',fontWeight:600}}>SmartCapStack</span>
         <span style={{margin:'0 8px',color:'var(--border2)'}}>·</span>
