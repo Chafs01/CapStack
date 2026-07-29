@@ -7,7 +7,7 @@
 // lender sizes on, which is precisely the number people rely on.
 import { DEFS, buildPF, calcWaterfall, calcAfterTax } from '../src/engine/index.js';
 import { BLANKS } from '../src/engine/defaults.js';
-import { getOpEx, opexItemsTotal } from '../src/engine/income.js';
+import { getOpEx, opexItemsTotal, getOtherIncome } from '../src/engine/income.js';
 import { buildWorkbook } from '../src/engine/excel.js';
 import { openMemo, generateMemo } from '../src/engine/memo.js';
 import { dealHealth } from '../src/engine/health.js';
@@ -188,6 +188,56 @@ console.log('\nsaved work and links carry the new shape:');
     hasContent({ ...BLANKS.multifamily, opexItems: [] }) === false);
   check('capex alone counts as work',
     hasContent({ ...BLANKS.multifamily, capexAnnual: 5000 }) === true);
+}
+
+console.log('\nother income itemises the same way, with the same rules:');
+{
+  const base = DEFS.multifamily;                       // legacy: 12,000 in one box
+  const listed = { ...base, otherIncome: 0, otherIncomeItems: [
+    { cat: 'Laundry', amount: 7000 }, { cat: 'Parking', amount: 3000 }, { cat: 'Pet Rent & Fees', amount: 2000 }] };
+  check('the two shapes total the same', getOtherIncome(base) === getOtherIncome(listed),
+    `${getOtherIncome(base)} vs ${getOtherIncome(listed)}`);
+  check('and produce identical years', JSON.stringify(buildPF(base).rows) === JSON.stringify(buildPF(listed).rows));
+  check('list wins when both are present — no double count',
+    getOtherIncome({ ...base, otherIncomeItems: [{ cat: 'Laundry', amount: 7000 }] }) === 7000);
+  check('a custom line adds exactly its amount',
+    getOtherIncome({ ...listed, otherIncomeItems: [...listed.otherIncomeItems, { cat: 'Custom', label: 'Billboard', amount: 4000 }] }) === 16000);
+  check('an emptied list means zero, not a fallback to the old field',
+    getOtherIncome({ ...base, otherIncomeItems: [{ cat: 'Laundry', amount: 0 }] }) === 0);
+  check('no list at all still reads the legacy field', getOtherIncome({ otherIncome: 5000 }) === 5000);
+  check('nothing anywhere is zero, not NaN', getOtherIncome({}) === 0);
+
+  // it feeds EGI, so it must move NOI and the management fee with it
+  const more = { ...base, otherIncome: 0, otherIncomeItems: [{ cat: 'Laundry', amount: 62000 }] };
+  const d = buildPF(more).rows[0].egi - buildPF(base).rows[0].egi;
+  check('extra other income raises EGI by exactly that amount', near(d, 50000, 1e-6), String(d));
+  check('and therefore raises NOI', buildPF(more).rows[0].noi > buildPF(base).rows[0].noi);
+
+  // malformed rows must not poison income any more than they poison expenses
+  for (const [label, rows] of [
+    ['not an array', 'nope'], ['null entries', [null, { cat: 'Laundry', amount: 100 }]],
+    ['missing amount', [{ cat: 'Laundry' }]], ['NaN amount', [{ cat: 'Laundry', amount: NaN }]],
+    ['Infinity amount', [{ cat: 'Laundry', amount: Infinity }]], ['primitives', [1, 'two', true]],
+    ['empty list', []],
+  ]) {
+    const inp = { ...base, otherIncomeItems: rows };
+    let threw = null, total = null, res = null;
+    try { total = getOtherIncome(inp); res = buildPF(inp); } catch (e) { threw = e.message; }
+    check(`other income ${label}: no throw`, threw === null, threw);
+    check(`other income ${label}: total is finite`, Number.isFinite(total), String(total));
+    check(`other income ${label}: engine stays finite`, !!res && Number.isFinite(res.rows[0].noi));
+  }
+
+  // and both lists at once, which is how a real itemised deal looks
+  const fully = { ...asList({ capexAnnual: 12000 }), otherIncome: 0,
+    otherIncomeItems: [{ cat: 'Laundry', amount: 7000 }, { cat: 'Storage', amount: 5000 }] };
+  let threw = null, res = null;
+  try { res = buildPF(fully); } catch (e) { threw = e.message; }
+  check('a fully itemised deal builds', threw === null && !!res, threw);
+  check('...with finite returns', Number.isFinite(res.ret.irr) || res.ret.irr === null);
+  check('...and survives a JSON round-trip unchanged',
+    JSON.stringify(buildPF(JSON.parse(JSON.stringify(fully))).rows) === JSON.stringify(res.rows));
+  check('...and counts as draft-worthy work', hasContent(fully) === true);
 }
 
 if (failures) { console.log(`\n${failures} FAILURE(S) — itemised expenses or capex regressed.`); process.exit(1); }

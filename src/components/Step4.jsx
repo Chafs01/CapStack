@@ -1,6 +1,6 @@
 import{f,pn}from'../engine/format.js';
 import{monthlyPmt}from'../engine/finance.js';
-import{getGPI,getOpEx,getDevCost}from'../engine/income.js';
+import{getGPI,getOpEx,getDevCost,getOtherIncome}from'../engine/income.js';
 import{buildPF}from'../engine/buildPF.js';
 import{Fld,Slider,Card,Metric}from'./ui.jsx';
 // ─── STEP 4 FINANCING ─────────────────────────────────────────────────────
@@ -37,7 +37,7 @@ function Step4({inp,onChange}){
   const devCost=t==='development'?getDevCost(inp):0;
   const eq=(t==='development'?devCost:pp)+acqC+lf-la;
   const ds=monthlyPmt(la,(inp.interestRate||0)/100,inp.amortYears||30)*12;
-  const noi=getGPI(inp)*(1-(inp.vacancyRate||0)/100)+(inp.otherIncome||0)-getOpEx(inp);
+  const noi=getGPI(inp)*(1-(inp.vacancyRate||0)/100)+getOtherIncome(inp)-getOpEx(inp);
   const dscr=ds>0?noi/ds:null;
   const isDev=t==='development';
   const lev=isDev&&devCost>0?la/devCost*100:ltv;

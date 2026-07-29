@@ -1,8 +1,8 @@
 import{f,pn}from'../engine/format.js';
-import{getGPI,getDevCost}from'../engine/income.js';
+import{getGPI,getDevCost,getOtherIncome}from'../engine/income.js';
 import{Fld,Slider,Card,Metric}from'./ui.jsx';
 import{summaryFigures}from'../lib/figures.js';
-import{OpExEditor}from'./editors.jsx';
+import{OpExEditor,OtherIncomeEditor}from'./editors.jsx';
 // ─── STEP 3 INCOME & EXPENSES ─────────────────────────────────────────────
 // Legacy deals carry six named expense fields; new ones carry a list. The
 // editor shows either as rows, and any edit commits the list and zeroes the
@@ -16,12 +16,17 @@ function Step3({inp,onChange}){
   const opexRows=Array.isArray(inp.opexItems)&&inp.opexItems.length
     ? inp.opexItems
     : LEGACY_OPEX.map(([k,cat])=>({cat,amount:inp[k]||0}));
+  const otherRows=Array.isArray(inp.otherIncomeItems)&&inp.otherIncomeItems.length
+    ? inp.otherIncomeItems
+    : ((inp.otherIncome||0)>0?[{cat:'Custom',label:'Other income',amount:inp.otherIncome}]:[]);
+  const setOther=rows=>onChange({otherIncomeItems:rows,otherIncome:0});
+
   const setOpex=rows=>onChange({opexItems:rows,
     propertyTax:0,insurance:0,maintenance:0,utilities:0,reserves:0,administrative:0});
 
   const gpi=getGPI(inp);
   const vac=gpi*(inp.vacancyRate||0)/100;
-  const egi=gpi-vac+(inp.otherIncome||0);
+  const egi=gpi-vac+getOtherIncome(inp);
   const mgmt=egi*(inp.managementFeePct||0)/100;
   const opex=(inp.propertyTax||0)+(inp.insurance||0)+mgmt+(inp.maintenance||0)+(inp.utilities||0)+(inp.reserves||0)+(inp.administrative||0);
   const noi=egi-opex;
@@ -52,7 +57,9 @@ function Step3({inp,onChange}){
           {t==='commercial'&&<><Fld label="Total SF" value={inp.totalSF} onChange={v=>onChange({totalSF:pn(v)})}/><Fld label="Base Rent / SF" prefix="$" value={inp.avgRentPerSF} onChange={v=>onChange({avgRentPerSF:pn(v)})}/><Fld label="CAM / NNN Income" prefix="$" value={inp.camIncome||0} onChange={v=>onChange({camIncome:pn(v)})}/></>}
           {t==='mixed-use'&&<><Fld label="Residential Units" value={inp.numUnits} onChange={v=>onChange({numUnits:pn(v)})}/><Fld label="Avg Monthly Rent" prefix="$" value={inp.avgRent} onChange={v=>onChange({avgRent:pn(v)})}/><Fld label="Commercial SF" value={inp.commercialSF||0} onChange={v=>onChange({commercialSF:pn(v)})}/><Fld label="Commercial Rent / SF" prefix="$" value={inp.commercialRentPerSF||0} onChange={v=>onChange({commercialRentPerSF:pn(v)})}/></>}
           {t==='development'&&<><Fld label="Stabilized Units" value={inp.numUnits} onChange={v=>onChange({numUnits:pn(v)})}/><Fld label="Avg Monthly Rent" prefix="$" value={inp.avgRent} onChange={v=>onChange({avgRent:pn(v)})}/></>}
-          <Fld label="Other Income (Annual)" prefix="$" hint="laundry, parking, fees" value={inp.otherIncome||0} onChange={v=>onChange({otherIncome:pn(v)})}/>
+        </div>
+        <div style={{paddingTop:14,borderTop:'1px solid var(--border)',marginTop:4}}>
+          <OtherIncomeEditor rows={otherRows} onChange={setOther}/>
         </div>
       </Card>
 

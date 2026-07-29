@@ -1,5 +1,5 @@
 import{monthlyPmt,loanBal,calcIRR,calcNPV}from'./finance.js';
-import{getGPI,getOpEx,getDevCost}from'./income.js';
+import{getGPI,getOpEx,getDevCost,getOtherIncome}from'./income.js';
 import{calcLIHTC}from'./lihtc.js';
 function buildPF(inp){
   const gpi0=getGPI(inp);
@@ -10,7 +10,7 @@ function buildPF(inp){
   const tEarly=(inp.assetType||'').toLowerCase();
   const isAff=tEarly==='affordable';
   const IRe=inp.interestRate||0, AYe=inp.amortYears||30;
-  const noi0=(gpi0*(1-vac/100)+(inp.otherIncome||0))-opex0;
+  const noi0=(gpi0*(1-vac/100)+getOtherIncome(inp))-opex0;
   let LA=inp.loanAmount||0;
   let lihtc=null, debtSizing=null;
   if(isAff){
@@ -59,9 +59,9 @@ function buildPF(inp){
     const em=Math.pow(1+eg/100,yr-1);
     const gpi=gpi0*rm;
     const vacL=gpi*vac/100;
-    const egi=gpi-vacL+(inp.otherIncome||0)*rm;
+    const egi=gpi-vacL+getOtherIncome(inp)*rm;
     const mgmt=egi*(inp.managementFeePct||0)/100;
-    const opex=(opex0-((getGPI(inp)*(1-vac/100)+(inp.otherIncome||0))*(inp.managementFeePct||0)/100))*em+mgmt;
+    const opex=(opex0-((getGPI(inp)*(1-vac/100)+getOtherIncome(inp))*(inp.managementFeePct||0)/100))*em+mgmt;
     const noi=egi-opex;
     const isIO=yr<=IO;
     const monthsPaid=isIO?0:(yr-IO)*12;
