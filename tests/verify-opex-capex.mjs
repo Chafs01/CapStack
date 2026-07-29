@@ -7,7 +7,7 @@
 // lender sizes on, which is precisely the number people rely on.
 import { DEFS, buildPF, calcWaterfall, calcAfterTax } from '../src/engine/index.js';
 import { BLANKS } from '../src/engine/defaults.js';
-import { getOpEx, opexItemsTotal, getOtherIncome } from '../src/engine/income.js';
+import { getOpEx, opexItemsTotal, getOtherIncome, resolveCapex } from '../src/engine/income.js';
 import { buildWorkbook } from '../src/engine/excel.js';
 import { openMemo, generateMemo } from '../src/engine/memo.js';
 import { dealHealth } from '../src/engine/health.js';
@@ -238,6 +238,53 @@ console.log('\nother income itemises the same way, with the same rules:');
   check('...and survives a JSON round-trip unchanged',
     JSON.stringify(buildPF(JSON.parse(JSON.stringify(fully))).rows) === JSON.stringify(res.rows));
   check('...and counts as draft-worthy work', hasContent(fully) === true);
+}
+
+console.log('\ncapex can be quoted three ways, and they must reconcile:');
+{
+  const base = { ...DEFS.multifamily, numUnits: 40 };
+  const mk = (capexBasis, capexAnnual) => buildPF({ ...base, capexBasis, capexAnnual });
+  const lump = mk('amount', 24000), per = mk('perUnit', 600), pct = mk('pctEGI', 3);
+
+  check('$600/unit x 40 units equals the $24,000 lump in year 1',
+    near(per.rows[0].capex, lump.rows[0].capex, 1e-6),
+    `${per.rows[0].capex} vs ${lump.rows[0].capex}`);
+  check('...and stays equal as both grow with expenses',
+    near(per.rows[6].capex, lump.rows[6].capex, 1e-6));
+  check('a percent basis reads off that year\'s EGI',
+    near(pct.rows[0].capex, pct.rows[0].egi * 0.03, 1e-6),
+    `${pct.rows[0].capex} vs ${pct.rows[0].egi * 0.03}`);
+  check('...and therefore rides income rather than the expense rate',
+    near(pct.rows[6].capex, pct.rows[6].egi * 0.03, 1e-6));
+  check('all three still land below NOI', lump.rows[0].noi === pct.rows[0].noi
+    && lump.sum.capR === pct.sum.capR && lump.sum.dscr === pct.sum.dscr);
+
+  // an existing deal has no basis stored; it must behave exactly as before
+  check('a deal with no basis behaves as a total budget',
+    JSON.stringify(buildPF({ ...base, capexAnnual: 24000 }).rows)
+    === JSON.stringify(mk('amount', 24000).rows));
+  check('an unknown basis falls back to a total budget',
+    JSON.stringify(buildPF({ ...base, capexAnnual: 24000, capexBasis: 'nonsense' }).rows)
+    === JSON.stringify(mk('amount', 24000).rows));
+  for (const b of ['amount', 'perUnit', 'pctEGI']) {
+    check(`zero capex on the ${b} basis is still a no-op`,
+      JSON.stringify(mk(b, 0).rows) === JSON.stringify(buildPF(base).rows));
+  }
+  // per-unit with no units must not silently invent a charge
+  check('per-unit with zero units yields nothing',
+    resolveCapex({ capexAnnual: 600, capexBasis: 'perUnit', numUnits: 0 }, 100000, 1) === 0);
+  // malformed values
+  for (const [label, over] of [
+    ['NaN amount', { capexAnnual: NaN }], ['string amount', { capexAnnual: '600' }],
+    ['negative', { capexAnnual: -500 }], ['null basis', { capexBasis: null }],
+    ['huge percent', { capexAnnual: 500, capexBasis: 'pctEGI' }],
+  ]) {
+    const inp = { ...base, capexBasis: 'perUnit', capexAnnual: 600, ...over };
+    let threw = null, res = null;
+    try { res = buildPF(inp); } catch (e) { threw = e.message; }
+    check(`capex ${label}: no throw`, threw === null, threw);
+    check(`capex ${label}: cash flow finite`, !!res && Number.isFinite(res.rows[0].cfbt));
+  }
 }
 
 if (failures) { console.log(`\n${failures} FAILURE(S) — itemised expenses or capex regressed.`); process.exit(1); }

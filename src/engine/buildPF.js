@@ -1,5 +1,5 @@
 import{monthlyPmt,loanBal,calcIRR,calcNPV}from'./finance.js';
-import{getGPI,getOpEx,getDevCost,getOtherIncome}from'./income.js';
+import{getGPI,getOpEx,getDevCost,getOtherIncome,resolveCapex}from'./income.js';
 import{calcLIHTC}from'./lihtc.js';
 function buildPF(inp){
   const gpi0=getGPI(inp);
@@ -70,7 +70,7 @@ function buildPF(inp){
     // Capital expenditure is not an operating expense: it sits below NOI so it
     // hits cash flow without distorting the cap rate or the DSCR a lender
     // sizes on. Grown with the other costs.
-    const capex=(inp.capexAnnual||0)*em;
+    const capex=resolveCapex(inp,egi,em);
     const cfbt=noi-ds-capex;
     const capR=capBasis>0?noi/capBasis:0;
     const coc=equity>0?cfbt/equity:0;

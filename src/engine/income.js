@@ -42,6 +42,25 @@ function getOtherIncome(inp){
   const v=+(inp&&inp.otherIncome);
   return isFinite(v)?v:0;
 }
+// Capital expenditure is quoted three ways in practice: a budget for the year,
+// a reserve per unit per year (the common multifamily convention, e.g. $300/unit),
+// or a share of effective gross income. The stored number means whichever the
+// basis says, so switching basis reinterprets it rather than silently keeping
+// a figure that no longer means anything.
+function resolveCapex(inp,egi,expenseFactor){
+  const v=+(inp&&inp.capexAnnual);
+  if(!isFinite(v)||v===0)return 0;
+  const basis=(inp&&inp.capexBasis)||'amount';
+  if(basis==='perUnit'){
+    const u=+(inp.numUnits)||0;
+    return v*u*(isFinite(expenseFactor)?expenseFactor:1);
+  }
+  if(basis==='pctEGI'){
+    // a share of income needs no separate growth — it rides the income line
+    return (isFinite(egi)?egi:0)*v/100;
+  }
+  return v*(isFinite(expenseFactor)?expenseFactor:1);
+}
 function opexItemsTotal(inp){
   if(!Array.isArray(inp.opexItems))return null;
   let t=0,any=false;
@@ -69,4 +88,4 @@ function getDevCost(inp){
   return(inp.landCost||inp.purchasePrice||0)+hard+soft+devFee;
 }
 
-export{umGPI,rtGPI,getGPI,getOpEx,getDevCost,opexItemsTotal,getOtherIncome,listTotal};
+export{umGPI,rtGPI,getGPI,getOpEx,getDevCost,opexItemsTotal,getOtherIncome,listTotal,resolveCapex};

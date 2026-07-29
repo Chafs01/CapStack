@@ -7,6 +7,8 @@ import{OpExEditor,OtherIncomeEditor}from'./editors.jsx';
 // Legacy deals carry six named expense fields; new ones carry a list. The
 // editor shows either as rows, and any edit commits the list and zeroes the
 // old fields so only one of the two is ever counted.
+const CAPEX_LABEL={amount:'Annual CapEx Budget',perUnit:'CapEx per Unit / Year',pctEGI:'CapEx as % of EGI'};
+
 const LEGACY_OPEX=[['propertyTax','Property Taxes'],['insurance','Insurance'],
   ['maintenance','Repairs & Maintenance'],['utilities','Utilities'],
   ['reserves','Capital Reserves'],['administrative','Administrative']];
@@ -23,6 +25,17 @@ function Step3({inp,onChange}){
 
   const setOpex=rows=>onChange({opexItems:rows,
     propertyTax:0,insurance:0,maintenance:0,utilities:0,reserves:0,administrative:0});
+
+  // switching basis clears the figure, because "600" means something entirely
+  // different per unit than it does as a total, and silently reinterpreting it
+  // would change the deal without the user touching the number
+  const capexBasis=inp.capexBasis||'amount';
+  const units=inp.numUnits||0;
+  const capexHint=capexBasis==='perUnit'
+    ? (units>0?`${f.$((inp.capexAnnual||0)*units)} a year across ${units} units`:'enter units above to see the annual total')
+    : capexBasis==='pctEGI'
+    ? 'rides income — no separate growth rate applied'
+    : (units>0?`${f.$((inp.capexAnnual||0)/units)} per unit / yr`:'annual reserve for capital work');
 
   const gpi=getGPI(inp);
   const vac=gpi*(inp.vacancyRate||0)/100;
@@ -82,7 +95,18 @@ function Step3({inp,onChange}){
 
       <Card title="Capital Expenditure" sub="Roofs, HVAC, unit turns — money spent on the asset, not on running it">
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'}} className="g2">
-          <Fld label="Annual CapEx Budget" prefix="$" hint={inp.numUnits>0?`${f.$((inp.capexAnnual||0)/inp.numUnits)} per unit / yr`:'annual reserve for capital work'}
+          <div style={{marginBottom:16}}>
+            <label className="fld-l">Quoted as</label>
+            <select className="input-f" value={capexBasis} style={{height:38}}
+              onChange={e=>onChange({capexBasis:e.target.value,capexAnnual:0})}>
+              <option value="amount">Total annual budget</option>
+              <option value="perUnit">Per unit, per year</option>
+              <option value="pctEGI">% of effective gross income</option>
+            </select>
+          </div>
+          <Fld label={CAPEX_LABEL[capexBasis]}
+            prefix={capexBasis==='pctEGI'?undefined:'$'} suffix={capexBasis==='pctEGI'?'%':undefined}
+            hint={capexHint}
             value={inp.capexAnnual||0} onChange={v=>onChange({capexAnnual:pn(v)})}/>
         </div>
         <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',lineHeight:1.55,marginTop:2}}>
