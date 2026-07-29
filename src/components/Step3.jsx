@@ -2,9 +2,23 @@ import{f,pn}from'../engine/format.js';
 import{getGPI,getDevCost}from'../engine/income.js';
 import{Fld,Slider,Card,Metric}from'./ui.jsx';
 import{summaryFigures}from'../lib/figures.js';
+import{OpExEditor}from'./editors.jsx';
 // ─── STEP 3 INCOME & EXPENSES ─────────────────────────────────────────────
+// Legacy deals carry six named expense fields; new ones carry a list. The
+// editor shows either as rows, and any edit commits the list and zeroes the
+// old fields so only one of the two is ever counted.
+const LEGACY_OPEX=[['propertyTax','Property Taxes'],['insurance','Insurance'],
+  ['maintenance','Repairs & Maintenance'],['utilities','Utilities'],
+  ['reserves','Capital Reserves'],['administrative','Administrative']];
+
 function Step3({inp,onChange}){
   const t=inp.assetType.toLowerCase();
+  const opexRows=Array.isArray(inp.opexItems)&&inp.opexItems.length
+    ? inp.opexItems
+    : LEGACY_OPEX.map(([k,cat])=>({cat,amount:inp[k]||0}));
+  const setOpex=rows=>onChange({opexItems:rows,
+    propertyTax:0,insurance:0,maintenance:0,utilities:0,reserves:0,administrative:0});
+
   const gpi=getGPI(inp);
   const vac=gpi*(inp.vacancyRate||0)/100;
   const egi=gpi-vac+(inp.otherIncome||0);
@@ -42,15 +56,10 @@ function Step3({inp,onChange}){
         </div>
       </Card>
 
-      <Card title="Operating Expenses" sub="Annual, at Year 1">
+      <Card title="Operating Expenses" sub="Annual, at Year 1 — add or rename lines to match the deal">
+        <OpExEditor rows={opexRows} onChange={setOpex}/>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'}} className="g2">
-          <Fld label="Property Taxes" prefix="$" value={inp.propertyTax||0} onChange={v=>onChange({propertyTax:pn(v)})}/>
-          <Fld label="Insurance" prefix="$" value={inp.insurance||0} onChange={v=>onChange({insurance:pn(v)})}/>
-          <Fld label="Property Management Fee" suffix="%" hint="of EGI" value={inp.managementFeePct||0} onChange={v=>onChange({managementFeePct:pn(v)})}/>
-          <Fld label="Repairs & Maintenance" prefix="$" value={inp.maintenance||0} onChange={v=>onChange({maintenance:pn(v)})}/>
-          <Fld label="Utilities" prefix="$" value={inp.utilities||0} onChange={v=>onChange({utilities:pn(v)})}/>
-          <Fld label="Capital Reserves" prefix="$" value={inp.reserves||0} onChange={v=>onChange({reserves:pn(v)})}/>
-          <Fld label="Administrative" prefix="$" value={inp.administrative||0} onChange={v=>onChange({administrative:pn(v)})}/>
+          <Fld label="Property Management Fee" suffix="%" hint="of EGI — grows with income, so it is kept separate" value={inp.managementFeePct||0} onChange={v=>onChange({managementFeePct:pn(v)})}/>
         </div>
         <div style={{display:'flex',gap:28,flexWrap:'wrap',alignItems:'baseline',paddingTop:16,borderTop:'1px solid var(--border)'}}>
           <div>
@@ -62,6 +71,17 @@ function Step3({inp,onChange}){
             <span className="mono" style={{fontWeight:700,fontSize:'var(--fs-5)',color:S.noi.tone==='neg'?'var(--neg)':S.noi.tone==='idle'?'var(--muted2)':'var(--text)'}}>{S.noi.ready?f.$f(noi):DASH}</span>
           </div>
         </div>
+      </Card>
+
+      <Card title="Capital Expenditure" sub="Roofs, HVAC, unit turns — money spent on the asset, not on running it">
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'}} className="g2">
+          <Fld label="Annual CapEx Budget" prefix="$" hint={inp.numUnits>0?`${f.$((inp.capexAnnual||0)/inp.numUnits)} per unit / yr`:'annual reserve for capital work'}
+            value={inp.capexAnnual||0} onChange={v=>onChange({capexAnnual:pn(v)})}/>
+        </div>
+        <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',lineHeight:1.55,marginTop:2}}>
+          Sits below NOI, so it reduces cash flow and your cash-on-cash return without
+          altering the cap rate or the DSCR a lender sizes on. Leave it at zero and nothing changes.
+        </p>
       </Card>
 
       {/* summary sits after the inputs so people aren't reading numbers

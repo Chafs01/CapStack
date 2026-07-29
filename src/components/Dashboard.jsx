@@ -37,6 +37,7 @@ function PFTable({rows,hp}){
     {l:'  Less: Operating Expenses',k:'opex',fmt:v=>`(${f.$f(v)})`,type:'deduct'},
     {l:'Net Operating Income',k:'noi',fmt:f.$f,type:'hl'},
     {l:'  Less: Debt Service',k:'ds',fmt:v=>`(${f.$f(v)})`,type:'deduct'},
+    {l:'  Less: Capital Expenditure',k:'capex',fmt:v=>`(${f.$f(v)})`,type:'deduct'},
     {l:'Cash Flow Before Tax',k:'cfbt',fmt:f.$f,type:'hl'},
     {l:'RATIOS & METRICS',k:null,type:'sec'},
     {l:'Cap Rate',k:'capR',fmt:v=>f.pct(v,2),type:'metric'},

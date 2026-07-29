@@ -129,6 +129,7 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
     ['acqp','Acquisition Costs (% of Price)',(inp.acquisitionCostsPct||0)/100,FP,true],
     ['feep','Loan Fees (% of Loan)',(inp.loanFeesPct||0)/100,FP,true],
     ['disc','Discount Rate (NPV)',(inp.discountRate||0)/100,FP,true],
+    ['capex','Annual CapEx Budget',inp.capexAnnual||0,F$,true],
   ]);
   // wire left-side formulas now that refs exist
   const setRef=(key,f,r,fmt)=>{const a=refs[key].replace('Summary!','').replace(/\$/g,'');const c=ws.getCell(a);c.value=fml(f,r);if(fmt)c.numFmt=fmt;};
@@ -207,7 +208,10 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
   sect('DEBT SERVICE');
   const dsF=yr=>`-IF(${refs.loan}=0,0,IF(${yr}<=${refs.io},${refs.loan}*${refs.rate},IF(${refs.rate}=0,${refs.loan}/${refs.amort},${refs.loan}*${refs.rate}/12/(1-(1+${refs.rate}/12)^(-${refs.amort}*12))*12)))`;
   line('ds','Annual Debt Service',[null].concat(yrs.map(yr=>yr<=hp?{f:dsF(yr),r:-ER[yr-1].ds}:null)),F$N);
-  line('cfbt','Cash Flow Before Tax',[null].concat(yrs.map(yr=>yr<=hp?{f:`${colOf(yr)}${rowIdx.noi}+${colOf(yr)}${rowIdx.ds}`,r:ER[yr-1].cfbt}:null)),F$,{total:true});
+  // capital expenditure is not an operating expense: it sits under debt
+  // service so it reduces cash flow without touching NOI or the DSCR above
+  line('capex','Less: Capital Expenditure',[null].concat(yrs.map(yr=>yr<=hp?{f:`-${refs.capex}*(1+${refs.eg})^(${yr}-1)`,r:-(ER[yr-1].capex||0)}:null)),F$N);
+  line('cfbt','Cash Flow Before Tax',[null].concat(yrs.map(yr=>yr<=hp?{f:`${colOf(yr)}${rowIdx.noi}+${colOf(yr)}${rowIdx.ds}+${colOf(yr)}${rowIdx.capex}`,r:ER[yr-1].cfbt}:null)),F$,{total:true});
   sect('RATIOS & BALANCES');
   line('cap','Cap Rate',[null].concat(yrs.map(yr=>yr<=hp?{f:`${colOf(yr)}${rowIdx.noi}/${refs.basis}`,r:ER[yr-1].capR}:null)),FP2);
   line('coc','Cash-on-Cash Return',[null].concat(yrs.map(yr=>yr<=hp?{f:`IF(${refs.eq}=0,0,${colOf(yr)}${rowIdx.cfbt}/${refs.eq})`,r:ER[yr-1].coc}:null)),FP2);

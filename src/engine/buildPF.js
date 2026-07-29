@@ -67,12 +67,16 @@ function buildPF(inp){
     const monthsPaid=isIO?0:(yr-IO)*12;
     const bal=loanBal(LA,IR/100,AY,monthsPaid);
     const ds=LA>0?(isIO?ioAnnual:pmt12):0;
-    const cfbt=noi-ds;
+    // Capital expenditure is not an operating expense: it sits below NOI so it
+    // hits cash flow without distorting the cap rate or the DSCR a lender
+    // sizes on. Grown with the other costs.
+    const capex=(inp.capexAnnual||0)*em;
+    const cfbt=noi-ds-capex;
     const capR=capBasis>0?noi/capBasis:0;
     const coc=equity>0?cfbt/equity:0;
     const dscr=ds>0?noi/ds:null;
     const expR=egi>0?opex/egi:0;
-    rows.push({yr,gpi,vacL,egi,opex,noi,ds,cfbt,capR,coc,dscr,bal,expR,mgmt});
+    rows.push({yr,gpi,vacL,egi,opex,noi,ds,capex,cfbt,capR,coc,dscr,bal,expR,mgmt});
   }
 
   const ex=rows[hp-1];
@@ -101,7 +105,7 @@ function buildPF(inp){
   const irr=equity>0?calcIRR(irrFlows):NaN;
   const npv=calcNPV(irrFlows,dr);
   const y1=rows[0];
-  const beOcc=y1.gpi>0?Math.max(0,(y1.opex+y1.ds)/y1.gpi):0;
+  const beOcc=y1.gpi>0?Math.max(0,(y1.opex+y1.ds+(y1.capex||0))/y1.gpi):0;
   const retOnCost=devCost>0?y1.noi/devCost:0;
 
   return{inp,equity,totalCost,acqC,LF,rows,

@@ -92,6 +92,50 @@ function UnitMixEditor({rows,onChange}){
     </div>
   );
 }
+// Operating expense categories a real underwriter actually breaks out. Six
+// fixed boxes is fine for a duplex and useless for a deal where the whole job
+// is arguing about the line items -- so the list is open, and "Custom" covers
+// whatever this asset has that the list does not.
+const OPEX_CATEGORIES=['Property Taxes','Insurance','Repairs & Maintenance','Utilities',
+  'Water & Sewer','Trash Removal','Landscaping / Snow','Turnover & Make-Ready','Contract Services',
+  'Payroll / On-Site','Marketing & Leasing','Legal & Professional','HOA / Condo Dues',
+  'Pest Control','Security','Capital Reserves','Administrative','Custom'];
+
+function OpExEditor({rows,onChange}){
+  rows=rows||[];
+  const set=(i,p)=>onChange(rows.map((r,j)=>j===i?{...r,...p}:r));
+  const add=()=>onChange([...rows,{cat:'Custom',label:'',amount:0}]);
+  const del=i=>onChange(rows.filter((_,j)=>j!==i));
+  const total=rows.reduce((s,r)=>s+(+r.amount||0),0);
+  const C='1.5fr 1fr 30px';
+  return(
+    <div style={{marginBottom:14}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,gap:12,flexWrap:'wrap'}}>
+        <label style={{fontSize:'var(--fs-4)',fontWeight:600,color:'var(--text)'}}>Operating Expense Line Items</label>
+        <span style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>{rows.length} line{rows.length!==1?'s':''} &middot; {f.$(total)}/yr</span>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:C,gap:8,padding:'0 2px 6px',fontSize:'var(--fs-2)',fontWeight:700,color:'var(--muted2)'}}>
+        <div>Category</div><div>Annual Amount</div><div></div>
+      </div>
+      {rows.map((r,i)=>(
+        <div key={i}>
+          <div style={{display:'grid',gridTemplateColumns:C,gap:8,marginBottom:r.cat==='Custom'?4:8,alignItems:'center'}}>
+            <select className="input-f" value={r.cat||'Custom'} onChange={e=>set(i,{cat:e.target.value})} style={{height:38}}>
+              {OPEX_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+            <div style={{position:'relative'}}>
+              <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>$</span>
+              <input className="input-f" value={r.amount||''} onChange={e=>set(i,{amount:pn(e.target.value)})} placeholder="0" style={{paddingLeft:24}} inputMode="decimal"/>
+            </div>
+            <button onClick={()=>del(i)} aria-label="Remove" title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
+          </div>
+          {r.cat==='Custom'&&<input className="input-f" value={r.label||''} onChange={e=>set(i,{label:e.target.value})} placeholder="Name this expense (e.g. Elevator Service, Dock Maintenance)" style={{marginBottom:8,fontSize:'var(--fs-4)'}}/>}
+        </div>
+      ))}
+      <button className="btn-s" style={{padding:'7px 14px',fontSize:'var(--fs-4)',marginTop:2}} onClick={add}>+ Add expense line</button>
+    </div>
+  );
+}
 function RetailEditor({rows,onChange,label}){
   rows=rows||[];
   const set=(i,p)=>onChange(rows.map((r,j)=>j===i?{...r,...p}:r));
@@ -125,4 +169,4 @@ function RetailEditor({rows,onChange,label}){
   );
 }
 
-export{UNIT_TYPES,CREDIT_TYPES,CreditEditor,UnitMixEditor,RetailEditor};
+export{UNIT_TYPES,CREDIT_TYPES,OPEX_CATEGORIES,CreditEditor,UnitMixEditor,OpExEditor,RetailEditor};

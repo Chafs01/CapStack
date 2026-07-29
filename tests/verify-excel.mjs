@@ -45,12 +45,38 @@ check('sheet names', wbNew.worksheets.map(w => w.name), wbOld.worksheets.map(w =
 for (const name of wbOld.worksheets.map(w => w.name)) {
   if (REBUILT.has(name)) { console.log(`  SKIP sheet "${name}" — rebuilt as a live model, see verify-excel-waterfall.mjs`); continue; }
   const a = wbNew.getWorksheet(name), b = wbOld.getWorksheet(name);
-  const cells = (ws) => {
-    const out = [];
-    ws.eachRow({ includeEmpty: false }, (row, rn) => row.eachCell({ includeEmpty: false }, (cell, cn) => out.push([rn, cn, cell.value])));
-    return out;
+  // Indexed by row label rather than row number. Comparing by position made
+  // any deliberately inserted line — a CapEx row, say — look like every row
+  // beneath it had changed, which buries a real drift in a wall of noise. By
+  // label, a moved row is silent and a changed *value* still fails loudly.
+  const byLabel = (ws) => {
+    const m = {};
+    ws.eachRow({ includeEmpty: false }, (row) => {
+      const label = String(row.getCell(2).value ?? '').trim();
+      if (!label) return;
+      const vals = [];
+      for (let c = 3; c <= 16; c++) {
+        const v = row.getCell(c).value;
+        if (v === undefined || v === null) continue;
+        // Cell addresses inside formulas necessarily shift when a row is
+        // inserted, so comparing formula text would flag layout as drift.
+        // What must not change is the value — and a formula must still be a
+        // formula, so an "F" marker makes a silent downgrade to a hardcoded
+        // number fail rather than pass.
+        vals.push(v && typeof v === 'object' && v.formula
+          ? 'F' + JSON.stringify('result' in v ? v.result : null)
+          : v);
+      }
+      m[label] = vals;
+    });
+    return m;
   };
-  check(`sheet "${name}" cell values+formulas`, cells(a), cells(b));
+  const A = byLabel(a), B = byLabel(b);
+  for (const label of Object.keys(B)) {
+    check(`sheet "${name}" row "${label}"`, A[label], B[label]);
+  }
+  const added = Object.keys(A).filter((k) => !(k in B));
+  if (added.length) console.log(`  NOTE sheet "${name}" gained ${added.length} row(s): ${added.join(', ')}`);
 }
 
 // A skip is only defensible if the replacement really is live. Guard against
