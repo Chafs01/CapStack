@@ -6,7 +6,10 @@ import{calcAfterTax}from'./afterTax.js';
 // ─── EXCEL EXPORT ────────────────────────────────────────────────────────
 // ExcelJS is ~1MB and only needed when someone actually exports, so it loads
 // on demand instead of shipping with the initial page.
-async function buildWorkbook(res,inp,withResults=true){
+// `openUrl` is the link back into the app for this exact deal. Passed in
+// rather than built here so the workbook stays free of the share encoding and
+// the node tests can build workbooks without a browser.
+async function buildWorkbook(res,inp,withResults=true,openUrl){
   const mod=await import('exceljs');
   const E=mod.default||mod;
   const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
@@ -46,7 +49,19 @@ async function buildWorkbook(res,inp,withResults=true){
   ws.columns=[{width:2},{width:28},{width:15},{width:2.5},{width:28},{width:15},{width:2}];
   banner(ws,2,2,6,name.toUpperCase(),`${inp.assetType} Investment Analysis  |  ${hp}-Year Hold  |  Blue cells are inputs, black cells are live formulas  |  Prepared ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}`);
 
-  let rL=5,rR=5;
+  if(openUrl){
+    // The workbook is the thing that gets emailed around. A way back means a
+    // stale model can be re-run in seconds instead of rebuilt, and whoever it
+    // was forwarded to can see what made it.
+    ws.mergeCells(4,2,4,6);
+    const lk=ws.getCell(4,2);
+    lk.value={text:'Open this deal in SmartCapStack  \u2192   (re-run it with new assumptions)',hyperlink:openUrl};
+    lk.font={name:'Calibri',size:10,bold:true,color:{argb:'FF0070C0'},underline:true};
+    lk.alignment={vertical:'middle',indent:1};
+    ws.getRow(4).height=19;
+  }
+
+  let rL=openUrl?6:5,rR=openUrl?6:5;
   const refs={};
   // entry: [key|null, label, value|{f,r}, fmt, isInput]
   const block=(side,title,entries)=>{
@@ -637,8 +652,8 @@ async function buildWorkbook(res,inp,withResults=true){
   return wb;
 }
 
-async function exportXLSX(res,inp){
-  const wb=await buildWorkbook(res,inp);
+async function exportXLSX(res,inp,openUrl){
+  const wb=await buildWorkbook(res,inp,true,openUrl);
   const buf=await wb.xlsx.writeBuffer();
   const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   const a=document.createElement('a');

@@ -266,10 +266,9 @@ function App(){
         )}
         {isShared&&(
           <div className="demo-bar">
-            <span><strong>Shared deal.</strong> Someone sent you this underwriting. Nothing is saved to your account &mdash; edit it freely and it becomes yours.</span>
+            <span><strong>Shared analysis.</strong> Someone sent you their underwriting to read. The full analysis is below &mdash; running your own deal takes about four minutes.</span>
             <span style={{display:'flex',gap:18,flexShrink:0}}>
-              <button onClick={()=>{setStep(0);window.scrollTo({top:0});}}>Edit these assumptions</button>
-              <button onClick={()=>{handleAsset('multifamily');setRes(null);setStep(0);window.scrollTo({top:0});}}>Start my own</button>
+              <button onClick={startFresh}>Run my own deal</button>
             </span>
           </div>
         )}
@@ -309,7 +308,10 @@ function App(){
           res&&(
             <Suspense fallback={<div style={{padding:'80px 24px',textAlign:'center',color:'var(--muted2)',fontSize:'var(--fs-5)'}}>Preparing results…</div>}>
               <ErrorBoundary resetKey={res} onBack={()=>setStep(3)}>
-                <Dashboard res={res} inp={inp} onExport={()=>{track('excel_exported');exportXLSX(res,inp);}} onBack={()=>setStep(3)} onSave={handleSave} onShare={handleShare}/>
+                <Dashboard res={res} inp={inp} viewOnly={isShared} onRunOwn={startFresh} onExport={async()=>{track('excel_exported');
+                  // a link home, so the workbook is portable rather than a dead end
+                  let back;try{back=shareURL(await encodeDeal(inp));}catch(e){}
+                  exportXLSX(res,inp,back);}} onBack={()=>setStep(3)} onSave={handleSave} onShare={handleShare}/>
               </ErrorBoundary>
             </Suspense>
           )

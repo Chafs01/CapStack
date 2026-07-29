@@ -559,7 +559,11 @@ function LihtcPanel({L,res}){
   );
 }
 
-function Dashboard({res,inp,onExport,onBack,onSave,onShare}){
+// `viewOnly` is how a link opens for someone who is not the author: the whole
+// analysis is readable, but the tools are not. Reading someone's finished deal
+// has no substitute value for underwriting your own, so it stays open — what
+// is withheld is the working model, which is the product.
+function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,onRunOwn}){
   const [tab,setTab]=useState('charts');
   const hp=inp.holdingPeriod||7;
   const {rows,ret,sum,exit,equity,totalCost,acqC,LF}=res;
@@ -594,7 +598,8 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare}){
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20,flexWrap:'wrap',gap:14}}>
         <div>
           <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:9,flexWrap:'wrap'}}>
-            <button className="btn-q" onClick={onBack}>← Edit</button>
+            {!viewOnly&&<button className="btn-q" onClick={onBack}>← Edit</button>}
+            {viewOnly&&<span className="eyebrow" style={{color:'var(--muted2)'}}>Shared &middot; view only</span>}
             <Chip tone="accent">{dealTypeLabel(inp)}</Chip>
             <Chip>{hp}-Year Hold</Chip>
             {inp.address&&<Chip>{inp.address}</Chip>}
@@ -604,11 +609,21 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare}){
         {/* must be allowed to shrink, or flexWrap never engages and the last
             action is clipped off the right edge on a phone */}
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-          <button className="btn-s" onClick={onSave}>Save deal</button>
-          {onShare&&<button className="btn-s" onClick={onShare}>Share link</button>}
-          <button className="btn-s" onClick={()=>openMemo(res,inp)}>Memo / PDF</button>
-          <button className="btn-s" onClick={()=>downloadMemo(res,inp)}>Markdown</button>
-          <button className="btn-p" onClick={onExport}>Export Excel</button>
+          {viewOnly?(
+            <>
+              {/* reading stays free; the working model does not travel */}
+              <button className="btn-s" onClick={()=>openMemo(res,inp)}>Memo / PDF</button>
+              <button className="btn-p" onClick={onRunOwn}>Run your own deal &rarr;</button>
+            </>
+          ):(
+            <>
+              <button className="btn-s" onClick={onSave}>Save deal</button>
+              {onShare&&<button className="btn-s" onClick={onShare}>Share link</button>}
+              <button className="btn-s" onClick={()=>openMemo(res,inp)}>Memo / PDF</button>
+              <button className="btn-s" onClick={()=>downloadMemo(res,inp)}>Markdown</button>
+              <button className="btn-p" onClick={onExport}>Export Excel</button>
+            </>
+          )}
         </div>
       </div>
 

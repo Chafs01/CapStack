@@ -52,7 +52,36 @@ for (const [label, payload] of Object.entries(rejected)) {
   check(`rejects ${label}`, out === null, String(out));
 }
 
-console.log('memo escaping (a shared deal is untrusted input):');
+console.log('the workbook carries a way back to the app:');
+{
+  const { buildWorkbook } = await import('../src/engine/excel.js');
+  const inp = { ...DEFS.residential, propertyName: 'Link Back' };
+  const res = buildPF(inp);
+  const url = shareURL(await encodeDeal(inp));
+
+  const withLink = await buildWorkbook(res, inp, true, url);
+  const ws = withLink.getWorksheet('Summary');
+  const cell = ws.getCell(4, 2).value;
+  check('the link cell is a real hyperlink', !!(cell && cell.hyperlink), JSON.stringify(cell));
+  check('it points at this deal, not a bare homepage', /[#&]d=/.test((cell && cell.hyperlink) || ''));
+  const payload = /[#&]d=([A-Za-z0-9\-_]+)/.exec((cell && cell.hyperlink) || '')?.[1];
+  const back = await decodeDeal(payload);
+  check('the embedded link reopens the identical deal', JSON.stringify(back) === JSON.stringify(inp));
+  check('the link fits comfortably in a cell and a mail client',
+    (cell.hyperlink || '').length < 2000, String((cell.hyperlink || '').length));
+  // the link occupies a row, so the blocks beneath it must move rather than collide
+  check('the summary blocks shift down instead of being overwritten',
+    ws.getCell(6, 2).value === 'PROPERTY & DEAL', String(ws.getCell(6, 2).value));
+
+  // omitting the url must leave the workbook exactly as it was before
+  const noLink = await buildWorkbook(res, inp, true);
+  check('no link cell when no url is supplied', !noLink.getWorksheet('Summary').getCell(4, 2).value);
+  check('and the original layout is untouched',
+    noLink.getWorksheet('Summary').getCell(5, 2).value === 'PROPERTY & DEAL',
+    String(noLink.getWorksheet('Summary').getCell(5, 2).value));
+}
+
+console.log('\nmemo escaping (a shared deal is untrusted input):');
 const evil = {
   ...DEFS.multifamily,
   propertyName: '<img src=x onerror="window.__PWNED=1">',
