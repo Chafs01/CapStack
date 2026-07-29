@@ -29,7 +29,9 @@ const mk = (over = {}) => {
     exit: { proceeds: 100000, ...(r.exit || {}) },
     equity: 100000,
     lihtc: r.lihtc,
-  }, { assetType: 'Multifamily', purchasePrice: 1000000, loanAmount: 700000, vacancyRate: 5, ...inp }];
+    // 1.1% of price — the US median, so the tax-basis check reads clean and
+    // this fixture keeps testing what it means to test
+  }, { assetType: 'Multifamily', purchasePrice: 1000000, propertyTax: 11000, loanAmount: 700000, vacancyRate: 5, ...inp }];
 };
 
 console.log('readiness — an unfinished form is not a failing deal:');

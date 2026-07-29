@@ -30,6 +30,14 @@ const T = {
   ltvHigh: 0.80,
   capLow: 0.03,
   capHigh: 0.12,
+  // Property tax as a share of price. US effective rates run from roughly
+  // 0.3% (Hawaii, Alabama) to about 2.4% (New Jersey, Illinois). Below the
+  // floor the figure is usually the seller's old assessment rather than what
+  // the buyer will pay; above the ceiling it is usually a typo or a special
+  // assessment district. Deliberately wide, because a false alarm on a real
+  // low-rate state teaches people to ignore the panel.
+  taxRateLow: 0.0035,
+  taxRateHigh: 0.030,
 };
 
 const num = (v) => (typeof v === 'number' && isFinite(v) ? v : null);
@@ -50,6 +58,24 @@ function permanentLoan(res, inp) {
   const t = String(inp?.assetType || '').toLowerCase();
   if (t === 'affordable') return num(res?.lihtc?.permLoan);
   return num(inp?.loanAmount);
+}
+
+// Property tax may sit in the itemised list or in the legacy field, and the
+// check has to find it in either without counting it twice.
+function propertyTaxOf(inp){
+  if(Array.isArray(inp?.opexItems)){
+    let t=0,found=false;
+    for(const r of inp.opexItems){
+      if(!r||typeof r!=='object')continue;
+      const cat=String(r.cat||'').toLowerCase();
+      if(cat.includes('tax')){const v=+r.amount;if(isFinite(v)){t+=v;found=true;}}
+    }
+    if(found)return t;
+    // an itemised deal with no tax line means the list is authoritative and
+    // tax genuinely is not in it — do not fall back and resurrect a stale field
+    if(inp.opexItems.length)return 0;
+  }
+  return num(inp?.propertyTax)||0;
 }
 
 // A deal can only be assessed once it has both a cost basis and some income.
@@ -196,6 +222,35 @@ function dealHealth(res, inp) {
     }
   }
 
+  // ── does the tax figure look like the buyer's, or the seller's? ────────
+  // The single most expensive assumption a small investor gets wrong. Many
+  // states reassess at or near the sale price when a property changes hands,
+  // so a seller who has owned for years may be paying tax on a value far
+  // below what the buyer will be assessed on. Underwriting their bill
+  // overstates NOI, the cap rate, and every return beneath it.
+  const purchased=t!=='development'&&t!=='affordable';
+  const price=num(inp.purchasePrice)||0;
+  const taxAmt=propertyTaxOf(inp);
+  if(purchased&&price>0&&taxAmt>0){
+    const eff=taxAmt/price;
+    if(eff<T.taxRateLow){
+      add('tax-basis','warn',`Property tax is only ${(eff*100).toFixed(2)}% of the purchase price`,
+        'Unless the property is in a genuinely low-rate state such as Hawaii, Alabama or Colorado, a figure this low is usually the seller\u2019s existing assessment rather than yours. Many states reassess at or near the sale price when a property changes hands, and a long-held property can be taxed on a value far below what you are paying.',
+        'Check with the county assessor what the bill becomes after sale. If the low rate is simply the jurisdiction, ignore this.');
+    }else if(eff>T.taxRateHigh){
+      add('tax-basis','warn',`Property tax is ${(eff*100).toFixed(2)}% of the purchase price`,
+        'Higher than almost every US jurisdiction. Usually a mistyped figure, or a special assessment or improvement district bundled into the bill.',
+        'Confirm the figure, and whether any part of it is a temporary special assessment.');
+    }else{
+      add('tax-basis','pass',`Property tax is ${(eff*100).toFixed(2)}% of the purchase price`,
+        'Within the normal range for US jurisdictions. Still worth confirming it reflects a post-sale assessment rather than the seller\u2019s.');
+    }
+  }else if(purchased&&price>0&&taxAmt<=0){
+    add('tax-basis','warn','No property tax entered',
+      'Tax is usually the largest single operating expense, so leaving it out overstates NOI and every return below it.',
+      'Enter the tax you expect to pay after closing.');
+  }
+
   // ── how much of the return depends on the sale ──────────────────────────
   const proceeds = num(exit?.proceeds) || 0;
   const totalRet = (num(ret.totalCF) || 0) + proceeds;
@@ -217,4 +272,4 @@ function dealHealth(res, inp) {
   return { ready: true, checks, counts, verdict };
 }
 
-export { dealHealth, assessable, costBasis, permanentLoan, isResidential1to4, T as HEALTH_THRESHOLDS };
+export { dealHealth, assessable, costBasis, permanentLoan, isResidential1to4, propertyTaxOf, T as HEALTH_THRESHOLDS };
