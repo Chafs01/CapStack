@@ -97,7 +97,10 @@ function PortfolioView({onBack,user}){
   );
 }
 
-function SavedDeals({onLoad,onClose,user,onSignIn,notify}){
+// `embedded` drops the page chrome — outer padding, the big heading, and the
+// sign-in banner — so the Profile page can host this list under its own header
+// without two competing titles stacked on top of each other.
+function SavedDeals({onLoad,onClose,user,onSignIn,notify,embedded}){
   const [portfolio,setPortfolio]=useState(false);
   const [deals,setDeals]=useState([]);
   const [loadingDeals,setLoadingDeals]=useState(true);
@@ -147,8 +150,8 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify}){
     if(a&&b)return <CompareView a={a} b={b} onBack={()=>setCompare(false)}/>;
   }
   return(
-    <div className="fu" style={{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px'}}>
-      {!user&&<div style={{background:'var(--accent-tint)',border:'1px solid var(--accent)',borderRadius:8,padding:'10px 16px',marginBottom:18,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
+    <div className={embedded?undefined:'fu'} style={embedded?undefined:{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px'}}>
+      {!user&&!embedded&&<div style={{background:'var(--accent-tint)',border:'1px solid var(--accent)',borderRadius:8,padding:'10px 16px',marginBottom:18,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
         <span style={{fontSize:'var(--fs-4)',color:'var(--accent)',fontWeight:500}}>Sign in to save deals to the cloud and access them from any device.</span>
         <button className="btn-p" style={{padding:'6px 14px',fontSize:'var(--fs-3)',flexShrink:0}} onClick={onSignIn}>Sign In</button>
       </div>}
@@ -156,9 +159,9 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify}){
         <span style={{fontSize:'var(--fs-4)',color:'var(--accent)',fontWeight:500}}>{localCount} deal{localCount!==1?'s':''} saved in this browser {localCount!==1?'are':'is'} not in your account yet.</span>
         <button className="btn-p" style={{padding:'6px 14px',fontSize:'var(--fs-3)',flexShrink:0}} onClick={migrate}>Upload to account</button>
       </div>}
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:12}}>
-        <h2 style={{fontSize:'var(--fs-9)',fontWeight:800}}>Saved Deals</h2>
-        <div style={{display:'flex',gap:10}}>
+      <div style={{display:'flex',justifyContent:embedded?'flex-end':'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:12}}>
+        {!embedded&&<h2 style={{fontSize:'var(--fs-9)',fontWeight:800}}>Saved Deals</h2>}
+        <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
           {sel.length===2&&<button className="btn-p" onClick={()=>setCompare(true)}>Compare selected</button>}
           {deals.length>0&&<button className="btn-s" onClick={()=>setPortfolio(true)}>Portfolio roll-up</button>}
           <button className="btn-s" onClick={onClose}>+ New analysis</button>

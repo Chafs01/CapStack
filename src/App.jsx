@@ -5,6 +5,7 @@ import{DEFS,BLANKS}from'./engine/defaults.js';
 import{exportXLSX}from'./engine/excel.js';
 import{Landing}from'./components/Landing.jsx';
 import{SavedDeals}from'./components/SavedDeals.jsx';
+import{Profile}from'./components/Profile.jsx';
 import{Step1}from'./components/Step1.jsx';
 import{Step2}from'./components/Step2.jsx';
 import{Step3}from'./components/Step3.jsx';
@@ -226,13 +227,13 @@ function App(){
         <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap',justifyContent:'flex-end'}}>
           {view!=='landing'&&step<4&&step>0&&<span className="mono hide-m" style={{fontSize:'var(--fs-2)',color:'var(--on-dark-dim)'}}>STEP {step}/{STEPS.length}</span>}
           {view==='landing'&&<button className="btn-p" style={{padding:'7px 18px',fontSize:'var(--fs-4)'}} onClick={startFresh}>Start an analysis</button>}
-          <button onClick={()=>setView('saved')} style={{background:'none',border:'none',cursor:'pointer',fontSize:'var(--fs-3)',color:view==='saved'?'var(--on-dark-accent)':'var(--on-dark-muted)',fontWeight:view==='saved'?700:500,padding:0,fontFamily:"'Inter',sans-serif"}}>Saved deals</button>
+          <button onClick={()=>{setView('profile');window.scrollTo({top:0});}} style={{background:'none',border:'none',cursor:'pointer',fontSize:'var(--fs-3)',color:view==='profile'?'var(--on-dark-accent)':'var(--on-dark-muted)',fontWeight:view==='profile'?700:500,padding:0,fontFamily:"'Inter',sans-serif"}}>{user?'Account':'Saved deals'}</button>
           {user?(
             <div style={{display:'flex',alignItems:'center',gap:8}}>
               {user.user_metadata?.avatar_url
                 ?<img src={user.user_metadata.avatar_url} alt="" referrerPolicy="no-referrer" style={{width:24,height:24,borderRadius:'50%',border:'1px solid rgba(255,255,255,.25)'}}/>
                 :null}
-              <span className="hide-m" style={{fontSize:'var(--fs-2)',color:'var(--on-dark-dim)',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.user_metadata?.full_name||user.email}</span>
+              <button onClick={()=>{setView('profile');window.scrollTo({top:0});}} className="hide-m" style={{background:'none',border:'none',padding:0,cursor:'pointer',fontFamily:"'Inter',sans-serif",fontSize:'var(--fs-2)',color:'var(--on-dark-dim)',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.user_metadata?.full_name||user.email}</button>
               <button onClick={async()=>{if(sb)await sb.auth.signOut();setUser(null);}} style={{background:'none',border:'none',borderBottom:'1px solid var(--border2)',borderRadius:0,cursor:'pointer',fontSize:'var(--fs-3)',color:'var(--on-dark-muted)',padding:'4px 10px',fontFamily:"'Inter',sans-serif"}}>Sign Out</button>
             </div>
           ):(
@@ -244,9 +245,11 @@ function App(){
 
       {view==='landing'&&<Landing onStart={startFresh} onDemo={handleDemo}
         onSample={()=>{const sd={...DEFS.multifamily,propertyName:'Sample Deal'};exportXLSX(buildPF(sd),sd);}}/>}
-      {view==='saved'&&(
-        <ErrorBoundary resetKey={view} onBack={()=>{setView('app');setStep(0);}}>
-          <SavedDeals onLoad={handleLoadDeal} onClose={()=>{setView('app');setStep(0);}} user={user} onSignIn={()=>setShowAuth(true)} notify={notify}/>
+      {view==='profile'&&(
+        <ErrorBoundary resetKey={user?user.id:'anon'} onBack={()=>{setView('app');setStep(0);}}>
+          <Profile user={user} onSignIn={()=>setShowAuth(true)}
+            onSignOut={async()=>{if(sb)await sb.auth.signOut();setUser(null);notify('Signed out');}}
+            onLoadDeal={handleLoadDeal} onStart={startFresh} notify={notify}/>
         </ErrorBoundary>
       )}
       {view==='legal'&&<Legal tab={legalTab} onTab={setLegalTab} onBack={()=>setView('landing')}/>}
