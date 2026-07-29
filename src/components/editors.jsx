@@ -1,4 +1,5 @@
 import{f,pn}from'../engine/format.js';
+import{resolveLine}from'../engine/income.js';
 // ─── RENT ROLL EDITORS ──────────────────────────────────────────────────
 const UNIT_TYPES=['Studio','1BR','2BR','3BR','4BR','Penthouse','Other'];
 const CREDIT_TYPES=[
@@ -96,18 +97,22 @@ function UnitMixEditor({rows,onChange}){
 // fixed boxes is fine for a duplex and useless for a deal where the whole job
 // is arguing about the line items -- so the list is open, and "Custom" covers
 // whatever this asset has that the list does not.
+const EXPENSE_BASES=[['amount','Annual $'],['perUnitYr','$ / unit / yr'],['pctEGI','% of EGI']];
+const INCOME_BASES=[['amount','Annual $'],['perUnitMo','$ / unit / mo'],['perUnitYr','$ / unit / yr']];
+const BASIS_SUFFIX={amount:'$',perUnitYr:'$',perUnitMo:'$',pctEGI:'%'};
+
 const OPEX_CATEGORIES=['Property Taxes','Insurance','Repairs & Maintenance','Utilities',
   'Water & Sewer','Trash Removal','Landscaping / Snow','Turnover & Make-Ready','Contract Services',
   'Payroll / On-Site','Marketing & Leasing','Legal & Professional','HOA / Condo Dues',
   'Pest Control','Security','Capital Reserves','Administrative','Custom'];
 
-function OpExEditor({rows,onChange}){
+function OpExEditor({rows,onChange,units}){
   rows=rows||[];
   const set=(i,p)=>onChange(rows.map((r,j)=>j===i?{...r,...p}:r));
   const add=()=>onChange([...rows,{cat:'Custom',label:'',amount:0}]);
   const del=i=>onChange(rows.filter((_,j)=>j!==i));
-  const total=rows.reduce((s,r)=>s+(+r.amount||0),0);
-  const C='1.5fr 1fr 30px';
+  const total=rows.reduce((s,r)=>s+resolveLine(r,units,0),0);
+  const C='1.4fr 0.95fr 0.85fr 30px';
   return(
     <div style={{marginBottom:14}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,gap:12,flexWrap:'wrap'}}>
@@ -115,7 +120,7 @@ function OpExEditor({rows,onChange}){
         <span style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>{rows.length} line{rows.length!==1?'s':''} &middot; {f.$(total)}/yr</span>
       </div>
       <div style={{display:'grid',gridTemplateColumns:C,gap:8,padding:'0 2px 6px',fontSize:'var(--fs-2)',fontWeight:700,color:'var(--muted2)'}}>
-        <div>Category</div><div>Annual Amount</div><div></div>
+        <div>Category</div><div>Quoted as</div><div>Amount</div><div></div>
       </div>
       {rows.map((r,i)=>(
         <div key={i}>
@@ -123,8 +128,12 @@ function OpExEditor({rows,onChange}){
             <select className="input-f" value={r.cat||'Custom'} onChange={e=>set(i,{cat:e.target.value})} style={{height:38}}>
               {OPEX_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
             </select>
+            {/* changing basis clears the figure: 300 a door is not 300 a year */}
+            <select className="input-f" value={r.basis||'amount'} onChange={e=>set(i,{basis:e.target.value,amount:0})} style={{height:38}}>
+              {EXPENSE_BASES.map(([v,l])=><option key={v} value={v}>{l}</option>)}
+            </select>
             <div style={{position:'relative'}}>
-              <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>$</span>
+              <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>{BASIS_SUFFIX[r.basis||'amount']}</span>
               <input className="input-f" value={r.amount||''} onChange={e=>set(i,{amount:pn(e.target.value)})} placeholder="0" style={{paddingLeft:24}} inputMode="decimal"/>
             </div>
             <button onClick={()=>del(i)} aria-label="Remove" title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
@@ -144,13 +153,13 @@ const OTHER_INCOME_CATEGORIES=['Laundry','Parking','Storage','Pet Rent & Fees',
   'Vending & Amenities','Cleaning & Move-In Fees','Short-Term / Furnished Premium',
   'Rooftop / Antenna Lease','Signage','Cell Tower Lease','Custom'];
 
-function OtherIncomeEditor({rows,onChange}){
+function OtherIncomeEditor({rows,onChange,units}){
   rows=rows||[];
   const set=(i,p)=>onChange(rows.map((r,j)=>j===i?{...r,...p}:r));
   const add=()=>onChange([...rows,{cat:'Laundry',amount:0}]);
   const del=i=>onChange(rows.filter((_,j)=>j!==i));
-  const total=rows.reduce((s,r)=>s+(+r.amount||0),0);
-  const C='1.5fr 1fr 30px';
+  const total=rows.reduce((s,r)=>s+resolveLine(r,units,0),0);
+  const C='1.4fr 0.95fr 0.85fr 30px';
   return(
     <div style={{marginBottom:14}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,gap:12,flexWrap:'wrap'}}>
@@ -159,7 +168,7 @@ function OtherIncomeEditor({rows,onChange}){
       </div>
       {rows.length>0&&(
         <div style={{display:'grid',gridTemplateColumns:C,gap:8,padding:'0 2px 6px',fontSize:'var(--fs-2)',fontWeight:700,color:'var(--muted2)'}}>
-          <div>Source</div><div>Annual Amount</div><div></div>
+          <div>Source</div><div>Quoted as</div><div>Amount</div><div></div>
         </div>
       )}
       {rows.map((r,i)=>(
@@ -167,6 +176,9 @@ function OtherIncomeEditor({rows,onChange}){
           <div style={{display:'grid',gridTemplateColumns:C,gap:8,marginBottom:r.cat==='Custom'?4:8,alignItems:'center'}}>
             <select className="input-f" value={r.cat||'Custom'} onChange={e=>set(i,{cat:e.target.value})} style={{height:38}}>
               {OTHER_INCOME_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+            <select className="input-f" value={r.basis||'amount'} onChange={e=>set(i,{basis:e.target.value,amount:0})} style={{height:38}}>
+              {INCOME_BASES.map(([v,l])=><option key={v} value={v}>{l}</option>)}
             </select>
             <div style={{position:'relative'}}>
               <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>$</span>

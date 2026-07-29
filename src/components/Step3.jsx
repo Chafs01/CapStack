@@ -1,5 +1,5 @@
 import{f,pn}from'../engine/format.js';
-import{getGPI,getDevCost,getOtherIncome}from'../engine/income.js';
+import{getGPI,getDevCost,getOtherIncome,lossRate}from'../engine/income.js';
 import{Fld,Slider,Card,Metric}from'./ui.jsx';
 import{summaryFigures}from'../lib/figures.js';
 import{OpExEditor,OtherIncomeEditor}from'./editors.jsx';
@@ -38,7 +38,7 @@ function Step3({inp,onChange}){
     : (units>0?`${f.$((inp.capexAnnual||0)/units)} per unit / yr`:'annual reserve for capital work');
 
   const gpi=getGPI(inp);
-  const vac=gpi*(inp.vacancyRate||0)/100;
+  const vac=gpi*lossRate(inp);
   const egi=gpi-vac+getOtherIncome(inp);
   const mgmt=egi*(inp.managementFeePct||0)/100;
   const opex=(inp.propertyTax||0)+(inp.insurance||0)+mgmt+(inp.maintenance||0)+(inp.utilities||0)+(inp.reserves||0)+(inp.administrative||0);
@@ -64,7 +64,12 @@ function Step3({inp,onChange}){
       </div>
 
       <Card title="Revenue" sub="Gross potential income and vacancy">
-        <Slider label="Physical Vacancy + Credit Loss" min={0} max={25} step={0.5} value={inp.vacancyRate||0} onChange={v=>onChange({vacancyRate:v})} fmt2={v=>`${v}%`}/>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'}} className="g2">
+          <Fld label="Physical Vacancy" suffix="%" hint="share of rent lost to empty space"
+            value={inp.vacancyRate||0} onChange={v=>onChange({vacancyRate:pn(v)})}/>
+          <Fld label="Credit Loss" suffix="%" hint="billed but never collected"
+            value={inp.creditLossRate||0} onChange={v=>onChange({creditLossRate:pn(v)})}/>
+        </div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'}} className="g2">
           {t==='multifamily'&&<><Fld label="Units" value={inp.numUnits} onChange={v=>onChange({numUnits:pn(v)})}/><Fld label="Avg Monthly Rent" prefix="$" value={inp.avgRent} onChange={v=>onChange({avgRent:pn(v)})}/></>}
           {t==='commercial'&&<><Fld label="Total SF" value={inp.totalSF} onChange={v=>onChange({totalSF:pn(v)})}/><Fld label="Base Rent / SF" prefix="$" value={inp.avgRentPerSF} onChange={v=>onChange({avgRentPerSF:pn(v)})}/><Fld label="CAM / NNN Income" prefix="$" value={inp.camIncome||0} onChange={v=>onChange({camIncome:pn(v)})}/></>}
@@ -72,12 +77,12 @@ function Step3({inp,onChange}){
           {t==='development'&&<><Fld label="Stabilized Units" value={inp.numUnits} onChange={v=>onChange({numUnits:pn(v)})}/><Fld label="Avg Monthly Rent" prefix="$" value={inp.avgRent} onChange={v=>onChange({avgRent:pn(v)})}/></>}
         </div>
         <div style={{paddingTop:14,borderTop:'1px solid var(--border)',marginTop:4}}>
-          <OtherIncomeEditor rows={otherRows} onChange={setOther}/>
+          <OtherIncomeEditor rows={otherRows} onChange={setOther} units={inp.numUnits||0}/>
         </div>
       </Card>
 
       <Card title="Operating Expenses" sub="Annual, at Year 1 — add or rename lines to match the deal">
-        <OpExEditor rows={opexRows} onChange={setOpex}/>
+        <OpExEditor rows={opexRows} onChange={setOpex} units={inp.numUnits||0}/>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'}} className="g2">
           <Fld label="Property Management Fee" suffix="%" hint="of EGI — grows with income, so it is kept separate" value={inp.managementFeePct||0} onChange={v=>onChange({managementFeePct:pn(v)})}/>
         </div>

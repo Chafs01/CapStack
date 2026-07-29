@@ -7,7 +7,7 @@
 // lender sizes on, which is precisely the number people rely on.
 import { DEFS, buildPF, calcWaterfall, calcAfterTax } from '../src/engine/index.js';
 import { BLANKS } from '../src/engine/defaults.js';
-import { getOpEx, opexItemsTotal, getOtherIncome, resolveCapex } from '../src/engine/income.js';
+import { getOpEx, opexItemsTotal, getOtherIncome, resolveCapex, resolveLine, lossRate } from '../src/engine/income.js';
 import { buildWorkbook } from '../src/engine/excel.js';
 import { openMemo, generateMemo } from '../src/engine/memo.js';
 import { dealHealth } from '../src/engine/health.js';
@@ -284,6 +284,61 @@ console.log('\ncapex can be quoted three ways, and they must reconcile:');
     try { res = buildPF(inp); } catch (e) { threw = e.message; }
     check(`capex ${label}: no throw`, threw === null, threw);
     check(`capex ${label}: cash flow finite`, !!res && Number.isFinite(res.rows[0].cfbt));
+  }
+}
+
+console.log('\nline items can be quoted per unit or as a share of income:');
+{
+  const base = { ...DEFS.multifamily, numUnits: 40 };
+  check('$300/unit/yr resolves to the annual figure', resolveLine({ amount: 300, basis: 'perUnitYr' }, 40, 0) === 12000);
+  check('$25/unit/month resolves to the annual figure', resolveLine({ amount: 25, basis: 'perUnitMo' }, 40, 0) === 12000);
+  check('4% of EGI resolves off the EGI given', resolveLine({ amount: 4, basis: 'pctEGI' }, 40, 700000) === 28000);
+  check('no basis still means a plain annual amount', resolveLine({ amount: 9000 }, 40, 0) === 9000);
+  check('an unknown basis falls back to a plain amount', resolveLine({ amount: 9000, basis: 'nonsense' }, 40, 0) === 9000);
+  check('per-unit with no units yields nothing', resolveLine({ amount: 300, basis: 'perUnitYr' }, 0, 0) === 0);
+  check('a malformed amount yields nothing', resolveLine({ amount: 'x', basis: 'perUnitYr' }, 40, 0) === 0);
+
+  // the same expense expressed two ways must produce the same deal
+  const flat = { ...base, opexItems: [{ cat: 'Repairs & Maintenance', amount: 12000 }],
+    propertyTax: 0, insurance: 0, maintenance: 0, utilities: 0, reserves: 0, administrative: 0 };
+  const perUnit = { ...flat, opexItems: [{ cat: 'Repairs & Maintenance', basis: 'perUnitYr', amount: 300 }] };
+  check('an expense quoted per unit matches the same figure quoted flat',
+    JSON.stringify(buildPF(perUnit).rows) === JSON.stringify(buildPF(flat).rows));
+
+  const incFlat = { ...base, otherIncome: 0, otherIncomeItems: [{ cat: 'Laundry', amount: 12000 }] };
+  const incPer = { ...incFlat, otherIncomeItems: [{ cat: 'Laundry', basis: 'perUnitMo', amount: 25 }] };
+  check('income quoted per unit per month matches the same figure quoted flat',
+    JSON.stringify(buildPF(incPer).rows) === JSON.stringify(buildPF(incFlat).rows));
+
+  // a percent-of-EGI expense has to read the EGI the deal actually produces
+  const pctExp = { ...flat, opexItems: [{ cat: 'Repairs & Maintenance', basis: 'pctEGI', amount: 4 }] };
+  const r = buildPF(pctExp);
+  check('a percent-of-EGI expense is computed off EGI', near(getOpEx(pctExp) - r.rows[0].mgmt, r.rows[0].egi * 0.04, 1));
+}
+
+console.log('\nvacancy and credit loss are separate deductions:');
+{
+  const base = DEFS.multifamily;                       // 5% vacancy, no credit loss
+  const split = { ...base, vacancyRate: 4, creditLossRate: 1 };
+  const a = buildPF(base), b = buildPF(split);
+  check('4% + 1% gives the same EGI as a flat 5%', near(a.rows[0].egi, b.rows[0].egi, 1e-6));
+  check('...and the same NOI', near(a.rows[0].noi, b.rows[0].noi, 1e-6));
+  check('the two losses are reported separately', near(b.rows[0].vacL, b.rows[0].gpi * 0.04, 1e-6)
+    && near(b.rows[0].credL, b.rows[0].gpi * 0.01, 1e-6));
+  check('a deal saved before the split still has zero credit loss', a.rows[0].credL === 0);
+  check('lossRate adds the two', near(lossRate({ vacancyRate: 4, creditLossRate: 1.5 }), 0.055, 1e-9));
+  check('lossRate of a legacy deal is just vacancy', near(lossRate({ vacancyRate: 5 }), 0.05, 1e-9));
+  check('lossRate copes with nothing at all', lossRate({}) === 0);
+  check('lossRate ignores malformed values', lossRate({ vacancyRate: 'x', creditLossRate: NaN }) === 0);
+  // credit loss must actually bite
+  const heavy = buildPF({ ...base, creditLossRate: 3 });
+  check('adding credit loss reduces EGI', heavy.rows[0].egi < a.rows[0].egi);
+  check('...and NOI with it', heavy.rows[0].noi < a.rows[0].noi);
+  for (const v of [0, 100, -5, 1e6]) {
+    let threw = null, res = null;
+    try { res = buildPF({ ...base, creditLossRate: v }); } catch (e) { threw = e.message; }
+    check(`credit loss ${v}: no throw`, threw === null, threw);
+    check(`credit loss ${v}: finite`, !!res && Number.isFinite(res.rows[0].egi));
   }
 }
 

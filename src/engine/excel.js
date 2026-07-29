@@ -87,7 +87,7 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
 
   // engine-derived values for caching
   const R0=res.rows[0];
-  const gpi1=R0.gpi, oth1=R0.egi-(R0.gpi-R0.vacL);
+  const gpi1=R0.gpi, oth1=R0.egi-(R0.gpi-R0.vacL-(R0.credL||0));
   const baseExM=R0.opex-R0.mgmt;
   const basisVal=isDev?getDevCost(inp):(inp.purchasePrice||0);
   const LA=inp.loanAmount||0, IR=(inp.interestRate||0)/100, AY=inp.amortYears||30, IO=inp.ioPeriod||0;
@@ -128,7 +128,8 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
   block('L','MODEL ASSUMPTIONS',[
     ['gpi1','Gross Potential Income (Yr 1)',Math.round(gpi1),F$,true],
     ['oth1','Other Income (Yr 1)',Math.round(oth1),F$,true],
-    ['vac','Vacancy & Credit Loss',(inp.vacancyRate||0)/100,FP,true],
+    ['vac','Physical Vacancy',(inp.vacancyRate||0)/100,FP,true],
+    ['cred','Credit Loss',(inp.creditLossRate||0)/100,FP,true],
     ['exm','OpEx excl. Mgmt (Yr 1)',Math.round(baseExM),F$,true],
     ['mgmt','Management Fee (% of EGI)',(inp.managementFeePct||0)/100,FP,true],
     ['rg','Revenue Growth (Annual)',(inp.revenueGrowth||0)/100,FP,true],
@@ -204,9 +205,10 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
 
   sect('REVENUE');
   opsRow('gpi','Gross Potential Income',`${refs.gpi1}`,gpi1,(yr,p)=>`${p}*(1+${refs.rg})`,yr=>ER[yr-1].gpi,F$);
-  line('vac','Less: Vacancy & Credit Loss',[null].concat(yrs.map(yr=>({f:`-${colOf(yr)}${rowIdx.gpi}*${refs.vac}`,r:-ER[yr-1].vacL}))),F$N);
+  line('vac','Less: Vacancy Loss',[null].concat(yrs.map(yr=>({f:`-${colOf(yr)}${rowIdx.gpi}*${refs.vac}`,r:-ER[yr-1].vacL}))),F$N);
+  line('cred','Less: Credit Loss',[null].concat(yrs.map(yr=>({f:`-${colOf(yr)}${rowIdx.gpi}*${refs.cred}`,r:-(ER[yr-1].credL||0)}))),F$N);
   opsRow('oth','Plus: Other Income',`${refs.oth1}`,oth1,(yr,p)=>`${p}*(1+${refs.rg})`,yr=>oth1*Math.pow(1+(inp.revenueGrowth||0)/100,yr-1),F$);
-  line('egi','Effective Gross Income',[null].concat(yrs.map(yr=>({f:`${colOf(yr)}${rowIdx.gpi}+${colOf(yr)}${rowIdx.vac}+${colOf(yr)}${rowIdx.oth}`,r:ER[yr-1].egi}))),F$,{total:true});
+  line('egi','Effective Gross Income',[null].concat(yrs.map(yr=>({f:`${colOf(yr)}${rowIdx.gpi}+${colOf(yr)}${rowIdx.vac}+${colOf(yr)}${rowIdx.cred}+${colOf(yr)}${rowIdx.oth}`,r:ER[yr-1].egi}))),F$,{total:true});
   sect('OPERATING EXPENSES');
   opsRow('exm','OpEx excl. Management',`-${refs.exm}`,-baseExM,(yr,p)=>`${p}*(1+${refs.eg})`,yr=>-(baseExM*Math.pow(1+(inp.expenseGrowth||0)/100,yr-1)),F$N);
   line('mgmt','Management Fee',[null].concat(yrs.map(yr=>({f:`-${colOf(yr)}${rowIdx.egi}*${refs.mgmt}`,r:-ER[yr-1].mgmt}))),F$N);

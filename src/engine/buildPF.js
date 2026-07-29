@@ -1,16 +1,16 @@
 import{monthlyPmt,loanBal,calcIRR,calcNPV}from'./finance.js';
-import{getGPI,getOpEx,getDevCost,getOtherIncome,resolveCapex}from'./income.js';
+import{getGPI,getOpEx,getDevCost,getOtherIncome,resolveCapex,lossRate}from'./income.js';
 import{calcLIHTC}from'./lihtc.js';
 function buildPF(inp){
   const gpi0=getGPI(inp);
   const opex0=getOpEx(inp);
-  const vac=inp.vacancyRate||0;
+  const vacPct=+(inp.vacancyRate)||0, credPct=+(inp.creditLossRate)||0;
   const PP=inp.purchasePrice||0;
   const acqC=PP*(inp.acquisitionCostsPct||0)/100;
   const tEarly=(inp.assetType||'').toLowerCase();
   const isAff=tEarly==='affordable';
   const IRe=inp.interestRate||0, AYe=inp.amortYears||30;
-  const noi0=(gpi0*(1-vac/100)+getOtherIncome(inp))-opex0;
+  const noi0=(gpi0*(1-lossRate(inp))+getOtherIncome(inp))-opex0;
   let LA=inp.loanAmount||0;
   let lihtc=null, debtSizing=null;
   if(isAff){
@@ -58,10 +58,12 @@ function buildPF(inp){
     const rm=Math.pow(1+rg/100,yr-1);
     const em=Math.pow(1+eg/100,yr-1);
     const gpi=gpi0*rm;
-    const vacL=gpi*vac/100;
-    const egi=gpi-vacL+getOtherIncome(inp)*rm;
+    // shown as two lines because they are two different arguments
+    const vacL=gpi*vacPct/100;
+    const credL=gpi*credPct/100;
+    const egi=gpi-vacL-credL+getOtherIncome(inp)*rm;
     const mgmt=egi*(inp.managementFeePct||0)/100;
-    const opex=(opex0-((getGPI(inp)*(1-vac/100)+getOtherIncome(inp))*(inp.managementFeePct||0)/100))*em+mgmt;
+    const opex=(opex0-((getGPI(inp)*(1-lossRate(inp))+getOtherIncome(inp))*(inp.managementFeePct||0)/100))*em+mgmt;
     const noi=egi-opex;
     const isIO=yr<=IO;
     const monthsPaid=isIO?0:(yr-IO)*12;
@@ -76,7 +78,7 @@ function buildPF(inp){
     const coc=equity>0?cfbt/equity:0;
     const dscr=ds>0?noi/ds:null;
     const expR=egi>0?opex/egi:0;
-    rows.push({yr,gpi,vacL,egi,opex,noi,ds,capex,cfbt,capR,coc,dscr,bal,expR,mgmt});
+    rows.push({yr,gpi,vacL,credL,egi,opex,noi,ds,capex,cfbt,capR,coc,dscr,bal,expR,mgmt});
   }
 
   const ex=rows[hp-1];

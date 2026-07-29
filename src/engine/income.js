@@ -25,19 +25,39 @@ function getGPI(inp){
 // hold laundry, parking, storage, pet rent, RUBS and a rooftop antenna lease,
 // and those are exactly the lines an underwriter argues about. Same rule as
 // opex — the list wins when present, the single field still works otherwise.
-function listTotal(rows){
+// A line item is quoted the way its category is normally quoted: an annual
+// figure, per unit, or a share of income. Storing the basis alongside the
+// number means the model holds what the user actually said rather than an
+// arithmetic result they had to work out first.
+//   income  : amount | perUnitMo | perUnitYr
+//   expense : amount | perUnitYr | pctEGI
+// A share of income is offered only on expenses; on an income line it would be
+// a share of itself.
+function resolveLine(r,units,egi){
+  if(!r||typeof r!=='object')return 0;
+  const v=+r.amount;
+  if(!isFinite(v))return 0;
+  const u=isFinite(+units)?+units:0;
+  switch(r.basis){
+    case'perUnitMo':return v*u*12;
+    case'perUnitYr':return v*u;
+    case'pctEGI':return (isFinite(egi)?egi:0)*v/100;
+    default:return v;
+  }
+}
+function listTotal(rows,units,egi){
   if(!Array.isArray(rows))return null;
   let t=0,any=false;
   for(const r of rows){
     if(!r||typeof r!=='object')continue;
-    const v=+r.amount;
-    if(isFinite(v)&&v!==0)any=true;
-    t+=isFinite(v)?v:0;
+    const v=resolveLine(r,units,egi);
+    if(v!==0)any=true;
+    t+=v;
   }
   return any?t:(rows.length?0:null);
 }
 function getOtherIncome(inp){
-  const listed=listTotal(inp&&inp.otherIncomeItems);
+  const listed=listTotal(inp&&inp.otherIncomeItems,inp&&inp.numUnits,0);
   if(listed!==null)return listed;
   const v=+(inp&&inp.otherIncome);
   return isFinite(v)?v:0;
@@ -61,23 +81,23 @@ function resolveCapex(inp,egi,expenseFactor){
   }
   return v*(isFinite(expenseFactor)?expenseFactor:1);
 }
-function opexItemsTotal(inp){
-  if(!Array.isArray(inp.opexItems))return null;
-  let t=0,any=false;
-  for(const r of inp.opexItems){
-    if(!r||typeof r!=='object')continue;
-    const v=+r.amount;
-    if(isFinite(v)&&v!==0)any=true;
-    t+=isFinite(v)?v:0;
-  }
-  return any?t:(inp.opexItems.length?0:null);
+function opexItemsTotal(inp,egi){
+  return listTotal(inp&&inp.opexItems,inp&&inp.numUnits,egi);
+}
+// Physical vacancy and credit loss are different things and get argued over
+// separately, so they are entered separately. Both come off gross potential
+// income. A deal saved before the split carries only vacancyRate, and credit
+// loss reads as zero, so it computes exactly as it did.
+function lossRate(inp){
+  const v=+(inp&&inp.vacancyRate);
+  const c=+(inp&&inp.creditLossRate);
+  return ((isFinite(v)?v:0)+(isFinite(c)?c:0))/100;
 }
 function getOpEx(inp){
   const gpi=getGPI(inp);
-  const vac=inp.vacancyRate||0;
-  const egi=gpi*(1-vac/100)+getOtherIncome(inp);
+  const egi=gpi*(1-lossRate(inp))+getOtherIncome(inp);
   const mgmt=egi*(inp.managementFeePct||0)/100;
-  const itemised=opexItemsTotal(inp);
+  const itemised=opexItemsTotal(inp,egi);
   if(itemised!==null)return itemised+mgmt;
   return(inp.propertyTax||0)+(inp.insurance||0)+mgmt+(inp.maintenance||0)+(inp.utilities||0)+(inp.reserves||0)+(inp.administrative||0);
 }
@@ -88,4 +108,4 @@ function getDevCost(inp){
   return(inp.landCost||inp.purchasePrice||0)+hard+soft+devFee;
 }
 
-export{umGPI,rtGPI,getGPI,getOpEx,getDevCost,opexItemsTotal,getOtherIncome,listTotal,resolveCapex};
+export{umGPI,rtGPI,getGPI,getOpEx,getDevCost,opexItemsTotal,getOtherIncome,listTotal,resolveLine,resolveCapex,lossRate};

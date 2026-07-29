@@ -33,6 +33,7 @@ function PFTable({rows,hp}){
   const defs=[
     {l:'Gross Potential Income',k:'gpi',fmt:f.$f,type:'income'},
     {l:'  Less: Vacancy Loss',k:'vacL',fmt:v=>`(${f.$f(v)})`,type:'deduct'},
+    {l:'  Less: Credit Loss',k:'credL',fmt:v=>`(${f.$f(v)})`,type:'deduct'},
     {l:'Effective Gross Income',k:'egi',fmt:f.$f,type:'sub'},
     {l:'  Less: Operating Expenses',k:'opex',fmt:v=>`(${f.$f(v)})`,type:'deduct'},
     {l:'Net Operating Income',k:'noi',fmt:f.$f,type:'hl'},
