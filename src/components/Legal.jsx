@@ -110,4 +110,4 @@ function Legal({tab='privacy',onTab,onBack}){
   );
 }
 
-export{Legal};
+export{Legal,CONTACT};

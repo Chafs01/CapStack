@@ -1,6 +1,7 @@
 import{useState,useEffect}from'react';
 import{SavedDeals}from'./SavedDeals.jsx';
 import{loadDeals,loadDealsLocal}from'../lib/deals.js';
+import{CONTACT}from'./Legal.jsx';
 // ─── PROFILE / ACCOUNT ────────────────────────────────────────────────────
 // One place that answers "what is mine here": who you are signed in as, what
 // you get, what you have made, and where it is stored.
@@ -121,6 +122,14 @@ function Profile({user,onSignIn,onSignOut,onLoadDeal,onStart,notify}){
         <div style={{marginTop:-8}}>
           <SavedDeals embedded onLoad={onLoadDeal} onClose={onStart} user={user} onSignIn={onSignIn} notify={notify}/>
         </div>
+      </Sec>
+
+      {/* ── a way to reach a human ───────────────────────────────────── */}
+      <Sec title="Help &amp; feedback" sub="A person reads these. Bugs, confusion, and things you wish it did all welcome.">
+        <Row label="Email" value={
+          <a href={`mailto:${CONTACT}?subject=${encodeURIComponent('Feedback on SmartCapStack')}`}
+            style={{color:'var(--text)',borderBottom:'1px solid var(--border2)',textDecoration:'none'}}>{CONTACT}</a>
+        } sub="If something in a deal looks wrong, saying which figure and what you expected makes it far quicker to fix."/>
       </Sec>
 
       {/* ── session ──────────────────────────────────────────────────── */}

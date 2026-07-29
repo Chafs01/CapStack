@@ -11,7 +11,7 @@ import{Step2}from'./components/Step2.jsx';
 import{Step3}from'./components/Step3.jsx';
 import{Step4}from'./components/Step4.jsx';
 import{AuthModal,ResetPasswordModal,SaveModal,Toast}from'./components/modals.jsx';
-import{Legal}from'./components/Legal.jsx';
+import{Legal,CONTACT}from'./components/Legal.jsx';
 import{ErrorBoundary}from'./components/ErrorBoundary.jsx';
 import{initTelemetry,track}from'./lib/telemetry.js';
 import{encodeDeal,decodeDeal,shareURL,readDealFromHash,clearHash}from'./lib/share.js';
@@ -338,6 +338,11 @@ function App(){
         <button onClick={()=>{setLegalTab('privacy');setView('legal');window.scrollTo(0,0);}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--accent)',fontSize:'var(--fs-2)',padding:0,fontFamily:"'Inter',sans-serif"}}>Privacy</button>
         <span style={{margin:'0 8px',color:'var(--border2)'}}>·</span>
         <button onClick={()=>{setLegalTab('terms');setView('legal');window.scrollTo(0,0);}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--accent)',fontSize:'var(--fs-2)',padding:0,fontFamily:"'Inter',sans-serif"}}>Terms</button>
+        <span style={{margin:'0 8px',color:'var(--border2)'}}>·</span>
+        {/* a real address rather than a form: early on, being able to reply and
+            ask a follow-up is worth more than a tidy inbox */}
+        <a href={`mailto:${CONTACT}?subject=${encodeURIComponent('SmartCapStack')}`}
+          style={{color:'var(--accent)',fontSize:'var(--fs-2)',textDecoration:'none',borderBottom:'1px solid var(--border2)'}}>Contact</a>
         <br/>
         <span style={{fontSize:'var(--fs-2)'}}>All projections are estimates for informational purposes only. Not financial advice.</span>
       </div>
