@@ -15,10 +15,13 @@ const LEGACY_OPEX=[['propertyTax','Property Taxes'],['insurance','Insurance'],
 
 function Step3({inp,onChange}){
   const t=inp.assetType.toLowerCase();
-  const opexRows=Array.isArray(inp.opexItems)&&inp.opexItems.length
+  // An empty list is a state the user chose, not a missing one. Testing
+  // .length here meant deleting the last line looked identical to never having
+  // itemised at all, so all six defaults sprang back with values in them.
+  const opexRows=Array.isArray(inp.opexItems)
     ? inp.opexItems
     : LEGACY_OPEX.map(([k,cat])=>({cat,amount:inp[k]||0}));
-  const otherRows=Array.isArray(inp.otherIncomeItems)&&inp.otherIncomeItems.length
+  const otherRows=Array.isArray(inp.otherIncomeItems)
     ? inp.otherIncomeItems
     : ((inp.otherIncome||0)>0?[{cat:'Custom',label:'Other income',amount:inp.otherIncome}]:[]);
   const setOther=rows=>onChange({otherIncomeItems:rows,otherIncome:0});

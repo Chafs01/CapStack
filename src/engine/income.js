@@ -54,7 +54,9 @@ function listTotal(rows,units,egi){
     if(v!==0)any=true;
     t+=v;
   }
-  return any?t:(rows.length?0:null);
+  // Present but empty means the user cleared every line — that is zero, not
+  // "no list here, go and read the old fields".
+  return any?t:0;
 }
 function getOtherIncome(inp){
   const listed=listTotal(inp&&inp.otherIncomeItems,inp&&inp.numUnits,0);

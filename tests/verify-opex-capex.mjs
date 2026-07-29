@@ -342,5 +342,32 @@ console.log('\nvacancy and credit loss are separate deductions:');
   }
 }
 
+console.log('\nclearing every line means zero, not a reset to the defaults:');
+{
+  // Reported from a phone: deleting expense lines one by one, and on the last
+  // deletion all six sprang back with values in them. The list was emptied,
+  // and an empty list was being read as "no list", so the legacy fields were
+  // resurrected. Emptying is a choice; absence is not.
+  const base = DEFS.multifamily;
+  const cleared = { ...base, opexItems: [] };
+  const mgmtOnly = buildPF(cleared).rows[0].mgmt;
+  check('an emptied expense list leaves only the management fee',
+    near(getOpEx(cleared), mgmtOnly, 1e-6), `${getOpEx(cleared)} vs ${mgmtOnly}`);
+  check('...and does not resurrect the legacy fields',
+    getOpEx(cleared) < getOpEx(base) - 200000, String(getOpEx(cleared)));
+  check('an emptied income list is zero', getOtherIncome({ ...base, otherIncomeItems: [] }) === 0);
+  check('...even when the legacy field still holds a value',
+    getOtherIncome({ ...base, otherIncome: 12000, otherIncomeItems: [] }) === 0);
+  // a deal that genuinely never itemised must still read the old fields
+  check('a deal with no list at all still uses the legacy fields',
+    near(getOpEx(base), 299152, 1), String(getOpEx(base)));
+  check('...and the legacy other income', getOtherIncome(base) === 12000);
+  // and clearing must not break the model
+  let threw = null, res = null;
+  try { res = buildPF({ ...cleared, otherIncomeItems: [] }); } catch (e) { threw = e.message; }
+  check('a deal with both lists emptied still builds', threw === null && !!res, threw);
+  check('...with finite figures', !!res && Number.isFinite(res.rows[0].noi));
+}
+
 if (failures) { console.log(`\n${failures} FAILURE(S) — itemised expenses or capex regressed.`); process.exit(1); }
 console.log('\nItemised expenses and capex behave correctly and change nothing that used to work.');
