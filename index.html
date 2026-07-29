@@ -26,6 +26,30 @@
 </head>
 <body>
 <div id="root"></div>
+<script>
+// Self-heal a stale cached page.
+//
+// Every deploy emits new hashed asset filenames and deletes the old ones, but
+// this HTML is cached for ten minutes. A visitor returning inside that window
+// gets HTML pointing at a script that no longer exists, it 404s, and nothing
+// renders — a blank page, with no app code running to notice or explain it.
+//
+// This runs from the cached HTML itself, so it works even when the module
+// never loads. If nothing has mounted shortly after load, fetch the page again
+// past the cache. Guarded by a session flag so it can never loop, and the flag
+// is cleared once the app mounts so a later genuine failure can still retry.
+(function(){
+  var KEY='scs_stale_reload';
+  setTimeout(function(){
+    var root=document.getElementById('root');
+    if(root&&root.childElementCount===0&&!sessionStorage.getItem(KEY)){
+      try{sessionStorage.setItem(KEY,'1');}catch(e){}
+      var q=location.search?location.search+'&':'?';
+      location.replace(location.pathname+q+'v='+Date.now()+location.hash);
+    }
+  },4000);
+})();
+</script>
 <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
