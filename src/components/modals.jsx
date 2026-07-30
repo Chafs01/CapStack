@@ -9,6 +9,12 @@ import{Fld}from'./ui.jsx';
 // runs through Resend on the verified send.smartcapstack.com domain, so the
 // form is live. Google OAuth is always available alongside it.
 const EMAIL_AUTH=true;
+// Google sign-in is hidden for now, not removed: the OAuth call, the provider
+// config and every account created through it still work, so flipping this back
+// to true restores the button and those users sign straight back into the same
+// records. Accounts are matched on email, so a Google user who sets a password
+// keeps their saved deals either way.
+const GOOGLE_AUTH=false;
 
 // ─── PASSWORD STRENGTH ─────────────────────────────────────────────────────
 // Requirement checklist + 0-4 score. The first three (length, mixed case,
@@ -53,6 +59,7 @@ function AuthModal({onClose,onUser}){
   const [mode,setMode]=useState('login');
   const [email,setEmail]=useState('');
   const [pw,setPw]=useState('');
+  const [pw2,setPw2]=useState('');
   const [err,setErr]=useState('');
   const [busy,setBusy]=useState(false);
   const [msg,setMsg]=useState('');
@@ -75,19 +82,27 @@ function AuthModal({onClose,onUser}){
     }catch(e){setErr(e.message||'Authentication failed.');}
     setBusy(false);
   };
-  const switchMode=m=>{setMode(m);setErr('');setMsg('');setPw('');};
+  const switchMode=m=>{setMode(m);setErr('');setMsg('');setPw('');setPw2('');};
+  // A typo in a password you cannot see is only discoverable at the reset
+  // screen, so sign-up asks twice. Only complain once there is something to
+  // compare -- flagging a mismatch against a half-typed second entry is noise.
+  const pwMismatch=mode==='signup'&&pw2.length>0&&pw!==pw2;
   const google=async()=>{
     setErr('');setBusy(true);
     try{
       if(!sb)throw new Error('Cloud features are unavailable right now.');
       const{error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+window.location.pathname}});
       if(error)throw error;
-      // success navigates away; leave busy on so the button stays disabled
-    }catch(e){setErr(e.message||'Google sign-in failed.');setBusy(false);}
+    }catch(e){setErr(e.message||'Google sign-in failed.');}
+    // Always release the button. This used to stay latched on the assumption
+    // that success navigates away -- but when the redirect does not happen, the
+    // flag is shared with the email form, so every other way in reads "Please
+    // wait..." and is disabled with nothing to click.
+    setBusy(false);
   };
   const title=mode==='login'?'Sign In':mode==='signup'?'Create Account':'Reset Password';
   const cta=busy?'Please wait…':mode==='login'?'Sign In':mode==='signup'?'Create Account':'Send Reset Link';
-  const disabled=busy||!email||(mode==='login'&&!pw)||(mode==='signup'&&!pwOk);
+  const disabled=busy||!email||(mode==='login'&&!pw)||(mode==='signup'&&(!pwOk||pw!==pw2));
   return(
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
@@ -97,12 +112,13 @@ function AuthModal({onClose,onUser}){
         <p style={{color:'var(--muted)',fontSize:'var(--fs-4)',marginBottom:22}}>
           {mode==='reset'?"Enter your account email and we'll send you a link to set a new password.":'Save your deals to the cloud and access them from any device.'}
         </p>
-        {mode!=='reset'&&<button onClick={google} disabled={busy} style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'11px 16px',background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:8,fontSize:'var(--fs-5)',fontWeight:600,color:'var(--text)',cursor:'pointer',fontFamily:"'Inter',sans-serif",marginBottom:EMAIL_AUTH?18:8}}>
+        {GOOGLE_AUTH&&mode!=='reset'&&<button onClick={google} disabled={busy} style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'11px 16px',background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:8,fontSize:'var(--fs-5)',fontWeight:600,color:'var(--text)',cursor:'pointer',fontFamily:"'Inter',sans-serif",marginBottom:EMAIL_AUTH?18:8}}>
           <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
           Continue with Google
         </button>}
         {EMAIL_AUTH&&<>
-          {mode!=='reset'&&<div style={{display:'flex',alignItems:'center',gap:12,marginBottom:18}}>
+          {/* "or use email" only means something when there is another way in */}
+          {GOOGLE_AUTH&&mode!=='reset'&&<div style={{display:'flex',alignItems:'center',gap:12,marginBottom:18}}>
             <div style={{flex:1,height:1,background:'var(--border)'}}/>
             <span style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>or use email</span>
             <div style={{flex:1,height:1,background:'var(--border)'}}/>
@@ -110,6 +126,10 @@ function AuthModal({onClose,onUser}){
           <Fld label="Email" type="email" value={email} onChange={v=>setEmail(v)}/>
           {mode!=='reset'&&<Fld label="Password" type="password" value={pw} onChange={v=>setPw(v)}/>}
           {mode==='signup'&&<PwMeter pw={pw}/>}
+          {mode==='signup'&&<>
+            <Fld label="Confirm Password" type="password" value={pw2} onChange={v=>setPw2(v)}/>
+            {pwMismatch&&<div style={{color:'var(--neg)',fontSize:'var(--fs-3)',marginTop:-10,marginBottom:12}}>Passwords do not match.</div>}
+          </>}
           {mode==='login'&&<button onClick={()=>switchMode('reset')} style={{background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontSize:'var(--fs-3)',padding:0,marginTop:-6,marginBottom:8,fontFamily:"'Inter',sans-serif"}}>Forgot password?</button>}
         </>}
         {err&&<div style={{color:'var(--neg)',fontSize:'var(--fs-4)',marginBottom:10,marginTop:4}}>{err}</div>}
