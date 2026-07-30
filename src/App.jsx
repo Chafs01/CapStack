@@ -380,6 +380,7 @@ function App(){
                 <Dashboard res={res} inp={inp}
                   viewOnly={isShared||isDemo}
                   viewOnlyLabel={isDemo?'Sample · view only':undefined}
+                  canDownload={!!user}
                   onRunOwn={requireAuth(startFresh)} onExport={requireAuth(async()=>{track('excel_exported');
                   // a link home, so the workbook is portable rather than a dead end
                   let back;try{back=shareURL(await encodeDeal(inp));}catch(e){}

@@ -81,7 +81,11 @@ function PFTable({rows,hp}){
 }
 
 // ─── SENSITIVITY TABLE ─────────────────────────────────────────────────────
-function SensTable({inp}){
+// readOnly is for a deal that is not yours -- the sample, or someone else's
+// share link. The grid still reads, but its axes stop being inputs: retyping
+// them silently re-underwrites another person's deal on screen, which looks
+// like their analysis says something it does not.
+function SensTable({inp,readOnly}){
   // a comp-priced deal has no exit cap, so the column axis becomes $/unit
   const isPPU=inp.exitMethod==='ppu';
   const basePPU=inp.exitPPU||0;
@@ -96,24 +100,29 @@ function SensTable({inp}){
   // header (these were white-on-white and effectively invisible)
   const axIn={width:'100%',border:'1px solid var(--border2)',borderRadius:'var(--r-sm)',background:'var(--surface)',color:'var(--text)',fontWeight:700,fontSize:'var(--fs-4)',textAlign:'center',outline:'none',fontFamily:"ui-monospace,'SF Mono',Menlo,monospace",padding:'4px 2px'};
   const axInL={...axIn,width:52};
+  const axTxt={fontWeight:700,fontSize:'var(--fs-4)',textAlign:'center',display:'block',padding:'4px 2px'};
   return(
     <div>
       <div className="sect-lbl" style={{marginBottom:6}}>Levered IRR Sensitivity</div>
-      <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginBottom:6}}>{`Each cell is the deal's levered IRR at that revenue growth and ${isPPU?'comparable sale price per unit':'exit cap'}.`} Edit any axis value below and the grid recalculates live. All other inputs held constant.</p>
+      <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginBottom:6}}>{`Each cell is the deal's levered IRR at that revenue growth and ${isPPU?'comparable sale price per unit':'exit cap'}.`} {readOnly?'All other inputs held constant.':'Edit any axis value below and the grid recalculates live. All other inputs held constant.'}</p>
       <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginBottom:14}}><span style={{color:'var(--pos)'}}>&#9632; &gt;15%</span>  <span style={{color:'var(--warn)',marginLeft:8}}>&#9632; 10-15%</span>  <span style={{color:'var(--neg)',marginLeft:8}}>&#9632; &lt;10%</span></p>
       <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
-        <span style={{fontSize:'var(--fs-2)',fontWeight:700,color:'var(--muted2)',letterSpacing:'.5px'}}>{isPPU?'EXIT $ / UNIT':'EXIT CAP RATE'} &rarr; (columns, editable)</span>
+        <span style={{fontSize:'var(--fs-2)',fontWeight:700,color:'var(--muted2)',letterSpacing:'.5px'}}>{isPPU?'EXIT $ / UNIT':'EXIT CAP RATE'} &rarr; {readOnly?'(columns)':'(columns, editable)'}</span>
       </div>
       <div className="xscroll">
         <table className="tbl">
           <thead><tr>
             <th style={{textAlign:'left',minWidth:140}}>Revenue Growth &darr;<br/><span style={{fontWeight:400,color:'var(--muted2)'}}>vs. {isPPU?'$ / Unit':'Exit Cap'} &rarr;</span></th>
-            {caps.map((c,i)=><th key={i}><input value={c} onChange={e=>setCap(i,e.target.value)} style={axIn} inputMode="decimal"/></th>)}
+            {caps.map((c,i)=><th key={i}>{readOnly
+              ?<span className="mono" style={axTxt}>{c}</span>
+              :<input value={c} onChange={e=>setCap(i,e.target.value)} style={axIn} inputMode="decimal"/>}</th>)}
           </tr></thead>
           <tbody>{growths.map((g,gi)=>(
             <tr key={gi}>
               <td style={{fontWeight:700,color:'var(--muted)'}}>
-                <input value={g} onChange={e=>setGr(gi,e.target.value)} style={axInL} inputMode="decimal"/> <span style={{color:'var(--muted2)'}}>% / yr</span>
+                {readOnly
+                  ?<span className="mono" style={{fontWeight:700}}>{g}</span>
+                  :<input value={g} onChange={e=>setGr(gi,e.target.value)} style={axInL} inputMode="decimal"/>} <span style={{color:'var(--muted2)'}}>% / yr</span>
               </td>
               {caps.map((c,ci)=>{
                 const irr=getIRR(g,c);
@@ -565,7 +574,7 @@ function LihtcPanel({L,res}){
 // analysis is readable, but the tools are not. Reading someone's finished deal
 // has no substitute value for underwriting your own, so it stays open — what
 // is withheld is the working model, which is the product.
-function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabel,onRunOwn}){
+function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabel,canDownload,onRunOwn}){
   const [tab,setTab]=useState('charts');
   const hp=inp.holdingPeriod||7;
   const {rows,ret,sum,exit,equity,totalCost,acqC,LF}=res;
@@ -613,10 +622,13 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
           {viewOnly?(
             <>
-              {/* View only means exactly that: the analysis is readable on
-                  screen and nothing leaves with you. The memo was the last way
-                  to walk off with a formatted copy of someone else's work, or
-                  of the sample, so it is gone from here too. */}
+              {/* The workbook is the working model, and it never travels off a
+                  view-only screen -- not for the sample, not for someone else's
+                  shared deal, signed in or not. The memo is a document rather
+                  than a model, so an account is enough to take one.
+                  Signed out, the option is not shown at all: a button that
+                  exists only to refuse you is worse than no button. */}
+              {canDownload&&<button className="btn-s" onClick={()=>openMemo(res,inp)}>Memo / PDF</button>}
               <button className="btn-p" onClick={onRunOwn}>Run your own deal &rarr;</button>
             </>
           ):(
@@ -792,7 +804,7 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
 
       {tab==='sensitivity'&&(
         <div className="fu glass" style={{padding:22}}>
-          <SensTable inp={inp}/>
+          <SensTable inp={inp} readOnly={viewOnly}/>
         </div>
       )}
     </div>
