@@ -215,14 +215,16 @@ function AuthView({onClose,onUser}){
             <Fld label="Confirm Password" type="password" value={pw2} onChange={v=>setPw2(v)}/>
             {pwMismatch&&<div style={{color:'var(--neg)',fontSize:'var(--fs-3)',marginTop:-10,marginBottom:12}}>Passwords do not match.</div>}
           </>}
-          {mode==='login'&&<button onClick={()=>switchMode('reset')} style={{background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontSize:'var(--fs-3)',padding:0,marginTop:-6,marginBottom:8,fontFamily:"'Inter',sans-serif"}}>Forgot password?</button>}
+          {/* its own line: once the submit button stopped being full-width the
+              two sat side by side and read as one run-on string */}
+          {mode==='login'&&<button onClick={()=>switchMode('reset')} style={{display:'block',background:'none',border:'none',color:'var(--muted)',cursor:'pointer',fontSize:'var(--fs-3)',padding:0,marginTop:-4,marginBottom:4,borderBottom:'1px solid var(--border2)',fontFamily:"'Inter',sans-serif"}}>Forgot password?</button>}
         </>}
         {err&&<div style={{color:'var(--neg)',fontSize:'var(--fs-4)',marginBottom:10,marginTop:4}}>{err}</div>}
         {msg&&<div style={{color:'var(--pos)',fontSize:'var(--fs-4)',marginBottom:10,marginTop:4}}>{msg}</div>}
         {/* btn-p is an underlined text action, so stretching it to full width
             left a lonely rule across the panel. It sits at its own width, like
             Continue does on every wizard step. */}
-        {EMAIL_AUTH&&<button className="btn-p" onClick={submit} disabled={disabled} style={{marginBottom:20,marginTop:8}}>{cta}</button>}
+        {EMAIL_AUTH&&<button className="btn-p" onClick={submit} disabled={disabled} style={{display:'block',marginBottom:22,marginTop:18}}>{cta}</button>}
         {EMAIL_AUTH&&<div style={{fontSize:'var(--fs-4)',color:'var(--muted)'}}>
           {mode==='login'&&<>No account? <button onClick={()=>switchMode('signup')} style={{background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontWeight:600,fontSize:'var(--fs-4)',fontFamily:"'Inter',sans-serif"}}>Sign Up</button></>}
           {mode==='signup'&&<>Have an account? <button onClick={()=>switchMode('login')} style={{background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontWeight:600,fontSize:'var(--fs-4)',fontFamily:"'Inter',sans-serif"}}>Sign In</button></>}
