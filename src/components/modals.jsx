@@ -3,10 +3,12 @@ import{sb}from'../lib/supabase.js';
 import{persistDeal}from'../lib/deals.js';
 import{Fld}from'./ui.jsx';
 
-// Email/password sign-up + reset is built but hidden until branded email
-// delivery is set up. Flip to true to re-enable the email form. Google OAuth
-// is always available.
-const EMAIL_AUTH=false;
+// Email/password sign-up + reset. Kept behind a flag because it is only safe
+// to show when password-reset mail actually gets delivered -- a reset form
+// whose email never arrives locks people out with no way back. Delivery now
+// runs through Resend on the verified send.smartcapstack.com domain, so the
+// form is live. Google OAuth is always available alongside it.
+const EMAIL_AUTH=true;
 
 // ─── PASSWORD STRENGTH ─────────────────────────────────────────────────────
 // Requirement checklist + 0-4 score. The first three (length, mixed case,
