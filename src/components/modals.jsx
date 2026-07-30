@@ -34,20 +34,23 @@ function pwCheck(pw){
 function PwMeter({pw}){
   const{checks,score}=pwCheck(pw);
   if(!pw)return null;
-  const bands=['#e02424','#e02424','#c27803','#0e9f6e','#0e9f6e'];
   const labels=['Too weak','Weak','Fair','Good','Strong'];
-  const c=bands[score];
+  // Monochrome, like everything else here. This used to carry its own traffic
+  // -light palette -- three hardcoded hex values in a theme whose whole premise
+  // is ink on warm off-white, which is exactly why it read as bolted on. A rule
+  // that fills in and a requirement that goes from grey to black say the same
+  // thing without importing a second design language.
   return(
-    <div style={{marginTop:-4,marginBottom:12}}>
+    <div style={{marginTop:-4,marginBottom:14}}>
       <div style={{display:'flex',gap:4,marginBottom:7}}>
-        {[0,1,2,3].map(i=><div key={i} style={{flex:1,height:4,borderRadius:2,background:i<score?c:'var(--border2)',transition:'background .2s'}}/>)}
+        {[0,1,2,3].map(i=><div key={i} style={{flex:1,height:2,background:i<score?'var(--text)':'var(--border2)',transition:'background .2s'}}/>)}
       </div>
-      <div style={{fontSize:'var(--fs-2)',color:c,fontWeight:600,marginBottom:6}}>{labels[score]}</div>
-      <div style={{display:'grid',gap:3}}>
+      <div style={{fontSize:'var(--fs-2)',color:'var(--muted)',fontWeight:600,letterSpacing:'.14em',textTransform:'uppercase',marginBottom:5}}>{labels[score]}</div>
+      <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',lineHeight:1.7}}>
         {checks.map((ch,i)=>(
-          <div key={i} style={{display:'flex',alignItems:'center',gap:6,fontSize:'var(--fs-2)',color:ch.ok?'var(--pos)':'var(--muted2)'}}>
-            <span style={{fontWeight:700,width:11}}>{ch.ok?'✓':'○'}</span>{ch.label}
-          </div>
+          <span key={i} style={{color:ch.ok?'var(--text)':'var(--muted2)'}}>
+            {ch.label}{i<checks.length-1?<span style={{color:'var(--border2)'}}>&nbsp;·&nbsp;</span>:null}
+          </span>
         ))}
       </div>
     </div>
@@ -56,7 +59,7 @@ function PwMeter({pw}){
 
 // ─── AUTH MODAL ───────────────────────────────────────────────────────────
 // mode: 'login' | 'signup' | 'reset' (request a reset email)
-function AuthModal({onClose,onUser}){
+function AuthView({onClose,onUser}){
   const [mode,setMode]=useState('login');
   const [email,setEmail]=useState('');
   const [pw,setPw]=useState('');
@@ -64,6 +67,11 @@ function AuthModal({onClose,onUser}){
   const [err,setErr]=useState('');
   const [busy,setBusy]=useState(false);
   const [msg,setMsg]=useState('');
+  // A "we sent you an email" line under a form the user has already finished
+  // with reads like the form failed to submit. When there is nothing left to
+  // do but go and open an inbox, the form is replaced by the message rather
+  // than sitting behind it.
+  const [sent,setSent]=useState(null); // {kind:'confirm'|'reset', email}
   const pwOk=pwCheck(pw).strongEnough;
   const submit=async()=>{
     setErr('');setBusy(true);
@@ -72,21 +80,51 @@ function AuthModal({onClose,onUser}){
       if(mode==='reset'){
         const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
         if(error)throw error;
-        setMsg('Check your email for a link to reset your password.');setBusy(false);return;
+        setSent({kind:'reset',email});setBusy(false);return;
       }
       let r;
       if(mode==='login')r=await sb.auth.signInWithPassword({email,password:pw});
       else r=await sb.auth.signUp({email,password:pw,options:{emailRedirectTo:window.location.origin+window.location.pathname}});
       if(r.error)throw r.error;
-      // Sign-ups belong in the same event table as everything else, so "how
-      // many people made an account" is answerable next to "how many ran a
-      // deal" rather than living in a provider's dashboard. Deliberately no
-      // email address or user id: this table is insert-only and holds nothing
-      // that identifies a person, and a signup event is no reason to start.
-      if(mode==='signup')track('account_created',{confirmRequired:!r.data.session});
-      if(mode==='signup'&&!r.data.session){setMsg('Account created. Check your email to confirm, then sign in.');setBusy(false);return;}
+      if(mode==='signup'){
+        // Supabase hides "this email is taken" behind a fake success so a
+        // signup form cannot be used to harvest which addresses have accounts.
+        // The tell is the identities array: a genuinely new user comes back
+        // with one, an existing address comes back with none and nothing was
+        // created. We choose to say so, because a silent no-op leaves someone
+        // waiting forever for a confirmation email that is never coming.
+        const u=r.data.user;
+        if(u&&Array.isArray(u.identities)&&u.identities.length===0){
+          setSent({kind:'exists',email});setBusy(false);return;
+        }
+        // Sign-ups belong in the same event table as everything else, so "how
+        // many people made an account" is answerable next to "how many ran a
+        // deal" rather than living in a provider's dashboard. Deliberately no
+        // email address or user id: this table is insert-only and holds nothing
+        // that identifies a person, and a signup event is no reason to start.
+        track('account_created',{confirmRequired:!r.data.session});
+        if(!r.data.session){setSent({kind:'confirm',email});setBusy(false);return;}
+      }
       if(r.data.user){onUser(r.data.user);onClose();}
-    }catch(e){setErr(e.message||'Authentication failed.');}
+    }catch(e){
+      const m=e.message||'Authentication failed.';
+      // With email confirmation switched off Supabase stops obfuscating and
+      // says so outright. Same situation, same panel.
+      if(mode==='signup'&&/already registered|already exists/i.test(m))setSent({kind:'exists',email});
+      else setErr(m);
+    }
+    setBusy(false);
+  };
+  // Offered straight from the "already have an account" panel, because that is
+  // the moment someone realises they have forgotten their password.
+  const sendReset=async()=>{
+    setErr('');setBusy(true);
+    try{
+      if(!sb)throw new Error('Cloud features are unavailable right now.');
+      const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
+      if(error)throw error;
+      setSent({kind:'reset',email});
+    }catch(e){setErr(e.message||'Could not send the reset link.');}
     setBusy(false);
   };
   const switchMode=m=>{setMode(m);setErr('');setMsg('');setPw('');setPw2('');};
@@ -111,10 +149,50 @@ function AuthModal({onClose,onUser}){
   const cta=busy?'Please wait…':mode==='login'?'Sign In':mode==='signup'?'Create Account':'Send Reset Link';
   const disabled=busy||!email||(mode==='login'&&!pw)||(mode==='signup'&&(!pwOk||pw!==pw2));
   return(
-    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.55)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}
-      onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div className="glass" style={{width:'100%',maxWidth:420,padding:'32px 28px',position:'relative'}}>
-        <button onClick={onClose} style={{position:'absolute',top:12,right:14,background:'none',border:'none',fontSize:'var(--fs-8)',cursor:'pointer',color:'var(--muted)',lineHeight:1}}>&times;</button>
+    // A page, not a dialog. Signing in is a destination -- it deserves a URL's
+    // worth of presence, room to breathe, and the same fade-up every other view
+    // gets, rather than a square that appears over the top of the work.
+    <div className="fu" style={{maxWidth:430,margin:'0 auto',padding:'64px 24px 96px'}}>
+      {/* Enter submits. Typing a password and reaching for the mouse is not how
+          anyone fills in a login, and the button is the only thing that knows
+          whether the form is complete -- so Enter defers to the same disabled
+          check rather than firing a request the button would have refused. */}
+      <div className="card" style={{padding:'34px 30px',marginBottom:20}}
+        onKeyDown={e=>{
+          if(e.key!=='Enter')return;
+          if(sent){e.preventDefault();onClose();return;}
+          if(EMAIL_AUTH&&!disabled){e.preventDefault();submit();}
+        }}>
+        {sent?(<>
+          <h2 style={{fontSize:'var(--fs-8)',fontWeight:700,marginBottom:10}}>
+            {sent.kind==='confirm'?'Account created':sent.kind==='reset'?'Reset link sent':'That email already has an account'}
+          </h2>
+          {sent.kind==='exists'?(<>
+            <p style={{color:'var(--muted)',fontSize:'var(--fs-4)',lineHeight:1.65,marginBottom:8}}>
+              There is already an account for
+            </p>
+            <p className="mono" style={{fontSize:'var(--fs-4)',fontWeight:600,marginBottom:20,wordBreak:'break-all'}}>{sent.email}</p>
+            <p style={{color:'var(--muted)',fontSize:'var(--fs-3)',lineHeight:1.65,marginBottom:24}}>
+              Nothing new was created. Sign in with the password you set, or have a link sent to set a new one.
+            </p>
+            <div style={{display:'flex',gap:22,alignItems:'baseline',flexWrap:'wrap'}}>
+              <button className="btn-p" onClick={()=>{setSent(null);setMode('login');setPw('');setPw2('');}}>Sign in →</button>
+              <button className="btn-s" disabled={busy} onClick={sendReset}>{busy?'Sending…':'Email me a reset link'}</button>
+            </div>
+            {err&&<div style={{color:'var(--neg)',fontSize:'var(--fs-3)',marginTop:14}}>{err}</div>}
+          </>):(<>
+            <p style={{color:'var(--muted)',fontSize:'var(--fs-4)',lineHeight:1.65,marginBottom:8}}>
+              {sent.kind==='confirm'?'Open the confirmation link we sent to':'Open the link we sent to'}
+            </p>
+            <p className="mono" style={{fontSize:'var(--fs-4)',fontWeight:600,marginBottom:20,wordBreak:'break-all'}}>{sent.email}</p>
+            <p style={{color:'var(--muted)',fontSize:'var(--fs-3)',lineHeight:1.65,marginBottom:24}}>
+              {sent.kind==='confirm'
+                ?'Then come back and sign in. If it has not arrived in a minute, check your spam folder.'
+                :'The link sets a new password. If it has not arrived in a minute, check your spam folder.'}
+            </p>
+            <button className="btn-p" onClick={onClose}>Done</button>
+          </>)}
+        </>):(<>
         <h2 style={{fontSize:'var(--fs-8)',fontWeight:700,marginBottom:4}}>{title}</h2>
         <p style={{color:'var(--muted)',fontSize:'var(--fs-4)',marginBottom:22}}>
           {mode==='reset'?"Enter your account email and we'll send you a link to set a new password.":'Save your deals to the cloud and access them from any device.'}
@@ -141,13 +219,18 @@ function AuthModal({onClose,onUser}){
         </>}
         {err&&<div style={{color:'var(--neg)',fontSize:'var(--fs-4)',marginBottom:10,marginTop:4}}>{err}</div>}
         {msg&&<div style={{color:'var(--pos)',fontSize:'var(--fs-4)',marginBottom:10,marginTop:4}}>{msg}</div>}
-        {EMAIL_AUTH&&<button className="btn-p" onClick={submit} disabled={disabled} style={{width:'100%',marginBottom:16,marginTop:6}}>{cta}</button>}
-        {EMAIL_AUTH&&<div style={{textAlign:'center',fontSize:'var(--fs-4)',color:'var(--muted)'}}>
+        {/* btn-p is an underlined text action, so stretching it to full width
+            left a lonely rule across the panel. It sits at its own width, like
+            Continue does on every wizard step. */}
+        {EMAIL_AUTH&&<button className="btn-p" onClick={submit} disabled={disabled} style={{marginBottom:20,marginTop:8}}>{cta}</button>}
+        {EMAIL_AUTH&&<div style={{fontSize:'var(--fs-4)',color:'var(--muted)'}}>
           {mode==='login'&&<>No account? <button onClick={()=>switchMode('signup')} style={{background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontWeight:600,fontSize:'var(--fs-4)',fontFamily:"'Inter',sans-serif"}}>Sign Up</button></>}
           {mode==='signup'&&<>Have an account? <button onClick={()=>switchMode('login')} style={{background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontWeight:600,fontSize:'var(--fs-4)',fontFamily:"'Inter',sans-serif"}}>Sign In</button></>}
           {mode==='reset'&&<button onClick={()=>switchMode('login')} style={{background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontWeight:600,fontSize:'var(--fs-4)',fontFamily:"'Inter',sans-serif"}}>← Back to sign in</button>}
         </div>}
+        </>)}
       </div>
+      <button className="btn-s" onClick={onClose}>← Back</button>
     </div>
   );
 }
@@ -232,4 +315,4 @@ function SaveModal({inp,res,user,existingId,onClose,onSaved,onSignIn}){
   );
 }
 
-export{AuthModal,ResetPasswordModal,SaveModal,Toast};
+export{AuthView,ResetPasswordModal,SaveModal,Toast};

@@ -10,7 +10,7 @@ import{Step1}from'./components/Step1.jsx';
 import{Step2}from'./components/Step2.jsx';
 import{Step3}from'./components/Step3.jsx';
 import{Step4}from'./components/Step4.jsx';
-import{AuthModal,ResetPasswordModal,SaveModal,Toast}from'./components/modals.jsx';
+import{AuthView,ResetPasswordModal,SaveModal,Toast}from'./components/modals.jsx';
 import{Legal,CONTACT}from'./components/Legal.jsx';
 import{ErrorBoundary}from'./components/ErrorBoundary.jsx';
 import{initTelemetry,track}from'./lib/telemetry.js';
@@ -40,7 +40,10 @@ function App(){
   const [res,setRes]=useState(null);
   const [loading,setLoading]=useState(false);
   const [user,setUser]=useState(null);
-  const [showAuth,setShowAuth]=useState(false);
+  // Signing in is a view, not an overlay. Remembering where the user came from
+  // means Back and a completed sign-in both return them to the deal they were
+  // in the middle of, rather than dumping them on the landing page.
+  const [authFrom,setAuthFrom]=useState(null);
   const [showReset,setShowReset]=useState(false);
   const [showSave,setShowSave]=useState(false);
   const [currentDealId,setCurrentDealId]=useState(null);
@@ -104,12 +107,23 @@ function App(){
     sb.auth.getUser().then(({data:{user:u}})=>setUser(u||null)).catch(()=>{});
     const{data:{subscription}}=sb.auth.onAuthStateChange((event,session)=>{
       setUser(session?.user||null);
-      if(event==='PASSWORD_RECOVERY'){setShowAuth(false);setShowReset(true);}
+      if(event==='PASSWORD_RECOVERY'){setView(v=>v==='signin'?'landing':v);setShowReset(true);}
     });
     return()=>subscription.unsubscribe();
   },[]);
 
   const update=useCallback(upd=>setInp(prev=>({...prev,...upd})),[]);
+
+  const openAuth=useCallback(()=>{
+    if(view!=='signin')setAuthFrom(view);
+    setView('signin');
+    window.scrollTo({top:0});
+  },[view]);
+  const closeAuth=useCallback(()=>{
+    setView(authFrom||'landing');
+    setAuthFrom(null);
+    window.scrollTo({top:0});
+  },[authFrom]);
 
   const handleAsset=useCallback(a=>{
     setAssetType(a);
@@ -237,7 +251,7 @@ function App(){
               <button onClick={async()=>{if(sb)await sb.auth.signOut();setUser(null);}} style={{background:'none',border:'none',borderBottom:'1px solid var(--border2)',borderRadius:0,cursor:'pointer',fontSize:'var(--fs-3)',color:'var(--on-dark-muted)',padding:'4px 10px',fontFamily:"'Inter',sans-serif"}}>Sign Out</button>
             </div>
           ):(
-            <button onClick={()=>setShowAuth(true)} style={{background:'none',border:'none',borderBottom:'2px solid var(--accent)',borderRadius:0,cursor:'pointer',fontSize:'var(--fs-3)',color:'var(--accent)',padding:'4px 0',fontWeight:600,fontFamily:"'Inter',sans-serif"}}>Sign In</button>
+            <button onClick={openAuth} style={{background:'none',border:'none',borderBottom:'2px solid var(--accent)',borderRadius:0,cursor:'pointer',fontSize:'var(--fs-3)',color:'var(--accent)',padding:'4px 0',fontWeight:600,fontFamily:"'Inter',sans-serif"}}>Sign In</button>
           )}
           {res&&step<4&&<button className="btn-s" style={{fontSize:'var(--fs-3)',padding:'6px 14px',background:'none',color:'var(--accent)'}} onClick={()=>setStep(4)}>View results →</button>}
         </div>
@@ -247,12 +261,17 @@ function App(){
         onSample={()=>{const sd={...DEFS.multifamily,propertyName:'Sample Deal'};exportXLSX(buildPF(sd),sd);}}/>}
       {view==='profile'&&(
         <ErrorBoundary resetKey={user?user.id:'anon'} onBack={()=>{setView('app');setStep(0);}}>
-          <Profile user={user} onSignIn={()=>setShowAuth(true)}
+          <Profile user={user} onSignIn={openAuth}
             onSignOut={async()=>{if(sb)await sb.auth.signOut();setUser(null);notify('Signed out');}}
             onLoadDeal={handleLoadDeal} onStart={startFresh} notify={notify}/>
         </ErrorBoundary>
       )}
       {view==='legal'&&<Legal tab={legalTab} onTab={setLegalTab} onBack={()=>setView('landing')}/>}
+      {view==='signin'&&(
+        <ErrorBoundary resetKey="signin" onBack={()=>setView('landing')}>
+          <AuthView onClose={closeAuth} onUser={u=>setUser(u)}/>
+        </ErrorBoundary>
+      )}
       <div style={{maxWidth:step<4?720:1080,margin:'0 auto',padding:'40px 24px 72px',display:(view==='app')?'block':'none'}}>
         {/* Sample numbers must never be mistaken for the user's own deal. */}
         {draft&&!isDemo&&!isShared&&(
@@ -318,7 +337,6 @@ function App(){
         )}
       </div>
 
-      {showAuth&&<AuthModal onClose={()=>setShowAuth(false)} onUser={u=>setUser(u)}/>}
       {showReset&&<ResetPasswordModal onDone={()=>{setShowReset(false);notify('Password updated');}}/>}
       {showSave&&res&&<SaveModal inp={inp} res={res} user={user} existingId={currentDealId}
         onClose={()=>setShowSave(false)}
@@ -330,7 +348,7 @@ function App(){
           setInp(prev=>({...prev,propertyName:name}));
           notify(mode==='updated'?'Deal updated':(user?'Saved to your account':'Saved in this browser'));
         }}
-        onSignIn={()=>{setShowSave(false);setShowAuth(true);}}/>}
+        onSignIn={()=>{setShowSave(false);openAuth();}}/>}
       <Toast msg={toast} action={toastAct}/>
       <div style={{textAlign:'center',padding:'18px 20px',borderTop:'1px solid var(--border)',color:'var(--muted2)',fontSize:'var(--fs-2)'}}>
         <span style={{color:'var(--muted)',fontWeight:600}}>SmartCapStack</span>
