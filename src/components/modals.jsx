@@ -1,6 +1,7 @@
 import{useState}from'react';
 import{sb}from'../lib/supabase.js';
 import{persistDeal}from'../lib/deals.js';
+import{track}from'../lib/telemetry.js';
 import{Fld}from'./ui.jsx';
 
 // Email/password sign-up + reset. Kept behind a flag because it is only safe
@@ -77,6 +78,12 @@ function AuthModal({onClose,onUser}){
       if(mode==='login')r=await sb.auth.signInWithPassword({email,password:pw});
       else r=await sb.auth.signUp({email,password:pw,options:{emailRedirectTo:window.location.origin+window.location.pathname}});
       if(r.error)throw r.error;
+      // Sign-ups belong in the same event table as everything else, so "how
+      // many people made an account" is answerable next to "how many ran a
+      // deal" rather than living in a provider's dashboard. Deliberately no
+      // email address or user id: this table is insert-only and holds nothing
+      // that identifies a person, and a signup event is no reason to start.
+      if(mode==='signup')track('account_created',{confirmRequired:!r.data.session});
       if(mode==='signup'&&!r.data.session){setMsg('Account created. Check your email to confirm, then sign in.');setBusy(false);return;}
       if(r.data.user){onUser(r.data.user);onClose();}
     }catch(e){setErr(e.message||'Authentication failed.');}

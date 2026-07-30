@@ -129,7 +129,8 @@ select type as milestone,
 from events
 where created_at > now() - interval '30 days'
   and type in ('pageview','demo_viewed','analysis_started',
-               'proforma_generated','excel_exported','deal_saved','share_created')
+               'proforma_generated','excel_exported','deal_saved','share_created',
+               'account_created')
 group by 1
 order by people desc;
 ```
@@ -145,6 +146,7 @@ What the milestones mean:
 | `excel_exported` | downloaded the workbook |
 | `deal_saved` | saved a deal |
 | `share_created` | copied a share link — the growth loop |
+| `account_created` | signed up. `meta.confirmRequired` is true when the account still needs an email confirmation, so a gap between this and confirmed users means people are not finishing |
 
 ---
 
