@@ -44,6 +44,10 @@ function App(){
   // means Back and a completed sign-in both return them to the deal they were
   // in the middle of, rather than dumping them on the landing page.
   const [authFrom,setAuthFrom]=useState(null);
+  // Reading the session is asynchronous, so for the first moments after load a
+  // signed-in user is indistinguishable from a signed-out one. Gating before
+  // this resolves would bounce your own users to sign-in on every refresh.
+  const [authReady,setAuthReady]=useState(!sb);
   const [showReset,setShowReset]=useState(false);
   const [showSave,setShowSave]=useState(false);
   const [currentDealId,setCurrentDealId]=useState(null);
@@ -104,7 +108,10 @@ function App(){
 
   useEffect(()=>{
     if(!sb)return; // no Supabase config — calculator still works standalone
-    sb.auth.getUser().then(({data:{user:u}})=>setUser(u||null)).catch(()=>{});
+    sb.auth.getUser()
+      .then(({data:{user:u}})=>setUser(u||null))
+      .catch(()=>{})
+      .finally(()=>setAuthReady(true));
     const{data:{subscription}}=sb.auth.onAuthStateChange((event,session)=>{
       setUser(session?.user||null);
       if(event==='PASSWORD_RECOVERY'){setView(v=>v==='signin'?'landing':v);setShowReset(true);}
@@ -119,6 +126,25 @@ function App(){
     setView('signin');
     window.scrollTo({top:0});
   },[view]);
+  // An account is required to use the tool. Two deliberate exceptions: the
+  // landing page and the legal pages stay public so the product can be found
+  // and signed up for, and a share link still opens for its recipient -- that
+  // link is how people arrive, and asking a lender to make an account before
+  // reading a memo someone sent them is how it stops working.
+  //
+  // With no Supabase configured nobody can sign in at all, so enforcing the
+  // gate would lock the calculator shut with no way through. It stays open.
+  const needsAuth=!!sb&&authReady&&!user;
+  const requireAuth=useCallback(fn=>(...args)=>{
+    if(!!sb&&!user){openAuth();return;}
+    return fn(...args);
+  },[user,openAuth]);
+  // Catches the ways in that are not a button: a restored draft, a signed-out
+  // session expiring mid-deal, or a bookmark straight to the wizard.
+  useEffect(()=>{
+    if(!needsAuth||isShared)return;
+    if(view==='app'||view==='profile')openAuth();
+  },[needsAuth,isShared,view,openAuth]);
   const closeAuth=useCallback(()=>{
     setView(authFrom||'landing');
     setAuthFrom(null);
@@ -240,7 +266,7 @@ function App(){
         </div>
         <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap',justifyContent:'flex-end'}}>
           {view!=='landing'&&step<4&&step>0&&<span className="mono hide-m" style={{fontSize:'var(--fs-2)',color:'var(--on-dark-dim)'}}>STEP {step}/{STEPS.length}</span>}
-          {view==='landing'&&<button className="btn-p" style={{padding:'7px 18px',fontSize:'var(--fs-4)'}} onClick={startFresh}>Start an analysis</button>}
+          {view==='landing'&&<button className="btn-p" style={{padding:'7px 18px',fontSize:'var(--fs-4)'}} onClick={requireAuth(startFresh)}>Start an analysis</button>}
           <button onClick={()=>{setView('profile');window.scrollTo({top:0});}} style={{background:'none',border:'none',cursor:'pointer',fontSize:'var(--fs-3)',color:view==='profile'?'var(--on-dark-accent)':'var(--on-dark-muted)',fontWeight:view==='profile'?700:500,padding:0,fontFamily:"'Inter',sans-serif"}}>{user?'Account':'Saved deals'}</button>
           {user?(
             <div style={{display:'flex',alignItems:'center',gap:8}}>
@@ -257,8 +283,8 @@ function App(){
         </div>
       </div>
 
-      {view==='landing'&&<Landing onStart={startFresh} onDemo={handleDemo}
-        onSample={()=>{const sd={...DEFS.multifamily,propertyName:'Sample Deal'};exportXLSX(buildPF(sd),sd);}}/>}
+      {view==='landing'&&<Landing onStart={requireAuth(startFresh)} onDemo={requireAuth(handleDemo)}
+        onSample={requireAuth(()=>{const sd={...DEFS.multifamily,propertyName:'Sample Deal'};exportXLSX(buildPF(sd),sd);})}/>}
       {view==='profile'&&(
         <ErrorBoundary resetKey={user?user.id:'anon'} onBack={()=>{setView('app');setStep(0);}}>
           <Profile user={user} onSignIn={openAuth}
@@ -287,7 +313,7 @@ function App(){
           <div className="demo-bar">
             <span><strong>Shared analysis.</strong> Someone sent you their underwriting to read. The full analysis is below &mdash; running your own deal takes about four minutes.</span>
             <span style={{display:'flex',gap:18,flexShrink:0}}>
-              <button onClick={startFresh}>Run my own deal</button>
+              <button onClick={requireAuth(startFresh)}>Run my own deal</button>
             </span>
           </div>
         )}
@@ -327,7 +353,7 @@ function App(){
           res&&(
             <Suspense fallback={<div style={{padding:'80px 24px',textAlign:'center',color:'var(--muted2)',fontSize:'var(--fs-5)'}}>Preparing results…</div>}>
               <ErrorBoundary resetKey={res} onBack={()=>setStep(3)}>
-                <Dashboard res={res} inp={inp} viewOnly={isShared} onRunOwn={startFresh} onExport={async()=>{track('excel_exported');
+                <Dashboard res={res} inp={inp} viewOnly={isShared} onRunOwn={requireAuth(startFresh)} onExport={async()=>{track('excel_exported');
                   // a link home, so the workbook is portable rather than a dead end
                   let back;try{back=shareURL(await encodeDeal(inp));}catch(e){}
                   exportXLSX(res,inp,back);}} onBack={()=>setStep(3)} onSave={handleSave} onShare={handleShare}/>
