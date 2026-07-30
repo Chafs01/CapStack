@@ -1,5 +1,5 @@
 import{f,pn}from'../engine/format.js';
-import{resolveLine}from'../engine/income.js';
+import{resolveLine,resolveCostLine}from'../engine/income.js';
 // ─── RENT ROLL EDITORS ──────────────────────────────────────────────────
 const UNIT_TYPES=['Studio','1BR','2BR','3BR','4BR','Penthouse','Other'];
 const CREDIT_TYPES=[
@@ -99,7 +99,7 @@ function UnitMixEditor({rows,onChange}){
 // whatever this asset has that the list does not.
 const EXPENSE_BASES=[['amount','Annual $'],['perUnitYr','$ / unit / yr'],['pctEGI','% of EGI']];
 const INCOME_BASES=[['amount','Annual $'],['perUnitMo','$ / unit / mo'],['perUnitYr','$ / unit / yr']];
-const BASIS_SUFFIX={amount:'$',perUnitYr:'$',perUnitMo:'$',pctEGI:'%'};
+const BASIS_SUFFIX={amount:'$',perUnitYr:'$',perUnitMo:'$',pctEGI:'%',perSF:'$',perUnit:'$',pctHard:'%'};
 
 const OPEX_CATEGORIES=['Property Taxes','Insurance','Repairs & Maintenance','Utilities',
   'Water & Sewer','Trash Removal','Landscaping / Snow','Turnover & Make-Ready','Contract Services',
@@ -109,7 +109,7 @@ const OPEX_CATEGORIES=['Property Taxes','Insurance','Repairs & Maintenance','Uti
 function OpExEditor({rows,onChange,units}){
   rows=rows||[];
   const set=(i,p)=>onChange(rows.map((r,j)=>j===i?{...r,...p}:r));
-  const add=()=>onChange([...rows,{cat:'Custom',label:'',amount:0}]);
+  const add=()=>onChange([...rows,{cat:'Property Taxes',amount:0}]);
   const del=i=>onChange(rows.filter((_,j)=>j!==i));
   const total=rows.reduce((s,r)=>s+resolveLine(r,units,0),0);
   const C='1.4fr 0.95fr 0.85fr 30px';
@@ -119,9 +119,11 @@ function OpExEditor({rows,onChange,units}){
         <label style={{fontSize:'var(--fs-4)',fontWeight:600,color:'var(--text)'}}>Operating Expense Line Items</label>
         <span style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>{rows.length} line{rows.length!==1?'s':''} &middot; {f.$(total)}/yr</span>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:C,gap:8,padding:'0 2px 6px',fontSize:'var(--fs-2)',fontWeight:700,color:'var(--muted2)'}}>
-        <div>Category</div><div>Quoted as</div><div>Amount</div><div></div>
-      </div>
+      {rows.length>0&&(
+        <div style={{display:'grid',gridTemplateColumns:C,gap:8,padding:'0 2px 6px',fontSize:'var(--fs-2)',fontWeight:700,color:'var(--muted2)'}}>
+          <div>Category</div><div>Quoted as</div><div>Amount</div><div></div>
+        </div>
+      )}
       {rows.map((r,i)=>(
         <div key={i}>
           <div style={{display:'grid',gridTemplateColumns:C,gap:8,marginBottom:r.cat==='Custom'?4:8,alignItems:'center'}}>
@@ -193,6 +195,71 @@ function OtherIncomeEditor({rows,onChange,units}){
     </div>
   );
 }
+// A development budget gets the same treatment operating expenses got. One
+// blended $/SF is not how anyone builds one: the trades quote separately, and
+// the lines are exactly what a lender and a GC argue about. Softs carry a
+// percent-of-hard basis on top, because contingency and most fees are quoted
+// that way.
+const HARD_COST_CATEGORIES=['Demolition & Abatement','Sitework & Excavation','Utilities & Connections',
+  'Foundations','Structure & Shell','Exterior & Envelope','Roofing','Windows & Doors',
+  'Mechanical, Electrical & Plumbing','Fire Protection','Elevators & Conveyance','Interior Finishes',
+  'Millwork & Casework','Appliances','FF&E','Parking & Paving','Landscaping & Hardscape',
+  'Site Amenities','General Conditions','Contractor Fee & Overhead','Hard Cost Contingency','Custom'];
+const SOFT_COST_CATEGORIES=['Architecture & Engineering','Permits & Plan Check','Impact & Utility Fees',
+  'Environmental & Geotechnical','Survey','Legal','Accounting & Audit','Title & Recording',
+  'Builder’s Risk Insurance','Property Taxes During Construction','Construction Loan Interest',
+  'Financing & Lender Fees','Appraisal & Market Study','Project Management','Marketing & Lease-Up',
+  'Operating Reserve','Soft Cost Contingency','Custom'];
+const HARD_COST_BASES=[['amount','Lump sum $'],['perSF','$ / buildable SF'],['perUnit','$ / unit']];
+const SOFT_COST_BASES=[...HARD_COST_BASES,['pctHard','% of hard costs']];
+
+function DevCostEditor({rows,onChange,cats,bases,label,noun,placeholder,sf,units,hard}){
+  rows=rows||[];
+  const set=(i,p)=>onChange(rows.map((r,j)=>j===i?{...r,...p}:r));
+  const add=()=>onChange([...rows,{cat:cats[0],amount:0}]);
+  const del=i=>onChange(rows.filter((_,j)=>j!==i));
+  const total=rows.reduce((s,r)=>s+resolveCostLine(r,sf,units,hard),0);
+  const C='1.4fr 0.95fr 0.85fr 30px';
+  return(
+    <div style={{marginBottom:14}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,gap:12,flexWrap:'wrap'}}>
+        <label style={{fontSize:'var(--fs-4)',fontWeight:600,color:'var(--text)'}}>{label}</label>
+        <span style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>{rows.length} line{rows.length!==1?'s':''} &middot; {f.$(total)}</span>
+      </div>
+      {rows.length>0&&(
+        <div style={{display:'grid',gridTemplateColumns:C,gap:8,padding:'0 2px 6px',fontSize:'var(--fs-2)',fontWeight:700,color:'var(--muted2)'}}>
+          <div>Line Item</div><div>Quoted as</div><div>Amount</div><div></div>
+        </div>
+      )}
+      {rows.map((r,i)=>(
+        <div key={i}>
+          <div style={{display:'grid',gridTemplateColumns:C,gap:8,marginBottom:r.cat==='Custom'?4:8,alignItems:'center'}}>
+            <select className="input-f" value={r.cat||'Custom'} onChange={e=>set(i,{cat:e.target.value})} style={{height:38}}>
+              {cats.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+            {/* changing basis clears the figure: $22 a foot is not $22 total */}
+            <select className="input-f" value={r.basis||'amount'} onChange={e=>set(i,{basis:e.target.value,amount:0})} style={{height:38}}>
+              {bases.map(([v,l])=><option key={v} value={v}>{l}</option>)}
+            </select>
+            <div style={{position:'relative'}}>
+              <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>{BASIS_SUFFIX[r.basis||'amount']}</span>
+              <input className="input-f" value={r.amount||''} onChange={e=>set(i,{amount:pn(e.target.value)})} placeholder="0" style={{paddingLeft:24}} inputMode="decimal"/>
+            </div>
+            <button onClick={()=>del(i)} aria-label="Remove" title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
+          </div>
+          {r.cat==='Custom'&&<input className="input-f" value={r.label||''} onChange={e=>set(i,{label:e.target.value})} placeholder={placeholder} style={{marginBottom:8,fontSize:'var(--fs-4)'}}/>}
+          {/* what this line actually resolves to, so a per-foot quote is never a mystery */}
+          {r.basis&&r.basis!=='amount'&&(+r.amount||0)!==0&&(
+            <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginTop:-2,marginBottom:8,marginLeft:2}}>
+              = {f.$(resolveCostLine(r,sf,units,hard))}
+            </div>
+          )}
+        </div>
+      ))}
+      <button className="btn-s" style={{padding:'7px 14px',fontSize:'var(--fs-4)',marginTop:2}} onClick={add}>+ Add {noun}</button>
+    </div>
+  );
+}
 function RetailEditor({rows,onChange,label}){
   rows=rows||[];
   const set=(i,p)=>onChange(rows.map((r,j)=>j===i?{...r,...p}:r));
@@ -226,4 +293,6 @@ function RetailEditor({rows,onChange,label}){
   );
 }
 
-export{UNIT_TYPES,CREDIT_TYPES,OPEX_CATEGORIES,OTHER_INCOME_CATEGORIES,CreditEditor,UnitMixEditor,OpExEditor,OtherIncomeEditor,RetailEditor};
+export{UNIT_TYPES,CREDIT_TYPES,OPEX_CATEGORIES,OTHER_INCOME_CATEGORIES,
+  HARD_COST_CATEGORIES,SOFT_COST_CATEGORIES,HARD_COST_BASES,SOFT_COST_BASES,
+  CreditEditor,UnitMixEditor,OpExEditor,OtherIncomeEditor,DevCostEditor,RetailEditor};

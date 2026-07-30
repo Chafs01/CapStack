@@ -103,11 +103,57 @@ function getOpEx(inp){
   if(itemised!==null)return itemised+mgmt;
   return(inp.propertyTax||0)+(inp.insurance||0)+mgmt+(inp.maintenance||0)+(inp.utilities||0)+(inp.reserves||0)+(inp.administrative||0);
 }
+// A development budget is a list of lines, not a blended dollar-per-foot. One
+// hard cost figure is fine for a napkin and useless the moment anyone asks what
+// is in it — sitework, shell, MEP and finishes are quoted separately, by
+// different trades, in different units. Same rule as operating expenses: a list
+// wins when present, and the two legacy fields still compute exactly as they
+// did for every deal saved before this existed.
+//   hard : amount | perSF | perUnit
+//   soft : amount | perSF | perUnit | pctHard
+// A share of hard cost is offered only on soft lines — contingency and fees are
+// quoted that way, and on a hard line it would be a share of itself.
+function resolveCostLine(r,sf,units,hard){
+  if(!r||typeof r!=='object')return 0;
+  const v=+r.amount;
+  if(!isFinite(v))return 0;
+  const s=isFinite(+sf)?+sf:0;
+  const u=isFinite(+units)?+units:0;
+  const h=isFinite(+hard)?+hard:0;
+  switch(r.basis){
+    case'perSF':return v*s;
+    case'perUnit':return v*u;
+    case'pctHard':return h*v/100;
+    default:return v;
+  }
+}
+function costListTotal(rows,sf,units,hard){
+  if(!Array.isArray(rows))return null;
+  let t=0;
+  for(const r of rows)t+=resolveCostLine(r,sf,units,hard);
+  // Present but empty is a budget the user cleared, which is zero — not an
+  // instruction to go and read the old fields.
+  return isFinite(t)?t:0;
+}
+function getHardCost(inp){
+  const listed=costListTotal(inp&&inp.hardCostItems,inp&&inp.grossBuildableSF,inp&&inp.numUnits,0);
+  if(listed!==null)return listed;
+  return((inp&&inp.grossBuildableSF)||0)*((inp&&inp.hardCostPerSF)||0);
+}
+// Soft costs need the hard total before they can resolve, because the way most
+// of them are quoted is as a percentage of it.
+function getSoftCost(inp,hard){
+  const h=isFinite(+hard)?+hard:0;
+  const listed=costListTotal(inp&&inp.softCostItems,inp&&inp.grossBuildableSF,inp&&inp.numUnits,h);
+  if(listed!==null)return listed;
+  return h*((inp&&inp.softCostsPct)||0)/100;
+}
 function getDevCost(inp){
-  const hard=(inp.grossBuildableSF||0)*(inp.hardCostPerSF||0);
-  const soft=hard*(inp.softCostsPct||0)/100;
-  const devFee=inp.developerFee||0;
-  return(inp.landCost||inp.purchasePrice||0)+hard+soft+devFee;
+  const hard=getHardCost(inp);
+  const soft=getSoftCost(inp,hard);
+  const devFee=(inp&&inp.developerFee)||0;
+  const land=(inp&&inp.landCost)||(inp&&inp.purchasePrice)||0;
+  return land+hard+soft+devFee;
 }
 
-export{umGPI,rtGPI,getGPI,getOpEx,getDevCost,opexItemsTotal,getOtherIncome,listTotal,resolveLine,resolveCapex,lossRate};
+export{umGPI,rtGPI,getGPI,getOpEx,getDevCost,getHardCost,getSoftCost,opexItemsTotal,getOtherIncome,listTotal,resolveLine,resolveCostLine,costListTotal,resolveCapex,lossRate};

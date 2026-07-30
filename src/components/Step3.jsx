@@ -18,9 +18,14 @@ function Step3({inp,onChange}){
   // An empty list is a state the user chose, not a missing one. Testing
   // .length here meant deleting the last line looked identical to never having
   // itemised at all, so all six defaults sprang back with values in them.
+  //
+  // A blank deal starts with no lines at all. Six empty rows was clutter that
+  // implied those categories were required, and it made the step look busy
+  // before anything had been entered. A deal that predates itemising still
+  // shows its figures, because those rows carry real data.
   const opexRows=Array.isArray(inp.opexItems)
     ? inp.opexItems
-    : LEGACY_OPEX.map(([k,cat])=>({cat,amount:inp[k]||0}));
+    : LEGACY_OPEX.map(([k,cat])=>({cat,amount:inp[k]||0})).filter(r=>r.amount>0);
   const otherRows=Array.isArray(inp.otherIncomeItems)
     ? inp.otherIncomeItems
     : ((inp.otherIncome||0)>0?[{cat:'Custom',label:'Other income',amount:inp.otherIncome}]:[]);

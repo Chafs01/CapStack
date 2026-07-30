@@ -1,8 +1,12 @@
 // LIHTC credit calculation and sources & uses.
+import{getHardCost,getSoftCost}from'./income.js';
 function calcLIHTC(inp,permLoan){
   const land=inp.landCost||inp.purchasePrice||0;
-  const hard=(inp.grossBuildableSF||0)*(inp.hardCostPerSF||0);
-  const soft=hard*(inp.softCostsPct||0)/100;
+  // Eligible basis is built from hard and soft costs, so these must be the same
+  // totals the rest of the model uses — an itemised budget that the credit
+  // calculation ignored would quietly understate the equity.
+  const hard=getHardCost(inp);
+  const soft=getSoftCost(inp,hard);
   const devFee=inp.developerFee||0;
   const totalUses=land+hard+soft+devFee;
   const ebPct=(inp.eligibleBasisPct!=null?inp.eligibleBasisPct:95)/100;

@@ -2,7 +2,9 @@ import{useState,useRef}from'react';
 import{f,pn}from'../engine/format.js';
 import{parseFile,extractFields,extractRentRoll}from'../engine/parse.js';
 import{Fld,Card}from'./ui.jsx';
-import{UnitMixEditor,RetailEditor,CreditEditor}from'./editors.jsx';
+import{UnitMixEditor,RetailEditor,CreditEditor,DevCostEditor,
+  HARD_COST_CATEGORIES,SOFT_COST_CATEGORIES,HARD_COST_BASES,SOFT_COST_BASES}from'./editors.jsx';
+import{getHardCost,getSoftCost}from'../engine/income.js';
 // ─── STEP 2 PROPERTY + UPLOAD ─────────────────────────────────────────────
 const G2={display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'};
 const G3={display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'0 16px'};
@@ -43,6 +45,63 @@ function Step2({inp,onChange,assetType}){
     onChange({unitMix:mix,numUnits:u,avgRent:u?Math.round(an/u/12):0});
   };
   const acqFld=<Fld label="Acquisition Costs / Fees" suffix="%" hint={`closing, legal, title = ${f.$((inp.purchasePrice||0)*(inp.acquisitionCostsPct||0)/100)}`} value={inp.acquisitionCostsPct} onChange={v=>onChange({acquisitionCostsPct:pn(v)})}/>;
+
+  // A budget entered before itemising existed is shown as the lines it always
+  // was — one hard cost quote, one soft cost percentage — so nothing on screen
+  // moves just because entry got richer. Touching a line writes the list, and
+  // from then on the list is what the model reads.
+  const hardRows=Array.isArray(inp.hardCostItems)?inp.hardCostItems
+    :((inp.hardCostPerSF||0)>0?[{cat:'Structure & Shell',basis:'perSF',amount:inp.hardCostPerSF}]:[]);
+  const softRows=Array.isArray(inp.softCostItems)?inp.softCostItems
+    :((inp.softCostsPct||0)>0?[{cat:'Custom',label:'Soft costs',basis:'pctHard',amount:inp.softCostsPct}]:[]);
+  const hardTotal=getHardCost({...inp,hardCostItems:hardRows});
+  const softTotal=getSoftCost({...inp,softCostItems:softRows},hardTotal);
+  const devBudget=(<>
+    <DevCostEditor rows={hardRows} onChange={r=>onChange({hardCostItems:r})}
+      cats={HARD_COST_CATEGORIES} bases={HARD_COST_BASES}
+      label="Hard Cost Line Items" noun="hard cost"
+      placeholder="Name this line (e.g. Podium Deck, Solar Array)"
+      sf={inp.grossBuildableSF} units={inp.numUnits} hard={0}/>
+    <div style={{paddingTop:14,borderTop:'1px solid var(--border)'}}>
+      <DevCostEditor rows={softRows} onChange={r=>onChange({softCostItems:r})}
+        cats={SOFT_COST_CATEGORIES} bases={SOFT_COST_BASES}
+        label="Soft Cost Line Items" noun="soft cost"
+        placeholder="Name this line (e.g. Public Art Fee, Relocation)"
+        sf={inp.grossBuildableSF} units={inp.numUnits} hard={hardTotal}/>
+    </div>
+  </>);
+  // The total is the number every other figure is built on, so it is shown
+  // where it is entered rather than three steps later.
+  const budgetTotal=fee=>{
+    const land=inp.landCost||inp.purchasePrice||0;
+    const total=land+hardTotal+softTotal+(fee||0);
+    const sf=+inp.grossBuildableSF||0,u=+inp.numUnits||0;
+    const parts=[['Land',land],['Hard',hardTotal],['Soft',softTotal]];
+    if(fee)parts.push(['Developer Fee',fee]);
+    return(
+      <div style={{paddingTop:16,borderTop:'1px solid var(--border)'}}>
+        <div style={{display:'flex',gap:28,flexWrap:'wrap',alignItems:'baseline'}}>
+          {parts.map(([l,v])=>(
+            <div key={l}>
+              <span style={{color:'var(--muted)',fontSize:'var(--fs-4)'}}>{l}&nbsp;&nbsp;</span>
+              <span className="mono" style={{fontWeight:600,fontSize:'var(--fs-4)',color:'var(--muted)'}}>{f.$(v)}</span>
+            </div>
+          ))}
+          <div>
+            <span style={{color:'var(--muted)',fontSize:'var(--fs-4)'}}>Total Development Cost&nbsp;&nbsp;</span>
+            <span className="mono" style={{fontWeight:700,fontSize:'var(--fs-5)',color:total>0?'var(--text)':'var(--muted2)'}}>{total>0?f.$f(total):'—'}</span>
+          </div>
+        </div>
+        {total>0&&(sf>0||u>0)&&(
+          <div style={{marginTop:6,fontSize:'var(--fs-3)',color:'var(--muted2)'}}>
+            {sf>0&&<span>{f.$f(total/sf)} / buildable SF</span>}
+            {sf>0&&u>0&&<span>&nbsp;&middot;&nbsp;</span>}
+            {u>0&&<span>{f.$f(total/u)} / unit</span>}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return(
     <div className="fu">
@@ -123,14 +182,14 @@ function Step2({inp,onChange,assetType}){
       </>)}
 
       {t==='development'&&(<>
-        <Card title="Development Budget" sub="Land, hard and soft costs">
+        <Card title="Development Budget" sub="Land, hard and soft costs — add or rename lines to match the budget">
           <div style={G2} className="g2">
             <Fld label="Land / Site Cost" prefix="$" value={inp.landCost||inp.purchasePrice} onChange={v=>onChange({landCost:pn(v),purchasePrice:pn(v)})}/>
-            <Fld label="Gross Buildable SF" value={inp.grossBuildableSF} onChange={v=>onChange({grossBuildableSF:pn(v)})}/>
-            <Fld label="Hard Cost / SF" prefix="$" value={inp.hardCostPerSF} onChange={v=>onChange({hardCostPerSF:pn(v)})}/>
-            <Fld label="Soft Costs" suffix="%" hint="of hard costs" value={inp.softCostsPct} onChange={v=>onChange({softCostsPct:pn(v)})}/>
+            <Fld label="Gross Buildable SF" hint="the denominator for any per-SF line" value={inp.grossBuildableSF} onChange={v=>onChange({grossBuildableSF:pn(v)})}/>
             {acqFld}
           </div>
+          {devBudget}
+          {budgetTotal(0)}
         </Card>
         <Card title="Schedule" sub="Construction and lease-up timing">
           <div style={G3} className="g3">
@@ -154,15 +213,15 @@ function Step2({inp,onChange,assetType}){
       </>)}
 
       {t==='affordable'&&(<>
-        <Card title="Development Budget" sub="Land, costs, and developer fee">
+        <Card title="Development Budget" sub="Land, costs, and developer fee — add or rename lines to match the budget">
           <div style={G2} className="g2">
             <Fld label="Land / Site Cost" prefix="$" value={inp.landCost} onChange={v=>onChange({landCost:pn(v),purchasePrice:pn(v)})}/>
-            <Fld label="Gross Buildable SF" value={inp.grossBuildableSF} onChange={v=>onChange({grossBuildableSF:pn(v)})}/>
-            <Fld label="Hard Cost / SF" prefix="$" value={inp.hardCostPerSF} onChange={v=>onChange({hardCostPerSF:pn(v)})}/>
-            <Fld label="Soft Costs" suffix="%" hint="of hard costs" value={inp.softCostsPct} onChange={v=>onChange({softCostsPct:pn(v)})}/>
-            <Fld label="Developer Fee" prefix="$" value={inp.developerFee} onChange={v=>onChange({developerFee:pn(v)})}/>
+            <Fld label="Gross Buildable SF" hint="the denominator for any per-SF line" value={inp.grossBuildableSF} onChange={v=>onChange({grossBuildableSF:pn(v)})}/>
+            <Fld label="Developer Fee" prefix="$" hint="kept separate — it can be deferred to close the gap" value={inp.developerFee} onChange={v=>onChange({developerFee:pn(v)})}/>
             <Fld label="Soft Sources / Subsidy" prefix="$" hint="soft loans, grants" value={inp.softSources} onChange={v=>onChange({softSources:pn(v)})}/>
           </div>
+          {devBudget}
+          {budgetTotal(inp.developerFee||0)}
         </Card>
         <Card title="Tax Credit Assumptions" sub="Credit type, pricing, and eligible basis">
           <div style={G3} className="g3">
