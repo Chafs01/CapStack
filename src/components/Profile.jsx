@@ -2,6 +2,7 @@ import{useState,useEffect}from'react';
 import{SavedDeals}from'./SavedDeals.jsx';
 import{loadDeals,loadDealsLocal}from'../lib/deals.js';
 import{CONTACT}from'./Legal.jsx';
+import{sb}from'../lib/supabase.js';
 // ─── PROFILE / ACCOUNT ────────────────────────────────────────────────────
 // One place that answers "what is mine here": who you are signed in as, what
 // you get, what you have made, and where it is stored.
@@ -18,6 +19,41 @@ function Row({label,value,sub}){
       <div style={{minWidth:0}}>
         <div style={{fontSize:'var(--fs-4)',color:'var(--text)',lineHeight:1.5,wordBreak:'break-word'}}>{value}</div>
         {sub&&<div style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginTop:3,lineHeight:1.5}}>{sub}</div>}
+      </div>
+    </div>
+  );
+}
+
+// Google hands over a name; an email sign-up hands over nothing, so the account
+// page greeted those users with their own raw email address and gave them no
+// way to change it. The name lives in user_metadata, which the client is
+// allowed to write to itself -- no table, no policy, and updateUser fires an
+// auth state change, so the header picks it up without a reload.
+function NameRow({current,notify}){
+  const [val,setVal]=useState(current||'');
+  const [busy,setBusy]=useState(false);
+  useEffect(()=>{setVal(current||'');},[current]);
+  const dirty=val.trim()!==(current||'');
+  const save=async()=>{
+    if(!dirty||busy)return;
+    if(!sb){notify&&notify('Cloud features are unavailable right now.');return;}
+    setBusy(true);
+    try{
+      const{error}=await sb.auth.updateUser({data:{full_name:val.trim()}});
+      if(error)throw error;
+      notify&&notify(val.trim()?'Name updated':'Name removed');
+    }catch(e){notify&&notify(e.message||'Could not save your name.');}
+    setBusy(false);
+  };
+  return(
+    <div style={{display:'grid',gridTemplateColumns:'190px 1fr',gap:20,padding:'13px 0',borderTop:'1px solid var(--border)'}} className="g2">
+      <div className="eyebrow" style={{paddingTop:10}}>Name</div>
+      <div style={{minWidth:0,display:'flex',gap:18,alignItems:'center',flexWrap:'wrap'}}>
+        <input className="input-f" value={val} placeholder="Add your name"
+          onChange={e=>setVal(e.target.value)}
+          onKeyDown={e=>{if(e.key==='Enter')save();}}
+          style={{flex:'1 1 220px',maxWidth:300}}/>
+        {dirty&&<button className="btn-p" onClick={save} disabled={busy}>{busy?'Saving…':'Save'}</button>}
       </div>
     </div>
   );
@@ -98,7 +134,7 @@ function Profile({user,onSignIn,onSignOut,onLoadDeal,onStart,notify}){
         {user?(
           <>
             <Row label="Email" value={user.email||'—'}/>
-            {name&&<Row label="Name" value={name}/>}
+            <NameRow current={name} notify={notify}/>
             <Row label="Sign-in method" value={provider==='google'?'Google':(provider||'Email')}
               sub={provider==='google'?'Your password is managed by Google — there is nothing to reset here.':undefined}/>
             <Row label="Member since" value={fmtDate(user.created_at)}/>
