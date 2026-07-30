@@ -565,7 +565,7 @@ function LihtcPanel({L,res}){
 // analysis is readable, but the tools are not. Reading someone's finished deal
 // has no substitute value for underwriting your own, so it stays open — what
 // is withheld is the working model, which is the product.
-function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,onRunOwn}){
+function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabel,onRunOwn}){
   const [tab,setTab]=useState('charts');
   const hp=inp.holdingPeriod||7;
   const {rows,ret,sum,exit,equity,totalCost,acqC,LF}=res;
@@ -601,7 +601,7 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,onRunOwn}){
         <div>
           <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:9,flexWrap:'wrap'}}>
             {!viewOnly&&<button className="btn-q" onClick={onBack}>← Edit</button>}
-            {viewOnly&&<span className="eyebrow" style={{color:'var(--muted2)'}}>Shared &middot; view only</span>}
+            {viewOnly&&<span className="eyebrow" style={{color:'var(--muted2)'}}>{viewOnlyLabel||<>Shared &middot; view only</>}</span>}
             <Chip tone="accent">{dealTypeLabel(inp)}</Chip>
             <Chip>{hp}-Year Hold</Chip>
             {inp.address&&<Chip>{inp.address}</Chip>}
@@ -613,8 +613,10 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,onRunOwn}){
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
           {viewOnly?(
             <>
-              {/* reading stays free; the working model does not travel */}
-              <button className="btn-s" onClick={()=>openMemo(res,inp)}>Memo / PDF</button>
+              {/* View only means exactly that: the analysis is readable on
+                  screen and nothing leaves with you. The memo was the last way
+                  to walk off with a formatted copy of someone else's work, or
+                  of the sample, so it is gone from here too. */}
               <button className="btn-p" onClick={onRunOwn}>Run your own deal &rarr;</button>
             </>
           ):(

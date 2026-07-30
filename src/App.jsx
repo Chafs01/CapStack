@@ -126,11 +126,15 @@ function App(){
     setView('signin');
     window.scrollTo({top:0});
   },[view]);
-  // An account is required to use the tool. Two deliberate exceptions: the
+  // An account is required to use the tool. Three deliberate exceptions: the
   // landing page and the legal pages stay public so the product can be found
-  // and signed up for, and a share link still opens for its recipient -- that
-  // link is how people arrive, and asking a lender to make an account before
-  // reading a memo someone sent them is how it stops working.
+  // and signed up for; a share link still opens for its recipient, because that
+  // link is how people arrive and asking a lender to make an account before
+  // reading a memo someone sent them is how it stops working; and the sample
+  // analysis stays open, because asking someone to sign up before they have
+  // seen what the thing produces is asking on no evidence.
+  //
+  // All three are read-only. Entering your own deal is what needs an account.
   //
   // With no Supabase configured nobody can sign in at all, so enforcing the
   // gate would lock the calculator shut with no way through. It stays open.
@@ -142,9 +146,22 @@ function App(){
   // Catches the ways in that are not a button: a restored draft, a signed-out
   // session expiring mid-deal, or a bookmark straight to the wizard.
   useEffect(()=>{
-    if(!needsAuth||isShared)return;
+    if(!needsAuth||isShared||isDemo)return;
     if(view==='app'||view==='profile')openAuth();
-  },[needsAuth,isShared,view,openAuth]);
+  },[needsAuth,isShared,isDemo,view,openAuth]);
+  // Signing out is a deliberate exit, so it ends on the landing page. Leaving
+  // the user on the account page shows them a page about an account they no
+  // longer have, and letting the gate catch them instead would answer "sign me
+  // out" with a sign-in wall. One handler, because the header and the account
+  // page both do this and they were drifting apart already.
+  const handleSignOut=useCallback(async()=>{
+    if(sb)await sb.auth.signOut();
+    setUser(null);
+    setAuthFrom(null);
+    setView('landing');
+    window.scrollTo({top:0});
+    notify('Signed out');
+  },[notify]);
   const closeAuth=useCallback(()=>{
     setView(authFrom||'landing');
     setAuthFrom(null);
@@ -274,7 +291,7 @@ function App(){
                 ?<img src={user.user_metadata.avatar_url} alt="" referrerPolicy="no-referrer" style={{width:24,height:24,borderRadius:'50%',border:'1px solid rgba(255,255,255,.25)'}}/>
                 :null}
               <button onClick={()=>{setView('profile');window.scrollTo({top:0});}} className="hide-m" style={{background:'none',border:'none',padding:0,cursor:'pointer',fontFamily:"'Inter',sans-serif",fontSize:'var(--fs-2)',color:'var(--on-dark-dim)',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.user_metadata?.full_name||user.email}</button>
-              <button onClick={async()=>{if(sb)await sb.auth.signOut();setUser(null);}} style={{background:'none',border:'none',borderBottom:'1px solid var(--border2)',borderRadius:0,cursor:'pointer',fontSize:'var(--fs-3)',color:'var(--on-dark-muted)',padding:'4px 10px',fontFamily:"'Inter',sans-serif"}}>Sign Out</button>
+              <button onClick={handleSignOut} style={{background:'none',border:'none',borderBottom:'1px solid var(--border2)',borderRadius:0,cursor:'pointer',fontSize:'var(--fs-3)',color:'var(--on-dark-muted)',padding:'4px 10px',fontFamily:"'Inter',sans-serif"}}>Sign Out</button>
             </div>
           ):(
             <button onClick={openAuth} style={{background:'none',border:'none',borderBottom:'2px solid var(--accent)',borderRadius:0,cursor:'pointer',fontSize:'var(--fs-3)',color:'var(--accent)',padding:'4px 0',fontWeight:600,fontFamily:"'Inter',sans-serif"}}>Sign In</button>
@@ -283,12 +300,12 @@ function App(){
         </div>
       </div>
 
-      {view==='landing'&&<Landing onStart={requireAuth(startFresh)} onDemo={requireAuth(handleDemo)}
+      {view==='landing'&&<Landing onStart={requireAuth(startFresh)} onDemo={handleDemo}
         onSample={requireAuth(()=>{const sd={...DEFS.multifamily,propertyName:'Sample Deal'};exportXLSX(buildPF(sd),sd);})}/>}
       {view==='profile'&&(
         <ErrorBoundary resetKey={user?user.id:'anon'} onBack={()=>{setView('app');setStep(0);}}>
           <Profile user={user} onSignIn={openAuth}
-            onSignOut={async()=>{if(sb)await sb.auth.signOut();setUser(null);notify('Signed out');}}
+            onSignOut={handleSignOut}
             onLoadDeal={handleLoadDeal} onStart={startFresh} notify={notify}/>
         </ErrorBoundary>
       )}
@@ -320,9 +337,12 @@ function App(){
         {isDemo&&(
           <div className="demo-bar">
             <span><strong>Sample deal.</strong> Real figures from a 40-unit multifamily, so you can see the output before entering anything.</span>
+            {/* The sample is a thing to read, not a deal to edit. Editing it
+                put someone in a wizard prefilled with numbers that were never
+                theirs, one keystroke away from thinking it was their deal. The
+                only way on from here is to start their own. */}
             <span style={{display:'flex',gap:18,flexShrink:0}}>
-              <button onClick={()=>{setStep(0);window.scrollTo({top:0});}}>Edit these assumptions</button>
-              <button onClick={()=>{handleAsset('multifamily');setRes(null);setStep(0);window.scrollTo({top:0});}}>Start my own</button>
+              <button onClick={requireAuth(()=>{handleAsset('multifamily');setRes(null);setStep(0);window.scrollTo({top:0});})}>Start your own analysis</button>
             </span>
           </div>
         )}
@@ -353,10 +373,17 @@ function App(){
           res&&(
             <Suspense fallback={<div style={{padding:'80px 24px',textAlign:'center',color:'var(--muted2)',fontSize:'var(--fs-5)'}}>Preparing results…</div>}>
               <ErrorBoundary resetKey={res} onBack={()=>setStep(3)}>
-                <Dashboard res={res} inp={inp} viewOnly={isShared} onRunOwn={requireAuth(startFresh)} onExport={async()=>{track('excel_exported');
+                {/* Look freely, take with an account. The sample and shared
+                    analyses are readable by anyone, but the workbook leaves
+                    with you, so downloading it is where the account is asked
+                    for. */}
+                <Dashboard res={res} inp={inp}
+                  viewOnly={isShared||isDemo}
+                  viewOnlyLabel={isDemo?'Sample · view only':undefined}
+                  onRunOwn={requireAuth(startFresh)} onExport={requireAuth(async()=>{track('excel_exported');
                   // a link home, so the workbook is portable rather than a dead end
                   let back;try{back=shareURL(await encodeDeal(inp));}catch(e){}
-                  exportXLSX(res,inp,back);}} onBack={()=>setStep(3)} onSave={handleSave} onShare={handleShare}/>
+                  exportXLSX(res,inp,back);})} onBack={()=>setStep(3)} onSave={handleSave} onShare={handleShare}/>
               </ErrorBoundary>
             </Suspense>
           )
