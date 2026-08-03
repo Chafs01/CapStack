@@ -35,6 +35,27 @@ function Fld({label,hint,value,onChange,prefix,suffix,disabled,type='text',align
   );
 }
 
+// The bare input the row editors use. Same idle-formatting rule as Fld — a
+// figure carries thousands separators when you aren't typing in it — but with
+// no label or wrapper, since the editors lay out their own grid and supply
+// their own $ / % prefix. Commas only ever appear when the field is blurred,
+// so they never fight the cursor, and pn() strips them on the way back in.
+function NumIn({value,onChange,placeholder='0',style,...rest}){
+  const[txt,setTxt]=useState('');
+  const[foc,setFoc]=useState(false);
+  const n=+value||0;
+  const raw=value==null||value===''?'':String(value);
+  const idle=n===0?'':(Math.abs(n)>=1000?n.toLocaleString('en-US'):raw);
+  return(
+    <input className="input-f" inputMode="decimal" placeholder={placeholder}
+      value={foc?txt:idle}
+      onFocus={()=>{setFoc(true);setTxt(n===0?'':raw)}}
+      onChange={e=>{setTxt(e.target.value);onChange(e.target.value)}}
+      onBlur={()=>setFoc(false)}
+      style={style} {...rest}/>
+  );
+}
+
 function Slider({label,min,max,step,value,onChange,fmt2}){
   return(
     <div style={{marginBottom:16}}>
@@ -107,4 +128,4 @@ function Chip({tone='neutral',children}){
   return<span style={{fontSize:'var(--fs-2)',padding:'4px 10px',borderRadius:20,background:bg,color:fg,fontWeight:700,letterSpacing:.2,whiteSpace:'nowrap'}}>{children}</span>;
 }
 
-export{Fld,Slider,Card,Metric,fillCells,SecHdr,Chip};
+export{Fld,NumIn,Slider,Card,Metric,fillCells,SecHdr,Chip};

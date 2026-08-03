@@ -1,6 +1,6 @@
 import{f,pn}from'../engine/format.js';
 import{getGPI,getDevCost,getOtherIncome,lossRate}from'../engine/income.js';
-import{Fld,Slider,Card,Metric}from'./ui.jsx';
+import{Fld,Card}from'./ui.jsx';
 import{summaryFigures}from'../lib/figures.js';
 import{OpExEditor,OtherIncomeEditor}from'./editors.jsx';
 // ─── STEP 3 INCOME & EXPENSES ─────────────────────────────────────────────
@@ -51,24 +51,17 @@ function Step3({inp,onChange}){
   const mgmt=egi*(inp.managementFeePct||0)/100;
   const opex=(inp.propertyTax||0)+(inp.insurance||0)+mgmt+(inp.maintenance||0)+(inp.utilities||0)+(inp.reserves||0)+(inp.administrative||0);
   const noi=egi-opex;
-  const er=egi>0?opex/egi:0;
   const capBasis=t==='development'?getDevCost(inp):(inp.purchasePrice||0);
   const capR=capBasis>0?noi/capBasis:0;
   // Color marks an exception worth a second look — not every figure. An
   // untouched form has no exceptions to mark, so nothing on it reads red.
   const S=summaryFigures({gpi,egi,opex,noi,capBasis,capR});
   const DASH='—';
-  const cells=[
-    {label:'Gross Income',value:S.started?f.$(gpi):DASH},
-    {label:'Eff. Gross Income',value:S.started?f.$(egi):DASH},
-    {label:'NOI',value:S.noi.ready?f.$(noi):DASH,tone:S.noi.tone==='neg'?'neg':null},
-    {label:'Expense Ratio',value:S.started?`${(er*100).toFixed(1)}%`:DASH,tone:S.started?(er>0.6?'neg':er>0.45?'warn':null):null},
-  ];
   return(
     <div className="fu">
       <div style={{marginBottom:18}}>
         <h2 style={{fontSize:'var(--fs-9)',fontWeight:700,marginBottom:6}}>Income &amp; Expenses</h2>
-        <p style={{color:'var(--muted)',fontSize:'var(--fs-5)',lineHeight:1.55}}>Enter your Year 1 operating assumptions. The summary at the bottom updates as you type.</p>
+        <p style={{color:'var(--muted)',fontSize:'var(--fs-5)',lineHeight:1.55}}>Enter your Year 1 operating assumptions. Full results come at the end.</p>
       </div>
 
       <Card title="Revenue" sub="Gross potential income and vacancy">
@@ -128,12 +121,12 @@ function Step3({inp,onChange}){
         </p>
       </Card>
 
-      {/* summary sits after the inputs so people aren't reading numbers
-          before they've entered anything */}
-      <div className="eyebrow" style={{marginBottom:9,marginTop:24}}>Year 1 summary</div>
-      <div className="hair g4" style={{gridTemplateColumns:'repeat(4,1fr)'}}>
-        {cells.map(c=><Metric key={c.label} {...c}/>)}
-      </div>
+      {/* No Year 1 roll-up here. Gross income, EGI, NOI and the expense ratio
+          are results, and the results screen is where they belong — restating
+          them mid-build invites people to read conclusions off a form they
+          haven't finished. The two figures that stay are the ones you steer by
+          while typing expenses: NOI and the implied cap rate, both inside the
+          expense card. */}
     </div>
   );
 }

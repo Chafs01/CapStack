@@ -1,5 +1,6 @@
 import{f,pn}from'../engine/format.js';
 import{resolveLine,resolveCostLine}from'../engine/income.js';
+import{NumIn}from'./ui.jsx';
 // ─── RENT ROLL EDITORS ──────────────────────────────────────────────────
 const UNIT_TYPES=['Studio','1BR','2BR','3BR','4BR','Penthouse','Other'];
 const CREDIT_TYPES=[
@@ -38,7 +39,7 @@ function CreditEditor({rows,onChange}){
             </select>
             <div style={{position:'relative'}}>
               <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>$</span>
-              <input className="input-f" value={r.basis||''} onChange={e=>set(i,{basis:pn(e.target.value)})} placeholder="0" style={{paddingLeft:24}}/>
+              <NumIn value={r.basis} onChange={v=>set(i,{basis:pn(v)})} style={{paddingLeft:24}}/>
             </div>
             <input className="input-f" value={r.rate!=null?r.rate:''} onChange={e=>set(i,{rate:parseFloat(e.target.value)||0})} placeholder="0"/>
             <input className="input-f" value={r.price!=null?r.price:''} onChange={e=>set(i,{price:parseFloat(e.target.value)||0})} placeholder="0.90"/>
@@ -79,10 +80,10 @@ function UnitMixEditor({rows,onChange}){
             <select className="input-f" value={r.type||'1BR'} onChange={e=>set(i,{type:e.target.value})} style={{height:38}}>
               {UNIT_TYPES.map(u=><option key={u} value={u}>{u}</option>)}
             </select>
-            <input className="input-f" value={r.count||''} onChange={e=>set(i,{count:pn(e.target.value)})} placeholder="0"/>
+            <NumIn value={r.count} onChange={v=>set(i,{count:pn(v)})}/>
             <div style={{position:'relative'}}>
               <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>$</span>
-              <input className="input-f" value={r.rent||''} onChange={e=>set(i,{rent:pn(e.target.value)})} placeholder="0" style={{paddingLeft:24}}/>
+              <NumIn value={r.rent} onChange={v=>set(i,{rent:pn(v)})} style={{paddingLeft:24}}/>
             </div>
             <button onClick={()=>del(i)} title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
           </div>
@@ -136,7 +137,7 @@ function OpExEditor({rows,onChange,units}){
             </select>
             <div style={{position:'relative'}}>
               <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>{BASIS_SUFFIX[r.basis||'amount']}</span>
-              <input className="input-f" value={r.amount||''} onChange={e=>set(i,{amount:pn(e.target.value)})} placeholder="0" style={{paddingLeft:24}} inputMode="decimal"/>
+              <NumIn value={r.amount} onChange={v=>set(i,{amount:pn(v)})} style={{paddingLeft:24}}/>
             </div>
             <button onClick={()=>del(i)} aria-label="Remove" title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
           </div>
@@ -184,7 +185,7 @@ function OtherIncomeEditor({rows,onChange,units}){
             </select>
             <div style={{position:'relative'}}>
               <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>$</span>
-              <input className="input-f" value={r.amount||''} onChange={e=>set(i,{amount:pn(e.target.value)})} placeholder="0" style={{paddingLeft:24}} inputMode="decimal"/>
+              <NumIn value={r.amount} onChange={v=>set(i,{amount:pn(v)})} style={{paddingLeft:24}}/>
             </div>
             <button onClick={()=>del(i)} aria-label="Remove" title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
           </div>
@@ -243,7 +244,7 @@ function DevCostEditor({rows,onChange,cats,bases,label,noun,placeholder,sf,units
             </select>
             <div style={{position:'relative'}}>
               <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>{BASIS_SUFFIX[r.basis||'amount']}</span>
-              <input className="input-f" value={r.amount||''} onChange={e=>set(i,{amount:pn(e.target.value)})} placeholder="0" style={{paddingLeft:24}} inputMode="decimal"/>
+              <NumIn value={r.amount} onChange={v=>set(i,{amount:pn(v)})} style={{paddingLeft:24}}/>
             </div>
             <button onClick={()=>del(i)} aria-label="Remove" title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
           </div>
@@ -280,10 +281,10 @@ function RetailEditor({rows,onChange,label}){
       {rows.map((r,i)=>(
         <div key={i} style={{display:'grid',gridTemplateColumns:C,gap:8,marginBottom:8,alignItems:'center'}}>
           <input className="input-f" value={r.name||''} onChange={e=>set(i,{name:e.target.value})} placeholder="Tenant name"/>
-          <input className="input-f" value={r.sf||''} onChange={e=>set(i,{sf:pn(e.target.value)})} placeholder="0"/>
+          <NumIn value={r.sf} onChange={v=>set(i,{sf:pn(v)})}/>
           <div style={{position:'relative'}}>
             <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>$</span>
-            <input className="input-f" value={r.rentPerSF||''} onChange={e=>set(i,{rentPerSF:pn(e.target.value)})} placeholder="0" style={{paddingLeft:24}}/>
+            <NumIn value={r.rentPerSF} onChange={v=>set(i,{rentPerSF:pn(v)})} style={{paddingLeft:24}}/>
           </div>
           <button onClick={()=>del(i)} title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
         </div>
