@@ -31,8 +31,15 @@ function Step3({inp,onChange}){
     : ((inp.otherIncome||0)>0?[{cat:'Custom',label:'Other income',amount:inp.otherIncome}]:[]);
   const setOther=rows=>onChange({otherIncomeItems:rows,otherIncome:0});
 
+  // Management can be entered either way: as the dedicated percentage, or as a
+  // line among the others. Never both — the engine adds the percentage on top
+  // of whatever the list totals, so two entries would bill the manager twice.
+  // Adding the line therefore zeroes the field, and the field disappears while
+  // the line is there.
+  const mgmtLine=opexRows.some(r=>r&&r.cat==='Property Management');
   const setOpex=rows=>onChange({opexItems:rows,
-    propertyTax:0,insurance:0,maintenance:0,utilities:0,reserves:0,administrative:0});
+    propertyTax:0,insurance:0,maintenance:0,utilities:0,reserves:0,administrative:0,
+    ...(rows.some(r=>r&&r.cat==='Property Management')?{managementFeePct:0}:{})});
 
   // switching basis clears the figure, because "600" means something entirely
   // different per unit than it does as a total, and silently reinterpreting it
@@ -66,7 +73,12 @@ function Step3({inp,onChange}){
         <p style={{color:'var(--muted)',fontSize:'var(--fs-5)',lineHeight:1.55}}>Enter your Year 1 operating assumptions. Full results come at the end.</p>
       </div>
 
-      <Card title="Revenue" sub="Gross potential income and vacancy">
+      <Card title="Revenue" sub="Gross potential income and vacancy"
+        info={<>Gross potential income is what the property collects with every unit
+          full at the rents you enter. Vacancy and credit loss come off it: vacancy is
+          space sitting empty, credit loss is rent you billed and never collected.
+          What is left, plus other income, is effective gross income — the top line
+          everything else is measured against.</>}>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'}} className="g2">
           <Fld label="Physical Vacancy" suffix="%" hint="share of rent lost to empty space"
             value={inp.vacancyRate||0} onChange={v=>onChange({vacancyRate:pn(v)})}/>
@@ -84,11 +96,25 @@ function Step3({inp,onChange}){
         </div>
       </Card>
 
-      <Card title="Operating Expenses" sub="Annual, at Year 1 — add or rename lines to match the deal">
+      <Card title="Operating Expenses" sub="Annual, at Year 1 — add or rename lines to match the deal"
+        info={<>What it costs to run the building for a year: taxes, insurance, repairs,
+          utilities, management. Not the mortgage, and not capital work — those sit
+          below. Income minus these is net operating income, the figure a lender sizes
+          debt on and a buyer prices off, so anything you leave out here inflates the
+          value of the deal. Use the seller's numbers as a starting point and expect
+          taxes to reassess on sale.</>}>
         <OpExEditor rows={opexRows} onChange={setOpex} units={inp.numUnits||0}/>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'}} className="g2">
-          <Fld label="Property Management Fee" suffix="%" hint="of EGI — grows with income, so it is kept separate" value={inp.managementFeePct||0} onChange={v=>onChange({managementFeePct:pn(v)})}/>
-        </div>
+        {mgmtLine?(
+          <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',lineHeight:1.55,marginBottom:16}}>
+            Management is entered as a line above. Quoted as a % of EGI it is fixed off
+            Year 1 income and then grown with the other expenses; remove the line to go
+            back to the separate fee, which is recalculated against each year's income.
+          </p>
+        ):(
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'}} className="g2">
+            <Fld label="Property Management Fee" suffix="%" hint="of EGI — grows with income, so it is kept separate" value={inp.managementFeePct||0} onChange={v=>onChange({managementFeePct:pn(v)})}/>
+          </div>
+        )}
         <div style={{display:'flex',gap:28,flexWrap:'wrap',alignItems:'baseline',paddingTop:16,borderTop:'1px solid var(--border)'}}>
           <div>
             <span style={{color:'var(--muted)',fontSize:'var(--fs-4)'}}>Implied Cap Rate&nbsp;&nbsp;</span>
@@ -101,7 +127,13 @@ function Step3({inp,onChange}){
         </div>
       </Card>
 
-      <Card title="Capital Expenditure" sub="Roofs, HVAC, unit turns — money spent on the asset, not on running it">
+      <Card title="Capital Expenditure" sub="Roofs, HVAC, unit turns — money spent on the asset, not on running it"
+        info={<>Money that replaces something rather than maintains it. Fixing a leak is
+          repairs; replacing the roof is capital. It sits below NOI, so it costs you cash
+          without changing the cap rate or the DSCR a lender sizes on — which is exactly
+          why it gets left out of broker packages. A common multifamily reserve is $250
+          to $350 per unit per year. Use "one-time lump sum" for a single job in Year 1;
+          for a full renovation scope, use the Renovation Budget on the previous step.</>}>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'}} className="g2">
           <div style={{marginBottom:16}}>
             <label className="fld-l">Quoted as</label>

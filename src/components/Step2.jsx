@@ -124,7 +124,12 @@ function Step2({inp,onChange,assetType}){
         <p style={{color:'var(--muted)',fontSize:'var(--fs-5)',lineHeight:1.55}}>Enter the deal manually, or drop in a rent roll and we'll fill what we can.</p>
       </div>
 
-      <Card title="Start from a file" sub="Optional — rent roll, OM financials, or lease abstract">
+      <Card title="Start from a file" sub="Optional — rent roll, OM financials, or lease abstract"
+        info={<>Drop in a rent roll, an offering memorandum's financial page, or a CSV and
+          the fields it recognises are filled in for you. It reads what it can and shows
+          you exactly which fields it moved, so a partial read is obvious rather than
+          silent. Nothing is locked — everything it fills stays editable, and you can skip
+          this entirely and type the deal in yourself.</>}>
         <div className={`upload-z${dov?' dov':''}`}
           onDragOver={e=>{e.preventDefault();setDov(true)}} onDragLeave={()=>setDov(false)}
           onDrop={e=>{e.preventDefault();setDov(false);handleFile(e.dataTransfer.files[0])}}
@@ -157,7 +162,12 @@ function Step2({inp,onChange,assetType}){
         </div>
       </Card>
 
-      <Card title="Property">
+      <Card title="Property"
+        info={<>The basics of what you are buying. Purchase price is the contract price,
+          before costs. Acquisition costs are the fees to close — legal, title, inspection,
+          lender third parties — usually 1 to 2% of price, and they are real money that
+          comes out of your pocket alongside the down payment, so leaving them at zero
+          understates the equity the deal needs.</>}>
         <div style={G2} className="g2">
           <Fld label="Property Name" value={inp.propertyName||''} onChange={v=>onChange({propertyName:v})}/>
           <Fld label="Address / Market" value={inp.address||''} onChange={v=>onChange({address:v})}/>
@@ -171,13 +181,25 @@ function Step2({inp,onChange,assetType}){
       </Card>
 
       {t==='multifamily'&&(
-        <Card title="Unit Mix" sub="Floor plans, counts, and monthly rents">
+        <Card title="Unit Mix" sub="Floor plans, counts, and monthly rents"
+          info={<>Every floor plan, how many of each, and what one rents for today. This
+            drives gross potential income, so use in-place rents rather than what you hope
+            to charge — the upside belongs in the Renovation Budget and the growth rate,
+            where it can be seen and argued with. If the rent roll shows a unit vacant,
+            still enter its market rent; vacancy is taken as a percentage on the next
+            step.</>}>
           <UnitMixEditor rows={inp.unitMix} onChange={setMix}/>
         </Card>
       )}
 
       {t==='commercial'&&(
-        <Card title="Space & Income" sub="Rentable area and tenant rents">
+        <Card title="Space & Income" sub="Rentable area and tenant rents"
+          info={<>Commercial rent is quoted per square foot per year, so 25,000 SF at $28
+            is $700,000 of base rent. CAM or NNN income is what tenants reimburse you for
+            taxes, insurance and common-area upkeep — on a true triple-net lease that is
+            most of the operating cost, so if you enter the reimbursement here you must
+            also enter the matching expense on the next step or the deal will look far
+            better than it is.</>}>
           <div style={G2} className="g2">
             <Fld label="Total Rentable SF" value={inp.totalSF} onChange={v=>onChange({totalSF:pn(v)})}/>
             <Fld label="CAM / NNN Income" prefix="$" value={inp.camIncome||0} onChange={v=>onChange({camIncome:pn(v)})}/>
@@ -190,13 +212,25 @@ function Step2({inp,onChange,assetType}){
         <Card title="Residential Unit Mix">
           <UnitMixEditor rows={inp.unitMix} onChange={setMix}/>
         </Card>
-        <Card title="Commercial / Retail" sub="Ground-floor and other commercial space">
+        <Card title="Commercial / Retail" sub="Ground-floor and other commercial space"
+          info={<>The non-residential half of a mixed-use building, usually the ground
+            floor. Rent per SF per year, entered by space. Commercial tenants pay more per
+            foot than apartments but leave for longer and cost more to re-let, so a lender
+            will often value this income more conservatively than the residential
+            income above it.</>}>
           <RetailEditor rows={inp.retailIncome} onChange={r=>{const sf=r.reduce((a,x)=>a+(+x.sf||0),0);onChange({retailIncome:r,commercialSF:sf});}}/>
         </Card>
       </>)}
 
       {!isCost&&(
-        <Card title="Renovation Budget" sub="Optional — one-time work at or after closing. Leave empty for a turnkey deal">
+        <Card title="Renovation Budget" sub="Optional — one-time work at or after closing. Leave empty for a turnkey deal"
+          info={<>A scope of work you finish, not a yearly reserve. Enter it the way a
+            contractor quotes it — per unit for turns, lump sum for a roof — and set how
+            much of it the loan funds and how many months it takes to spend. It adds to
+            your cost basis and to total cash in, and it lands in the year you actually
+            spend it, so an 18-month scope shows up across two years of cash flow rather
+            than all at closing. If the work is meant to raise rents, raise them in the
+            unit mix too; this side only spends the money.</>}>
           <DevCostEditor rows={rehabRows} onChange={r=>onChange({rehabItems:r})}
             cats={REHAB_CATEGORIES} bases={REHAB_BASES}
             label="Renovation Line Items" noun="renovation line"
@@ -217,7 +251,14 @@ function Step2({inp,onChange,assetType}){
       )}
 
       {t==='development'&&(<>
-        <Card title="Development Budget" sub="Land, hard and soft costs — add or rename lines to match the budget">
+        <Card title="Development Budget" sub="Land, hard and soft costs — add or rename lines to match the budget"
+          info={<>What it costs to build. Hard costs are physical construction — sitework,
+            shell, MEP, finishes — quoted by trade, per SF or per unit. Soft costs are
+            everything else: design, permits, legal, insurance, construction-loan interest.
+            Several soft lines are normally quoted as a percentage of hard cost, which is
+            why that basis is offered here and not on the hard side. Carry a contingency
+            on both; 5 to 10% on hard cost is standard and the first thing a lender looks
+            for. This total, not the land price, is what the deal is measured against.</>}>
           <div style={G2} className="g2">
             <Fld label="Land / Site Cost" prefix="$" value={inp.landCost||inp.purchasePrice} onChange={v=>onChange({landCost:pn(v),purchasePrice:pn(v)})}/>
             <Fld label="Gross Buildable SF" hint="the denominator for any per-SF line" value={inp.grossBuildableSF} onChange={v=>onChange({grossBuildableSF:pn(v)})}/>
@@ -226,7 +267,12 @@ function Step2({inp,onChange,assetType}){
           {devBudget}
           {budgetTotal(0)}
         </Card>
-        <Card title="Schedule" sub="Construction and lease-up timing">
+        <Card title="Schedule" sub="Construction and lease-up timing"
+          info={<>How long before the building earns anything. Construction is months of
+            spending with no income; lease-up is the stretch after delivery while units
+            fill. Both push the first real cash flow further out, and on a development
+            that delay is usually the difference between a good return and a bad one.
+            Be honest here — permitting and weather do not care about the model.</>}>
           <div style={G3} className="g3">
             <Fld label="Construction Period" suffix="mos" value={inp.constructionPeriodMonths} onChange={v=>onChange({constructionPeriodMonths:pn(v)})}/>
             <Fld label="Lease-Up Period" suffix="mos" value={inp.leaseUpMonths} onChange={v=>onChange({leaseUpMonths:pn(v)})}/>
@@ -248,7 +294,14 @@ function Step2({inp,onChange,assetType}){
       </>)}
 
       {t==='affordable'&&(<>
-        <Card title="Development Budget" sub="Land, costs, and developer fee — add or rename lines to match the budget">
+        <Card title="Development Budget" sub="Land, costs, and developer fee — add or rename lines to match the budget"
+          info={<>What it costs to build. Hard costs are physical construction — sitework,
+            shell, MEP, finishes — quoted by trade, per SF or per unit. Soft costs are
+            everything else: design, permits, legal, insurance, construction-loan interest.
+            Several soft lines are normally quoted as a percentage of hard cost, which is
+            why that basis is offered here and not on the hard side. Carry a contingency
+            on both; 5 to 10% on hard cost is standard and the first thing a lender looks
+            for. This total, not the land price, is what the deal is measured against.</>}>
           <div style={G2} className="g2">
             <Fld label="Land / Site Cost" prefix="$" value={inp.landCost} onChange={v=>onChange({landCost:pn(v),purchasePrice:pn(v)})}/>
             <Fld label="Gross Buildable SF" hint="the denominator for any per-SF line" value={inp.grossBuildableSF} onChange={v=>onChange({grossBuildableSF:pn(v)})}/>
@@ -258,7 +311,15 @@ function Step2({inp,onChange,assetType}){
           {devBudget}
           {budgetTotal(inp.developerFee||0)}
         </Card>
-        <Card title="Tax Credit Assumptions" sub="Credit type, pricing, and eligible basis">
+        <Card title="Tax Credit Assumptions" sub="Credit type, pricing, and eligible basis"
+          info={<>How LIHTC turns into money. The credit rate — 9% for competitive new
+            construction, 4% with bonds — is applied to eligible basis, which is roughly
+            the depreciable development cost, times the share of units held affordable.
+            That produces an annual credit claimed over ten years, which an investor buys
+            up front at a price per credit dollar (commonly $0.85 to $0.95). Minimum DSCR
+            matters more than usual here: the permanent loan is sized off it, and
+            everything the loan does not cover has to come from credits, soft money, or
+            a deferred developer fee.</>}>
           <div style={G3} className="g3">
             <div style={{marginBottom:16}}>
               <label className="fld-l">Credit Type</label>

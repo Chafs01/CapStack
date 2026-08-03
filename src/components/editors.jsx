@@ -102,7 +102,7 @@ const EXPENSE_BASES=[['amount','Annual $'],['perUnitYr','$ / unit / yr'],['pctEG
 const INCOME_BASES=[['amount','Annual $'],['perUnitMo','$ / unit / mo'],['perUnitYr','$ / unit / yr']];
 const BASIS_SUFFIX={amount:'$',perUnitYr:'$',perUnitMo:'$',pctEGI:'%',perSF:'$',perUnit:'$',pctHard:'%'};
 
-const OPEX_CATEGORIES=['Property Taxes','Insurance','Repairs & Maintenance','Utilities',
+const OPEX_CATEGORIES=['Property Taxes','Insurance','Property Management','Repairs & Maintenance','Utilities',
   'Water & Sewer','Trash Removal','Landscaping / Snow','Turnover & Make-Ready','Contract Services',
   'Payroll / On-Site','Marketing & Leasing','Legal & Professional','HOA / Condo Dues',
   'Pest Control','Security','Capital Reserves','Administrative','Custom'];

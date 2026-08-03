@@ -1,4 +1,4 @@
-import{useState,useEffect}from'react';
+import{useState,useEffect,useRef}from'react';
 // ─── SMALL COMPONENTS ─────────────────────────────────────────────────────
 
 // Money/number fields get thousands separators when idle and right-aligned
@@ -71,14 +71,49 @@ function Slider({label,min,max,step,value,onChange,fmt2}){
   );
 }
 
+// The (i) beside a section heading. Opens on hover for anyone with a mouse and
+// on click for everyone else — the existing .tt tooltip is hover-only and
+// hidden outright on touch, which is exactly the reader who most needs the
+// explanation. Click also pins it open, so a long note can be read without
+// keeping the pointer perfectly still.
+function InfoDot({label,children}){
+  const [pin,setPin]=useState(false);
+  const [hov,setHov]=useState(false);
+  const [kbd,setKbd]=useState(false);
+  const wrap=useRef(null), btn=useRef(null);
+  const open=pin||hov||kbd;
+  useEffect(()=>{
+    if(!pin)return;
+    const away=e=>{if(wrap.current&&!wrap.current.contains(e.target))setPin(false)};
+    const esc=e=>{if(e.key==='Escape'){setPin(false);setKbd(false);if(btn.current)btn.current.blur();}};
+    document.addEventListener('mousedown',away);
+    document.addEventListener('keydown',esc);
+    return()=>{document.removeEventListener('mousedown',away);document.removeEventListener('keydown',esc)};
+  },[pin]);
+  return(
+    <span className="info-w" ref={wrap}>
+      <button type="button" className={'info-b'+(open?' on':'')} ref={btn}
+        aria-label={label?`What is ${label}?`:'More information'} aria-expanded={open}
+        onClick={()=>setPin(p=>!p)}
+        onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+        // Only keyboard focus opens it. A click focuses the button too, and
+        // treating that as hover left the popover stuck open — Escape cleared
+        // the pin while focus silently held it up.
+        onFocus={e=>{try{if(e.target.matches(':focus-visible'))setKbd(true)}catch(_){}}}
+        onBlur={()=>setKbd(false)}>i</button>
+      {open&&<span className="info-p" role="tooltip">{children}</span>}
+    </span>
+  );
+}
+
 // Section card — replaces the single giant white slab the wizard used to be.
-function Card({title,sub,right,children,pad=true,style}){
+function Card({title,sub,right,info,children,pad=true,style}){
   return(
     <div className="card" style={style}>
       {(title||right)&&(
         <div className="card-hd">
           <div style={{minWidth:0}}>
-            {title&&<div className="card-t">{title}</div>}
+            {title&&<div className="card-t">{title}{info&&<InfoDot label={title}>{info}</InfoDot>}</div>}
             {sub&&<div className="card-s" style={{marginTop:3}}>{sub}</div>}
           </div>
           {right}
@@ -128,4 +163,4 @@ function Chip({tone='neutral',children}){
   return<span style={{fontSize:'var(--fs-2)',padding:'4px 10px',borderRadius:20,background:bg,color:fg,fontWeight:700,letterSpacing:.2,whiteSpace:'nowrap'}}>{children}</span>;
 }
 
-export{Fld,NumIn,Slider,Card,Metric,fillCells,SecHdr,Chip};
+export{Fld,NumIn,Slider,Card,Metric,InfoDot,fillCells,SecHdr,Chip};

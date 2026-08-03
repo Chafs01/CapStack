@@ -55,7 +55,13 @@ function Step4({inp,onChange}){
         <p style={{color:'var(--muted)',fontSize:'var(--fs-5)',lineHeight:1.55}}>Debt structure, growth rates, and exit strategy. The summary at the bottom updates as you type.</p>
       </div>
 
-      <Card title="Loan Terms" sub="Your debt on the deal">
+      <Card title="Loan Terms" sub="Your debt on the deal"
+        info={<>The mortgage. Amortization is the schedule the payment is calculated on —
+          30 years is common on residential, 25 on commercial — and it is usually longer
+          than the term, so a balance is still owed when the loan matures. Interest-only
+          years raise early cash flow and pay down nothing. DSCR is NOI divided by the
+          annual payment; below about 1.25x most lenders will not fund the amount you
+          have entered.</>}>
         {!inp.sizeDebt?(
           <div style={G2} className="g2">
             <Fld label="Loan Amount" prefix="$" value={inp.loanAmount} onChange={v=>onChange({loanAmount:pn(v)})}/>
@@ -87,7 +93,13 @@ function Step4({inp,onChange}){
         </div>
       </Card>
 
-      <Card title="Hold & Exit" sub="Growth, hold period, and exit pricing">
+      <Card title="Hold & Exit" sub="Growth, hold period, and exit pricing"
+        info={<>How long you own it and what you sell it for. The exit cap rate is the
+          single most powerful number in the model: it prices the sale, and most of a
+          levered return usually comes from that sale rather than from operations. The
+          honest habit is to exit at a cap rate at or above the one you bought at —
+          assuming it compresses is assuming the market does you a favour. Check the
+          sensitivity grid on the results screen before trusting any headline IRR.</>}>
         <div className="eyebrow" style={{marginBottom:9}}>How the exit is priced</div>
         <div style={{display:'flex',gap:10,marginBottom:6,flexWrap:'wrap'}}>
           {[['cap','Income \u2014 cap rate','Values the property off forward NOI. Standard for 5+ unit and commercial assets.'],
@@ -126,7 +138,12 @@ function Step4({inp,onChange}){
       </Card>
 
       {t!=='affordable'&&(
-        <Card title="Advanced modelling" sub="Optional — add only what you need">
+        <Card title="Advanced modelling" sub="Optional — add only what you need"
+          info={<>Four optional layers. Each one opens its own section below with its
+            own explanation, so you can switch one on and read what it wants before
+            filling anything in. None of them is required — the pro forma above is
+            already complete — and switching one off leaves everything you typed
+            intact in case you want it back.</>}>
           <p style={{fontSize:'var(--fs-4)',color:'var(--muted)',lineHeight:1.6,marginBottom:16}}>
             Everything above is enough for a complete pro forma. These add depth if your deal calls for it.
           </p>
@@ -148,7 +165,16 @@ function Step4({inp,onChange}){
       )}
 
       {t!=='affordable'&&inp.waterfallEnabled&&(
-        <Card title="Equity Waterfall" sub="LP / GP promote structure">
+        <Card title="Equity Waterfall" sub="LP / GP promote structure"
+          info={<>How profit is divided when you raise money from investors. Cash flows
+            through it in order, each stage filling before the next gets anything. First
+            everyone gets their capital back. Then the LP — your investors — earns a
+            preferred return, typically 7 to 9% a year, before the sponsor sees profit.
+            Above that, the split tilts toward the sponsor at each hurdle: that extra
+            share is the promote, and it is how a sponsor gets paid for performance
+            rather than for raising money. A common shape is 8% pref, then 80/20, then
+            70/30 above a 15% LP IRR. Leave this off if you are buying with your own
+            money — there is nobody to split with.</>}>
           <p style={{fontSize:'var(--fs-4)',color:'var(--muted)',lineHeight:1.6,marginBottom:16}}>Splits levered cash flow between a limited partner and the sponsor. Return of capital and preferred return first, then tiered promote above each LP IRR hurdle.</p>
           <div style={G3} className="g3">
             <Fld label="LP Equity Share" suffix="%" hint="sponsor co-invests the rest" value={inp.lpSharePct!=null?inp.lpSharePct:90} onChange={v=>onChange({lpSharePct:pn(v)})}/>
@@ -165,7 +191,15 @@ function Step4({inp,onChange}){
       )}
 
       {t!=='affordable'&&inp.afterTax&&(
-        <Card title="After-Tax Analysis" sub="Depreciation, recapture, capital gains">
+        <Card title="After-Tax Analysis" sub="Depreciation, recapture, capital gains"
+          info={<>What you actually keep. The building — not the land under it — is
+            written off over 27.5 years for residential or 39 for commercial, and that
+            paper loss shelters real income, which is why real estate cash flow is
+            taxed lightly. The catch comes at sale: the IRS takes back the depreciation
+            you claimed at up to 25%, and taxes the gain on top. Land percentage is the
+            share of price you assign to dirt; 20 to 30% is typical, and your county
+            assessment is the usual evidence. These are estimates, not tax advice — an
+            accountant should see the real numbers before you file.</>}>
           <div style={G3} className="g3">
             {!isDev&&<Fld label="Land (non-depreciable)" suffix="%" hint="of cost" value={inp.landPct!=null?inp.landPct:20} onChange={v=>onChange({landPct:pn(v)})}/>}
             <Fld label="Depreciation Period" suffix="yrs" hint="27.5 resi / 39 comm" value={inp.depYears!=null?inp.depYears:(t==='commercial'?39:27.5)} onChange={v=>onChange({depYears:parseFloat(v)||0})}/>
@@ -177,7 +211,14 @@ function Step4({inp,onChange}){
       )}
 
       {t!=='affordable'&&inp.refiEnabled&&(
-        <Card title="Refinance / Cash-Out" sub="Mid-hold re-lever">
+        <Card title="Refinance / Cash-Out" sub="Mid-hold re-lever"
+          info={<>Replacing the loan partway through the hold, usually after the rents
+            have come up. The property is revalued at the refi cap rate, a new loan is
+            written at the LTV you set, the old one is paid off, and whatever is left
+            comes back to you — tax-free, because borrowing is not income. It is the
+            engine behind the BRRRR strategy. The trade is a bigger payment against
+            that cash, so watch what it does to DSCR: a cash-out that drops coverage
+            below roughly 1.25x is a loan no lender will write.</>}>
           <div style={G3} className="g3">
             <Fld label="Refinance in Year" value={inp.refiYear!=null?inp.refiYear:3} onChange={v=>onChange({refiYear:pn(v)})}/>
             <Fld label="Refi LTV" suffix="%" value={inp.refiLTV!=null?inp.refiLTV:70} onChange={v=>onChange({refiLTV:pn(v)})}/>
