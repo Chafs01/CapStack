@@ -30,6 +30,9 @@ function ChartTip({active,payload,label}){
 // ─── PROFORMA TABLE ────────────────────────────────────────────────────────
 function PFTable({rows,hp}){
   const visible=rows.slice(0,hp);
+  // The renovation line only appears when there is one, so a turnkey deal's
+  // table is exactly the table it has always been.
+  const hasRehab=visible.some(r=>(r.rehab||0)>0);
   const defs=[
     {l:'Gross Potential Income',k:'gpi',fmt:f.$f,type:'income'},
     {l:'  Less: Vacancy Loss',k:'vacL',fmt:v=>`(${f.$f(v)})`,type:'deduct'},
@@ -39,6 +42,7 @@ function PFTable({rows,hp}){
     {l:'Net Operating Income',k:'noi',fmt:f.$f,type:'hl'},
     {l:'  Less: Debt Service',k:'ds',fmt:v=>`(${f.$f(v)})`,type:'deduct'},
     {l:'  Less: Capital Expenditure',k:'capex',fmt:v=>`(${f.$f(v)})`,type:'deduct'},
+    ...(hasRehab?[{l:'  Less: Renovation',k:'rehab',fmt:v=>`(${f.$f(v)})`,type:'deduct'}]:[]),
     {l:'Cash Flow Before Tax',k:'cfbt',fmt:f.$f,type:'hl'},
     {l:'RATIOS & METRICS',k:null,type:'sec'},
     {l:'Cap Rate',k:'capR',fmt:v=>f.pct(v,2),type:'metric'},
@@ -577,7 +581,7 @@ function LihtcPanel({L,res}){
 function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabel,canDownload,onRunOwn}){
   const [tab,setTab]=useState('charts');
   const hp=inp.holdingPeriod||7;
-  const {rows,ret,sum,exit,equity,totalCost,acqC,LF}=res;
+  const {rows,ret,sum,exit,equity,totalCost,acqC,LF,rehab}=res;
   const t=inp.assetType.toLowerCase();
   const y1=rows[0];
   // Color is reserved for figures that actually need attention. A healthy deal
@@ -752,10 +756,14 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
               {[
                 {l:'Purchase Price',v:inp.purchasePrice},
                 {l:'Acquisition Costs',v:acqC},
+                ...(rehab&&rehab.total>0?[{l:'Renovation Budget',v:rehab.total}]:[]),
                 ...(LF>0?[{l:'Loan Fees',v:LF}]:[]),
                 {l:'Total All-In Cost',v:totalCost,bold:true},
-                {l:'  Debt (Loan)',v:inp.loanAmount,c:'var(--neg)'},
+                // the loan the model actually used, not the one typed in — debt
+                // sizing and a financed rehab both move it
+                {l:'  Debt (Loan)',v:totalCost-equity,c:'var(--neg)'},
                 {l:'  Equity',v:equity,c:'var(--pos)',bold:true},
+                ...(rehab&&rehab.deferred>0?[{l:'    of which spent after close',v:rehab.deferred,c:'var(--muted)'}]:[]),
               ].map((r,i)=>(
                 <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid var(--border)',fontSize:'var(--fs-4)'}}>
                   <span style={{color:r.bold?'var(--text)':'var(--muted)',fontWeight:r.bold?700:400}}>{r.l}</span>

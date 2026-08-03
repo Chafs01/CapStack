@@ -213,6 +213,16 @@ const SOFT_COST_CATEGORIES=['Architecture & Engineering','Permits & Plan Check',
   'Operating Reserve','Soft Cost Contingency','Custom'];
 const HARD_COST_BASES=[['amount','Lump sum $'],['perSF','$ / buildable SF'],['perUnit','$ / unit']];
 const SOFT_COST_BASES=[...HARD_COST_BASES,['pctHard','% of hard costs']];
+// A renovation scope on an existing building. Narrower than a ground-up budget
+// — no land, no developer fee, no shell — and the lines are the ones a buyer
+// actually walks the property counting: how many kitchens, which roofs, what
+// the exterior needs. Per-unit is first among the bases because unit turns are
+// quoted that way and are usually the biggest line.
+const REHAB_CATEGORIES=['Unit Turns / Interiors','Kitchens & Baths','Flooring','Appliances',
+  'Roof','HVAC','Plumbing','Electrical','Windows & Doors','Exterior & Siding','Paint',
+  'Parking & Site Work','Landscaping','Common Areas & Amenities','Life Safety & Code',
+  'Environmental & Abatement','Permits & Design','Contingency','Custom'];
+const REHAB_BASES=[['amount','Lump sum $'],['perUnit','$ / unit'],['perSF','$ / SF']];
 
 function DevCostEditor({rows,onChange,cats,bases,label,noun,placeholder,sf,units,hard}){
   rows=rows||[];
@@ -296,4 +306,5 @@ function RetailEditor({rows,onChange,label}){
 
 export{UNIT_TYPES,CREDIT_TYPES,OPEX_CATEGORIES,OTHER_INCOME_CATEGORIES,
   HARD_COST_CATEGORIES,SOFT_COST_CATEGORIES,HARD_COST_BASES,SOFT_COST_BASES,
+  REHAB_CATEGORIES,REHAB_BASES,
   CreditEditor,UnitMixEditor,OpExEditor,OtherIncomeEditor,DevCostEditor,RetailEditor};

@@ -1,5 +1,5 @@
 import{monthlyPmt,loanBal,calcIRR,calcNPV}from'./finance.js';
-import{getGPI,getOpEx,getDevCost,getOtherIncome,resolveCapex,lossRate}from'./income.js';
+import{getGPI,getOpEx,getDevCost,getOtherIncome,resolveCapex,lossRate,getRehab,rehabSchedule}from'./income.js';
 import{calcLIHTC}from'./lihtc.js';
 function buildPF(inp){
   const gpi0=getGPI(inp);
@@ -33,12 +33,30 @@ function buildPF(inp){
       debtSizing={constraints:cons.map(c=>({...c,loan:Math.max(0,c.loan),binds:c.name===binding.name})),binding:binding.name,sizedLoan:LA,valueBasis,noi0};
     }
   }
+  // A rehab draw is part of the loan, so it is sized in before the fee is
+  // taken on it. The lender's constraints above still bind on the going-in
+  // value, which is how a bridge loan is actually written: the rehab holdback
+  // rides on top of the acquisition loan rather than enlarging the test.
+  const rehabTotal=getRehab(inp);
+  const rehabFinPct=Math.max(0,Math.min(+(inp.rehabFinancedPct)||0,100));
+  const rehabFin=rehabTotal*rehabFinPct/100;
+  const rehabCash=rehabTotal-rehabFin;
+  LA=LA+rehabFin;
   const LF=LA*(inp.loanFeesPct||0)/100;
   const devCostEarly=(tEarly==='development'||isAff)?getDevCost(inp):0;
   const baseCost=(tEarly==='development'||isAff)?devCostEarly:PP;
+  // The going-in cap rate is quoted on the price, not on the price plus what
+  // you are about to spend. Renovation shows up in the return through the
+  // rents it buys and the basis it builds, not by quietly deflating Year 1.
   const capBasis=baseCost;
-  const totalCost=baseCost+acqC+LF;
+  const totalCost=baseCost+acqC+LF+rehabTotal;
   const equity=totalCost-LA;
+  // Cash rehab spent after close is not equity at close. Total equity is
+  // unchanged — it is the same money — but the IRR sees it in the year it
+  // leaves, and the cash flow line shows the year it was spent.
+  const rehabByYear=rehabSchedule(inp,rehabCash);
+  const rehabDeferred=rehabByYear.slice(1).reduce((s,v)=>s+v,0);
+  const equityAtClose=equity-rehabDeferred;
   const IR=inp.interestRate||0;
   const AY=inp.amortYears||30;
   const IO=inp.ioPeriod||0;
@@ -72,13 +90,17 @@ function buildPF(inp){
     // Capital expenditure is not an operating expense: it sits below NOI so it
     // hits cash flow without distorting the cap rate or the DSCR a lender
     // sizes on. Grown with the other costs.
-    const capex=resolveCapex(inp,egi,em);
-    const cfbt=noi-ds-capex;
+    const capex=resolveCapex(inp,egi,em,yr);
+    // Same rule as capex — below NOI, so it never distorts the cap rate or the
+    // DSCR a lender sizes on. Unlike capex it does not grow: a rehab budget is
+    // a fixed scope, not a recurring reserve.
+    const rehab=rehabByYear[yr]||0;
+    const cfbt=noi-ds-capex-rehab;
     const capR=capBasis>0?noi/capBasis:0;
     const coc=equity>0?cfbt/equity:0;
     const dscr=ds>0?noi/ds:null;
     const expR=egi>0?opex/egi:0;
-    rows.push({yr,gpi,vacL,credL,egi,opex,noi,ds,capex,cfbt,capR,coc,dscr,bal,expR,mgmt});
+    rows.push({yr,gpi,vacL,credL,egi,opex,noi,ds,capex,rehab,cfbt,capR,coc,dscr,bal,expR,mgmt});
   }
 
   const ex=rows[hp-1];
@@ -99,9 +121,14 @@ function buildPF(inp){
   const payoff=ex.bal;
   const proceeds=netSale-payoff;
   const totalCF=rows.slice(0,hp).reduce((s,r)=>s+r.cfbt,0);
-  const profit=totalCF+proceeds-equity;
-  const em2=equity>0?(totalCF+proceeds)/equity:0;
-  const irrFlows=[-equity,...rows.slice(0,hp-1).map(r=>r.cfbt),rows[hp-1].cfbt+proceeds];
+  const rehabInHold=rows.slice(0,hp).reduce((s,r)=>s+(r.rehab||0),0);
+  // Profit nets out however the rehab was timed, because the money spent in
+  // year two is already inside totalCF and out of equityAtClose. The multiple
+  // is deliberately not netted the same way: a multiple is distributions over
+  // capital invested, and rehab spent mid-hold is capital invested.
+  const profit=totalCF+proceeds-equityAtClose;
+  const em2=equity>0?(totalCF+rehabInHold+proceeds)/equity:0;
+  const irrFlows=[-equityAtClose,...rows.slice(0,hp-1).map(r=>r.cfbt),rows[hp-1].cfbt+proceeds];
   // with no equity at risk there is no return to solve for — an empty form
   // would otherwise report a meaningless IRR off all-zero cash flows
   const irr=equity>0?calcIRR(irrFlows):NaN;
@@ -110,7 +137,9 @@ function buildPF(inp){
   const beOcc=y1.gpi>0?Math.max(0,(y1.opex+y1.ds+(y1.capex||0))/y1.gpi):0;
   const retOnCost=devCost>0?y1.noi/devCost:0;
 
-  return{inp,equity,totalCost,acqC,LF,rows,
+  return{inp,equity,equityAtClose,totalCost,acqC,LF,rows,
+    rehab:{total:rehabTotal,financed:rehabFin,cash:rehabCash,deferred:rehabDeferred,
+      byYear:rehabByYear,months:Math.max(0,+(inp.rehabMonths)||0),pctFinanced:rehabFinPct},
     exit:{grossSale,sellAmt,netSale,payoff,proceeds,method:exitMethod,ppu:exPPU,units:exUnits,appr:apprR},
     ret:{irr,em:em2,npv,profit,totalCF,retOnCost},
     sum:{capR:y1.capR,coc:y1.coc,dscr:y1.dscr,noi:y1.noi,cf:y1.cfbt,beOcc,devCost},lihtc,debtSizing};

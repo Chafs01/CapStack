@@ -7,7 +7,7 @@ import{OpExEditor,OtherIncomeEditor}from'./editors.jsx';
 // Legacy deals carry six named expense fields; new ones carry a list. The
 // editor shows either as rows, and any edit commits the list and zeroes the
 // old fields so only one of the two is ever counted.
-const CAPEX_LABEL={amount:'Annual CapEx Budget',perUnit:'CapEx per Unit / Year',pctEGI:'CapEx as % of EGI'};
+const CAPEX_LABEL={amount:'Annual CapEx Budget',perUnit:'CapEx per Unit / Year',pctEGI:'CapEx as % of EGI',once:'One-Time CapEx'};
 
 const LEGACY_OPEX=[['propertyTax','Property Taxes'],['insurance','Insurance'],
   ['maintenance','Repairs & Maintenance'],['utilities','Utilities'],
@@ -43,6 +43,8 @@ function Step3({inp,onChange}){
     ? (units>0?`${f.$((inp.capexAnnual||0)*units)} a year across ${units} units`:'enter units above to see the annual total')
     : capexBasis==='pctEGI'
     ? 'rides income — no separate growth rate applied'
+    : capexBasis==='once'
+    ? 'spent in Year 1 only — does not repeat or grow'
     : (units>0?`${f.$((inp.capexAnnual||0)/units)} per unit / yr`:'annual reserve for capital work');
 
   const gpi=getGPI(inp);
@@ -108,6 +110,7 @@ function Step3({inp,onChange}){
               <option value="amount">Total annual budget</option>
               <option value="perUnit">Per unit, per year</option>
               <option value="pctEGI">% of effective gross income</option>
+              <option value="once">One-time lump sum</option>
             </select>
           </div>
           <Fld label={CAPEX_LABEL[capexBasis]}

@@ -64,15 +64,19 @@ function getOtherIncome(inp){
   const v=+(inp&&inp.otherIncome);
   return isFinite(v)?v:0;
 }
-// Capital expenditure is quoted three ways in practice: a budget for the year,
+// Capital expenditure is quoted four ways in practice: a budget for the year,
 // a reserve per unit per year (the common multifamily convention, e.g. $300/unit),
-// or a share of effective gross income. The stored number means whichever the
-// basis says, so switching basis reinterprets it rather than silently keeping
-// a figure that no longer means anything.
-function resolveCapex(inp,egi,expenseFactor){
+// a share of effective gross income, or a single lump sum spent once. The
+// stored number means whichever the basis says, so switching basis reinterprets
+// it rather than silently keeping a figure that no longer means anything.
+function resolveCapex(inp,egi,expenseFactor,yr){
   const v=+(inp&&inp.capexAnnual);
   if(!isFinite(v)||v===0)return 0;
   const basis=(inp&&inp.capexBasis)||'amount';
+  // A lump sum is spent once and then it is gone — no growth, no repeat. The
+  // year defaults to 1 so a caller that only wants the figure (the memo) sees
+  // it rather than a zero.
+  if(basis==='once')return (yr==null||yr===1)?v:0;
   if(basis==='perUnit'){
     const u=+(inp.numUnits)||0;
     return v*u*(isFinite(expenseFactor)?expenseFactor:1);
@@ -155,5 +159,36 @@ function getDevCost(inp){
   const land=(inp&&inp.landCost)||(inp&&inp.purchasePrice)||0;
   return land+hard+soft+devFee;
 }
+// A renovation budget is a one-time scope you finish, and it is emphatically
+// not the annual CapEx reserve: the reserve recurs and grows for the whole
+// hold, so putting a $600K unit-turn programme there charges it every year.
+// Quoted the way a scope is quoted -- lump sum, per unit, per SF -- and offered
+// only on acquisitions. Development and affordable deals already carry a full
+// hard/soft budget, and a second one would double-count the same work.
+function getRehab(inp){
+  const t=((inp&&inp.assetType)||'').toLowerCase();
+  if(t==='development'||t==='affordable')return 0;
+  const sf=(inp&&inp.totalSF)||(inp&&inp.grossBuildableSF)||0;
+  const listed=costListTotal(inp&&inp.rehabItems,sf,inp&&inp.numUnits,0);
+  return listed===null?0:listed;
+}
+// Cash rehab spread over the months it is actually spent. Money that leaves
+// your pocket in month 18 is not money you put in at close, and across a
+// seven-year hold that timing is worth real IRR. Index 0 is spend at close;
+// index y is spend during year y, so months 1-12 land in year 1.
+const REHAB_MAX_MONTHS=60;
+function rehabSchedule(inp,cashTotal){
+  const out=new Array(12).fill(0);
+  if(!(cashTotal>0))return out;
+  const raw=+((inp&&inp.rehabMonths))||0;
+  const months=Math.max(0,Math.min(raw,REHAB_MAX_MONTHS));
+  if(months<=0){out[0]=cashTotal;return out;}
+  const perMonth=cashTotal/months;
+  for(let m=1;m<=months;m++){
+    const yr=Math.min(Math.ceil(m/12),11);
+    out[yr]+=perMonth;
+  }
+  return out;
+}
 
-export{umGPI,rtGPI,getGPI,getOpEx,getDevCost,getHardCost,getSoftCost,opexItemsTotal,getOtherIncome,listTotal,resolveLine,resolveCostLine,costListTotal,resolveCapex,lossRate};
+export{umGPI,rtGPI,getGPI,getOpEx,getDevCost,getHardCost,getSoftCost,opexItemsTotal,getOtherIncome,listTotal,resolveLine,resolveCostLine,costListTotal,resolveCapex,lossRate,getRehab,rehabSchedule,REHAB_MAX_MONTHS};

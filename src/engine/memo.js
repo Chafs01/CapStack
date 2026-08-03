@@ -113,10 +113,27 @@ function assumptionGroups(res,inp,hp){
   if(inp.managementFeePct)E.push(['Management fee',inp.managementFeePct+'% of EGI']);
   if(inp.capexAnnual){
     const b=inp.capexBasis||'amount';
-    const lbl=b==='perUnit'?f.$f(inp.capexAnnual)+' / unit / yr':b==='pctEGI'?inp.capexAnnual+'% of EGI':f.$f(inp.capexAnnual)+' / yr';
-    E.push(['Capital expenditure',lbl+(b==='amount'?'':' = '+f.$f(resolveCapex(inp,egi,1)))]);
+    const lbl=b==='perUnit'?f.$f(inp.capexAnnual)+' / unit / yr'
+      :b==='pctEGI'?inp.capexAnnual+'% of EGI'
+      :b==='once'?f.$f(inp.capexAnnual)+' one-time (Yr 1)'
+      :f.$f(inp.capexAnnual)+' / yr';
+    E.push(['Capital expenditure',lbl+(b==='amount'||b==='once'?'':' = '+f.$f(resolveCapex(inp,egi,1)))]);
   }
   if(E.length)G.push(['Operating expenses',E]);
+
+  // A renovation scope belongs in the assumptions a reader will argue with,
+  // line by line, the same way the operating expenses are laid out.
+  const rh=inp.rehabItems;
+  if(Array.isArray(rh)&&rh.length&&res.rehab&&res.rehab.total>0){
+    const rhSF=inp.totalSF||inp.grossBuildableSF||0;
+    const R=rh.map(r=>[catLabel(r,'Renovation'),
+      quoted(r)+(r.basis&&r.basis!=='amount'?' = '+f.$f(resolveCostLine(r,rhSF,units,0)):'')]);
+    R.push(['Total renovation budget',f.$f(res.rehab.total)]);
+    if(res.rehab.pctFinanced>0)R.push(['Funded by loan',
+      res.rehab.pctFinanced+'% = '+f.$f(res.rehab.financed)]);
+    R.push(['Spend period',res.rehab.months>0?res.rehab.months+' months from closing':'at closing']);
+    G.push(['Renovation',R]);
+  }
 
   if(isDev){
     const D=[],hard=getHardCost(inp),soft=getSoftCost(inp,hard);

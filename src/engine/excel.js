@@ -90,14 +90,22 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
   const gpi1=R0.gpi, oth1=R0.egi-(R0.gpi-R0.vacL-(R0.credL||0));
   const baseExM=R0.opex-R0.mgmt;
   const basisVal=isDev?getDevCost(inp):(inp.purchasePrice||0);
-  const LA=inp.loanAmount||0, IR=(inp.interestRate||0)/100, AY=inp.amortYears||30, IO=inp.ioPeriod||0;
+  // A financed renovation is part of the loan the model actually drew, so the
+  // workbook has to state that loan rather than the one typed on Step 4 —
+  // otherwise sources and uses do not balance. With no renovation this is the
+  // typed figure, unchanged.
+  const RH=res.rehab||{total:0,deferred:0,byYear:[]};
+  const hasRehab=(RH.total||0)>0;
+  const LA=hasRehab?(res.totalCost-res.equity):(inp.loanAmount||0);
+  const IR=(inp.interestRate||0)/100, AY=inp.amortYears||30, IO=inp.ioPeriod||0;
   const ltvVal=basisVal>0?LA/basisVal:0;
   // capex may be quoted as a total, per unit, or a share of EGI; the sheet has
   // to express whichever, or the workbook and the app disagree the moment
   // someone edits it
   const cxBasis=inp.capexBasis||'amount';
   const CAPEX_LBL=cxBasis==='perUnit'?'CapEx per Unit / Year'
-    :cxBasis==='pctEGI'?'CapEx (% of EGI)':'Annual CapEx Budget';
+    :cxBasis==='pctEGI'?'CapEx (% of EGI)'
+    :cxBasis==='once'?'CapEx (one-time, Yr 1)':'Annual CapEx Budget';
 
   const sizeLine=isDev?[null,'Gross Buildable SF',inp.grossBuildableSF||0,FN,true]:(t==='commercial'?[null,'Total SF',inp.totalSF||0,FN,true]:['units','Units',inp.numUnits||0,FN,true]);
 
@@ -138,12 +146,12 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
     ['feep','Loan Fees (% of Loan)',(inp.loanFeesPct||0)/100,FP,true],
     ['disc','Discount Rate (NPV)',(inp.discountRate||0)/100,FP,true],
     ['capex',CAPEX_LBL,cxBasis==='pctEGI'?(inp.capexAnnual||0)/100:(inp.capexAnnual||0),cxBasis==='pctEGI'?FP2:F$,true],
-  ]);
+  ].concat(hasRehab?[['rehab','Renovation Budget (one-time)',RH.total,F$,true]]:[]));
   // wire left-side formulas now that refs exist
   const setRef=(key,f,r,fmt)=>{const a=refs[key].replace('Summary!','').replace(/\$/g,'');const c=ws.getCell(a);c.value=fml(f,r);if(fmt)c.numFmt=fmt;};
   setRef('acq',`${refs.price}*${refs.acqp}`,res.acqC);
   setRef('fees',`${refs.loan}*${refs.feep}`,res.LF);
-  setRef('tcap',`${refs.basis}+${refs.acq}+${refs.fees}`,res.totalCost);
+  setRef('tcap',`${refs.basis}+${refs.acq}+${refs.fees}`+(hasRehab?`+${refs.rehab}`:''),res.totalCost);
   setRef('ltv',`IF(${refs.basis}=0,0,${refs.loan}/${refs.basis})`,ltvVal);
   setRef('eq',`${refs.tcap}-${refs.loan}`,res.equity);
 
@@ -223,9 +231,17 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
     ? `-${refs.capex}*${refs.units||0}*(1+${refs.eg})^(${yr}-1)`
     : cxBasis==='pctEGI'
     ? `-${colOf(yr)}${rowIdx.egi}*${refs.capex}`
+    : cxBasis==='once'
+    ? (yr===1?`-${refs.capex}`:'0')
     : `-${refs.capex}*(1+${refs.eg})^(${yr}-1)`;
   line('capex','Less: Capital Expenditure',[null].concat(yrs.map(yr=>yr<=hp?{f:capexF(yr),r:-(ER[yr-1].capex||0)}:null)),F$N);
-  line('cfbt','Cash Flow Before Tax',[null].concat(yrs.map(yr=>yr<=hp?{f:`${colOf(yr)}${rowIdx.noi}+${colOf(yr)}${rowIdx.ds}+${colOf(yr)}${rowIdx.capex}`,r:ER[yr-1].cfbt}:null)),F$,{total:true});
+  // The renovation draw is a schedule, not a formula of anything else on the
+  // sheet — it is however many months of a fixed scope land in each year — so
+  // these are written as figures. Editing the budget cell on Summary will not
+  // move them; re-export after changing the scope.
+  if(hasRehab)line('rehab','Less: Renovation',[null].concat(yrs.map(yr=>yr<=hp?-(ER[yr-1].rehab||0):null)),F$N);
+  const cfbtF=yr=>`${colOf(yr)}${rowIdx.noi}+${colOf(yr)}${rowIdx.ds}+${colOf(yr)}${rowIdx.capex}`+(hasRehab?`+${colOf(yr)}${rowIdx.rehab}`:'');
+  line('cfbt','Cash Flow Before Tax',[null].concat(yrs.map(yr=>yr<=hp?{f:cfbtF(yr),r:ER[yr-1].cfbt}:null)),F$,{total:true});
   sect('RATIOS & BALANCES');
   line('cap','Cap Rate',[null].concat(yrs.map(yr=>yr<=hp?{f:`${colOf(yr)}${rowIdx.noi}/${refs.basis}`,r:ER[yr-1].capR}:null)),FP2);
   line('coc','Cash-on-Cash Return',[null].concat(yrs.map(yr=>yr<=hp?{f:`IF(${refs.eq}=0,0,${colOf(yr)}${rowIdx.cfbt}/${refs.eq})`,r:ER[yr-1].coc}:null)),FP2);
@@ -233,10 +249,16 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
   const balF=yr=>`IF(${refs.loan}=0,0,IF(${yr}<=${refs.io},${refs.loan},IF(${refs.rate}=0,MAX(0,${refs.loan}-${refs.loan}/(${refs.amort}*12)*((${yr}-${refs.io})*12)),MAX(0,${refs.loan}*(1+${refs.rate}/12)^((${yr}-${refs.io})*12)-(${refs.loan}*${refs.rate}/12/(1-(1+${refs.rate}/12)^(-${refs.amort}*12)))*((1+${refs.rate}/12)^((${yr}-${refs.io})*12)-1)/(${refs.rate}/12)))))`;
   line('bal','Ending Loan Balance',[null].concat(yrs.map(yr=>yr<=hp?{f:balF(yr),r:ER[yr-1].bal}:null)),F$);
   sect('LEVERED INVESTMENT CASH FLOWS');
-  line('init','Initial Equity Investment',[{f:`-${refs.eq}`,r:-res.equity}].concat(yrs.map(()=>null)),F$N);
+  // Cash renovation spent after closing is not equity at closing — it shows up
+  // in the year it is drawn, on the Renovation line above. Netting it out of
+  // Year 0 as well would count it twice.
+  const eqDef=hasRehab?Math.round(RH.deferred||0):0;
+  const eqT0F=eqDef>0?`-(${refs.eq}-${eqDef})`:`-${refs.eq}`;
+  const eqT0=-(res.equityAtClose!=null?res.equityAtClose:res.equity);
+  line('init','Initial Equity Investment',[{f:eqT0F,r:eqT0}].concat(yrs.map(()=>null)),F$N);
   line('opcf','Operating Cash Flow',[null].concat(yrs.map(yr=>yr<=hp?{f:`${colOf(yr)}${rowIdx.cfbt}`,r:ER[yr-1].cfbt}:null)),F$N);
   line('sale','Net Sale Proceeds',[null].concat(yrs.map(yr=>yr<hp?0:(yr===hp?{f:'X',r:res.exit.proceeds}:null))),F$N);
-  line('net','Levered Net Cash Flow',[{f:`C${rowIdx.init}`,r:-res.equity}].concat(yrs.map(yr=>yr<=hp?{f:`${colOf(yr)}${rowIdx.opcf}+${colOf(yr)}${rowIdx.sale}`,r:ER[yr-1].cfbt+(yr===hp?res.exit.proceeds:0)}:null)),F$N,{total:true});
+  line('net','Levered Net Cash Flow',[{f:`C${rowIdx.init}`,r:eqT0}].concat(yrs.map(yr=>yr<=hp?{f:`${colOf(yr)}${rowIdx.opcf}+${colOf(yr)}${rowIdx.sale}`,r:ER[yr-1].cfbt+(yr===hp?res.exit.proceeds:0)}:null)),F$N,{total:true});
 
   const PFQ="'Annual Pro Forma'!";
   const lastYr=colOf(hp), fwdL=CL(fwdC);
@@ -272,8 +294,10 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
     [null,'Total Sources',{f:`${refs.loan}+${refs.eq}`,r:res.totalCost},F$,false],
     [null,basisLblTxt(isDev),{f:`${refs.basis}`,r:basisVal},F$,false],
     [null,'Closing Costs & Fees',{f:`${refs.acq}+${refs.fees}`,r:res.acqC+res.LF},F$,false],
+  ].concat(hasRehab?[[null,'Renovation',{f:`${refs.rehab}`,r:RH.total},F$,false]]:[])
+   .concat([
     [null,'Total Uses',{f:`${refs.tcap}`,r:res.totalCost},F$,false],
-  ]);
+  ]));
   function basisLblTxt(d){return d?'Total Development Cost':'Purchase Price';}
   // wire the PF sale cell to Summary proceeds now that ref exists
   pf.getCell(rowIdx.sale,3+hp).value=fml(`${refs.proc}`,res.exit.proceeds);

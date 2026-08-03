@@ -3,8 +3,9 @@ import{f,pn}from'../engine/format.js';
 import{parseFile,extractFields,extractRentRoll}from'../engine/parse.js';
 import{Fld,Card}from'./ui.jsx';
 import{UnitMixEditor,RetailEditor,CreditEditor,DevCostEditor,
-  HARD_COST_CATEGORIES,SOFT_COST_CATEGORIES,HARD_COST_BASES,SOFT_COST_BASES}from'./editors.jsx';
-import{getHardCost,getSoftCost}from'../engine/income.js';
+  HARD_COST_CATEGORIES,SOFT_COST_CATEGORIES,HARD_COST_BASES,SOFT_COST_BASES,
+  REHAB_CATEGORIES,REHAB_BASES}from'./editors.jsx';
+import{getHardCost,getSoftCost,getRehab}from'../engine/income.js';
 // ─── STEP 2 PROPERTY + UPLOAD ─────────────────────────────────────────────
 const G2={display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'};
 const G3={display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'0 16px'};
@@ -54,6 +55,19 @@ function Step2({inp,onChange,assetType}){
     :((inp.hardCostPerSF||0)>0?[{cat:'Structure & Shell',basis:'perSF',amount:inp.hardCostPerSF}]:[]);
   const softRows=Array.isArray(inp.softCostItems)?inp.softCostItems
     :((inp.softCostsPct||0)>0?[{cat:'Custom',label:'Soft costs',basis:'pctHard',amount:inp.softCostsPct}]:[]);
+  // Renovation is new, so there is no legacy shape to honour — an absent list
+  // is simply no renovation.
+  const rehabRows=Array.isArray(inp.rehabItems)?inp.rehabItems:[];
+  const rehabTotal=getRehab({...inp,rehabItems:rehabRows});
+  const rehabPct=Math.max(0,Math.min(+(inp.rehabFinancedPct)||0,100));
+  const rehabMos=Math.max(0,+(inp.rehabMonths)||0);
+  const rehabFinHint=rehabTotal>0
+    ? `${f.$(rehabTotal*rehabPct/100)} on the loan, ${f.$(rehabTotal*(1-rehabPct/100))} out of pocket`
+    : 'a bridge or rehab loan funds part of the work';
+  const rehabTimeHint=rehabTotal>0&&rehabMos>0
+    ? `${f.$(rehabTotal*(1-rehabPct/100)/rehabMos)} of cash a month for ${rehabMos} months`
+    : '0 spends it all at closing';
+
   const hardTotal=getHardCost({...inp,hardCostItems:hardRows});
   const softTotal=getSoftCost({...inp,softCostItems:softRows},hardTotal);
   const devBudget=(<>
@@ -180,6 +194,27 @@ function Step2({inp,onChange,assetType}){
           <RetailEditor rows={inp.retailIncome} onChange={r=>{const sf=r.reduce((a,x)=>a+(+x.sf||0),0);onChange({retailIncome:r,commercialSF:sf});}}/>
         </Card>
       </>)}
+
+      {!isCost&&(
+        <Card title="Renovation Budget" sub="Optional — one-time work at or after closing. Leave empty for a turnkey deal">
+          <DevCostEditor rows={rehabRows} onChange={r=>onChange({rehabItems:r})}
+            cats={REHAB_CATEGORIES} bases={REHAB_BASES}
+            label="Renovation Line Items" noun="renovation line"
+            placeholder="Name this scope (e.g. Boiler Replacement, Balcony Repair)"
+            sf={inp.totalSF||0} units={inp.numUnits||0} hard={0}/>
+          <div style={G2} className="g2">
+            <Fld label="Funded by Loan" suffix="%" hint={rehabFinHint}
+              value={inp.rehabFinancedPct||0} onChange={v=>onChange({rehabFinancedPct:pn(v)})}/>
+            <Fld label="Spend Over" suffix="mos" hint={rehabTimeHint}
+              value={inp.rehabMonths||0} onChange={v=>onChange({rehabMonths:pn(v)})}/>
+          </div>
+          <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',lineHeight:1.55,marginTop:2}}>
+            This is a scope you finish, not the annual CapEx reserve on the next step —
+            that one recurs every year of the hold. Renovation adds to your basis and to
+            total cash in, and it lands in the year you actually spend it.
+          </p>
+        </Card>
+      )}
 
       {t==='development'&&(<>
         <Card title="Development Budget" sub="Land, hard and soft costs — add or rename lines to match the budget">
