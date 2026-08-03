@@ -18,7 +18,7 @@ const ASSET_DESC={
   },
   multifamily:{
     what:'Apartment and rental-housing acquisitions, underwritten on stabilized operations.',
-    models:'You build a unit-mix rent roll, set vacancy and operating expenses, and the model runs a ten-year levered return with exit at your cap rate.'
+    models:'You build a unit-mix rent roll, set vacancy and operating expenses, and the model runs a levered return over the hold you choose, with exit at your cap rate.'
   },
   commercial:{
     what:'Office, retail, and industrial properties driven by tenant and NNN income.',

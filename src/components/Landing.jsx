@@ -80,12 +80,12 @@ function Landing({onStart,onSample,onDemo}){
         intro="No spreadsheet wrangling, no template licences. The model is built the moment you finish typing.">
         <Row label="Asset type" text="Multifamily, commercial, mixed-use, ground-up development, or LIHTC. Inputs and outputs adapt to the deal structure."/>
         <Row label="Assumptions" text="Unit mix, operating expenses, debt terms, and exit. Drop in a rent roll and the unit mix fills itself in."/>
-        <Row label="Analysis" text="Ten-year cash flows, levered returns, sensitivity, waterfall, and an investment memo. Then export to Excel."/>
+        <Row label="Analysis" text="Cash flows over a hold of up to 20 years, levered returns, sensitivity, waterfall, and an investment memo. Then export to Excel."/>
       </Sec>
 
       {/* ── FEATURES ── */}
       <Sec eyebrow="Everything in the model" title={<>Institutional outputs,<br/>without the analyst.</>}>
-        <Row label="10-Year DCF Engine" text="Income, expense, and debt-service projection with growth rates, vacancy, and interest-only periods."/>
+        <Row label="Multi-Year DCF Engine" text="Income, expense, and debt-service projection over a 3- to 20-year hold, with growth rates, vacancy, and interest-only periods."/>
         <Row label="Returns & Exit" text="Levered IRR, equity multiple, NPV, cash-on-cash, break-even occupancy, and a full exit breakdown."/>
         <Row label="IRR Sensitivity" text="Returns across revenue-growth and exit-cap scenarios, so you see exactly where the deal breaks."/>
         <Row label="Equity Waterfall" text="LP/GP promote with a preferred return and tiered IRR hurdles, computed year by year."/>
