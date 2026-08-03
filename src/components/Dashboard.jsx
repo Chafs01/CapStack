@@ -187,9 +187,9 @@ function analystNotes(res,inp){
 // wall of green that buries the two lines that matter.
 const HEALTH_TONE={fail:'neg',warn:'warn',pass:'pos',na:'muted2'};
 const HEALTH_MARK={fail:'\u2715',warn:'\u0021',pass:'\u2713',na:'\u2013'};
-function HealthPanel({res,inp,user}){
+function HealthPanel({res,inp,user,showAll}){
   const H=dealHealth(res,inp);
-  const seeDetail=canSeeAnalysis(user);
+  const seeDetail=showAll||canSeeAnalysis(user);
   const [openPass,setOpenPass]=useState(false);
   if(!H.ready)return null;
   const issues=H.checks.filter(c=>c.status==='fail'||c.status==='warn');
@@ -609,6 +609,11 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
   const cocC=sum.coc<0?'var(--neg)':sum.coc<0.02?'var(--warn)':null;
   const beC=sum.beOcc>0.95?'var(--neg)':sum.beOcc>0.90?'var(--warn)':null;
   const paid=canExport(user);
+  // The sample and a shared deal are shop windows, not someone's own workspace.
+  // They are read-only and nothing can be exported from them, so withholding
+  // the interpretation there hides the most persuasive thing the product does
+  // from exactly the person deciding whether to sign up at all.
+  const showAnalysis=viewOnly||canSeeAnalysis(user);
   const NOTES=analystNotes(res,inp);
   const chartData=rows.slice(0,hp).map(r=>({yr:`Yr ${r.yr}`,NOI:Math.round(r.noi),'Cash Flow':Math.round(r.cfbt)}));
   const ratesData=rows.slice(0,hp).map(r=>({yr:`Yr ${r.yr}`,'Cap Rate':+(r.capR*100).toFixed(2),'CoC Return':+(r.coc*100).toFixed(2)}));
@@ -688,7 +693,7 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
         </div>
       </div>
 
-      <HealthPanel res={res} inp={inp} user={user}/>
+      <HealthPanel res={res} inp={inp} user={user} showAll={viewOnly}/>
 
       {/* two headline returns get real prominence; the rest support them */}
       <div className="hair g2" style={{gridTemplateColumns:'1fr 1fr',marginBottom:14}}>
@@ -737,13 +742,13 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
 
       <div className="glass" style={{padding:'20px 24px',marginBottom:22}}>
         <div className="sect-lbl">Analyst Notes<span style={{fontWeight:400,letterSpacing:0,textTransform:'none',fontSize:'var(--fs-2)',color:'var(--muted)'}}>auto-generated from your inputs</span></div>
-        {!paid&&NOTES.length>0&&(
+        {!showAnalysis&&NOTES.length>0&&(
           <p style={{fontSize:'var(--fs-4)',color:'var(--muted)',lineHeight:1.65,margin:0}}>
             <b style={{color:'var(--text)'}}>{NOTES.length}</b> observation{NOTES.length===1?'':'s'} on this
             underwriting. Upgrade to read them.
           </p>
         )}
-        {paid&&NOTES.map((n,i)=>(
+        {showAnalysis&&NOTES.map((n,i)=>(
           <p key={i} style={{fontSize:'var(--fs-4)',color:'var(--text)',lineHeight:1.65,marginBottom:i===NOTES.length-1?0:9}}>{n}</p>
         ))}
         {t==='development'&&<p style={{fontSize:'var(--fs-3)',color:'var(--warn)',marginTop:10,lineHeight:1.5}}>Note: the headline IRR is the stabilized-operations return. See the Construction &amp; Lease-Up panel for the project-level IRR that accounts for the build period, lease-up ramp, and capitalized interest.</p>}
