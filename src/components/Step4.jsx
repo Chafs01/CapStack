@@ -3,6 +3,8 @@ import{monthlyPmt,MAX_HOLD}from'../engine/finance.js';
 import{getGPI,getOpEx,getDevCost,getOtherIncome,lossRate}from'../engine/income.js';
 import{buildPF}from'../engine/buildPF.js';
 import{Fld,Slider,Card,Metric}from'./ui.jsx';
+import{CompEditor}from'./editors.jsx';
+import{compsSummary}from'../engine/comps.js';
 // ─── STEP 4 FINANCING ─────────────────────────────────────────────────────
 const G2={display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'};
 const G3={display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'0 16px'};
@@ -40,6 +42,15 @@ function Step4({inp,onChange}){
   const noi=getGPI(inp)*(1-lossRate(inp))+getOtherIncome(inp)-getOpEx(inp);
   const dscr=ds>0?noi/ds:null;
   const isDev=t==='development';
+  // A comp set is the working-out behind the exit price. Editing it recomputes
+  // the average and writes it to exitPPU; clearing the last comp hands the
+  // field back rather than stranding a stale number.
+  const comps=Array.isArray(inp.exitComps)?inp.exitComps:[];
+  const compS=compsSummary(comps);
+  const setComps=rows=>{
+    const S=compsSummary(rows);
+    onChange(S.used>0?{exitComps:rows,exitPPU:Math.round(S.ppu)}:{exitComps:rows});
+  };
   const lev=isDev&&devCost>0?la/devCost*100:ltv;
   // Color marks an exception worth a second look — not every figure.
   const cells=[
@@ -116,12 +127,20 @@ function Step4({inp,onChange}){
             );
           })}
         </div>
-        {inp.exitMethod==='ppu'&&(
+        {inp.exitMethod==='ppu'&&(<>
+          {/* The comps derive the per-unit figure rather than the user typing a
+              conclusion. Writing the average straight into exitPPU means every
+              other module — sensitivity, refinance, the workbook — keeps
+              reading the one field it always has. */}
+          <CompEditor rows={comps} onChange={setComps}/>
           <div style={G2} className="g2">
-            <Fld label="Exit Price per Unit" prefix="$" hint="comparable sale value today" value={inp.exitPPU!=null?inp.exitPPU:0} onChange={v=>onChange({exitPPU:pn(v)})}/>
+            <Fld label="Exit Price per Unit" prefix="$"
+              hint={compS.used?`average of ${compS.used} comparable${compS.used===1?'':'s'} — edit a comp to change it`:'comparable sale value today'}
+              disabled={compS.used>0}
+              value={inp.exitPPU!=null?inp.exitPPU:0} onChange={v=>onChange({exitPPU:pn(v)})}/>
             <Fld label="Annual Appreciation" suffix="%" hint="applied over the hold" value={inp.apprRate!=null?inp.apprRate:3} onChange={v=>onChange({apprRate:parseFloat(v)||0})}/>
           </div>
-        )}
+        </>)}
         {inp.exitMethod==='ppu'&&!(inp.exitPPU>0)&&(
           <div style={{background:'var(--neg-tint)',border:'1px solid var(--neg-brd)',padding:'11px 14px',marginBottom:16,fontSize:'var(--fs-4)',color:'var(--neg)',lineHeight:1.5}}>
             Enter a comparable price per unit. Without one the exit is valued at zero and the returns below will be meaningless.

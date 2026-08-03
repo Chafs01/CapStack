@@ -1,6 +1,7 @@
 import{f,pn}from'../engine/format.js';
 import{resolveLine,resolveCostLine}from'../engine/income.js';
 import{NumIn}from'./ui.jsx';
+import{compPPU,compsSummary}from'../engine/comps.js';
 // ─── RENT ROLL EDITORS ──────────────────────────────────────────────────
 const UNIT_TYPES=['Studio','1BR','2BR','3BR','4BR','Penthouse','Other'];
 const CREDIT_TYPES=[
@@ -271,6 +272,57 @@ function DevCostEditor({rows,onChange,cats,bases,label,noun,placeholder,sf,units
     </div>
   );
 }
+
+// Sales comparables. The per-unit exit price is derived from these rather than
+// typed, so the memo can show what the number was built on.
+function CompEditor({rows,onChange}){
+  rows=rows||[];
+  const set=(i,p)=>onChange(rows.map((r,j)=>j===i?{...r,...p}:r));
+  const add=()=>onChange([...rows,{label:'',price:0,units:0}]);
+  const del=i=>onChange(rows.filter((_,j)=>j!==i));
+  const S=compsSummary(rows);
+  const C='1.5fr 1fr .7fr 1fr 30px';
+  return(
+    <div style={{marginBottom:14}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,gap:12,flexWrap:'wrap'}}>
+        <label style={{fontSize:'var(--fs-4)',fontWeight:600,color:'var(--text)'}}>Comparable Sales</label>
+        <span style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>
+          {S.used?`${S.used} comp${S.used===1?'':'s'} · avg ${f.$f(S.ppu)}/unit`:'add a comp to derive the exit price'}
+        </span>
+      </div>
+      {rows.length>0&&(
+        <div style={{display:'grid',gridTemplateColumns:C,gap:8,padding:'0 2px 6px',fontSize:'var(--fs-2)',fontWeight:700,color:'var(--muted2)'}}>
+          <div>Property</div><div>Sale Price</div><div>Units</div><div>$ / Unit</div><div></div>
+        </div>
+      )}
+      {rows.map((r,i)=>{
+        const per=compPPU(r);
+        return(
+          <div key={i} style={{display:'grid',gridTemplateColumns:C,gap:8,marginBottom:8,alignItems:'center'}}>
+            <input className="input-f" value={r.label||''} onChange={e=>set(i,{label:e.target.value})} placeholder={`Comp ${i+1} — address`}/>
+            <div style={{position:'relative'}}>
+              <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>$</span>
+              <NumIn value={r.price} onChange={v=>set(i,{price:pn(v)})} style={{paddingLeft:24}}/>
+            </div>
+            <NumIn value={r.units} onChange={v=>set(i,{units:pn(v)})}/>
+            <div className="mono" style={{fontSize:'var(--fs-4)',fontWeight:700,color:per==null?'var(--muted2)':'var(--text)',paddingLeft:2}}>
+              {per==null?'\u2014':f.$f(per)}
+            </div>
+            <button onClick={()=>del(i)} aria-label="Remove" title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
+          </div>
+        );
+      })}
+      <button className="btn-s" style={{padding:'7px 14px',fontSize:'var(--fs-4)',marginTop:2}} onClick={add}>+ Add comparable</button>
+      {S.used>1&&(
+        <div style={{fontSize:'var(--fs-3)',color:S.spread>0.35?'var(--warn)':'var(--muted)',lineHeight:1.55,marginTop:9}}>
+          Range {f.$f(S.low)} to {f.$f(S.high)} per unit
+          {S.spread>0.35&&' \u2014 that is a wide spread for a comp set. Tighter comparables would make the exit easier to defend.'}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RetailEditor({rows,onChange,label}){
   rows=rows||[];
   const set=(i,p)=>onChange(rows.map((r,j)=>j===i?{...r,...p}:r));
@@ -307,4 +359,4 @@ function RetailEditor({rows,onChange,label}){
 export{UNIT_TYPES,CREDIT_TYPES,OPEX_CATEGORIES,OTHER_INCOME_CATEGORIES,
   HARD_COST_CATEGORIES,SOFT_COST_CATEGORIES,HARD_COST_BASES,SOFT_COST_BASES,
   REHAB_CATEGORIES,REHAB_BASES,
-  CreditEditor,UnitMixEditor,OpExEditor,OtherIncomeEditor,DevCostEditor,RetailEditor};
+  CreditEditor,UnitMixEditor,OpExEditor,OtherIncomeEditor,DevCostEditor,RetailEditor,CompEditor};
