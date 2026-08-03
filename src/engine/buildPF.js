@@ -140,13 +140,31 @@ function buildPF(inp){
   const y1=rows[0];
   const beOcc=y1.gpi>0?Math.max(0,(y1.opex+y1.ds+(y1.capex||0))/y1.gpi):0;
   const retOnCost=devCost>0?y1.noi/devCost:0;
+  // Yield on cost — the question a renovation is actually judged by. Cap rate
+  // divides NOI by the price; this divides it by every dollar that went in,
+  // including the work, the closing costs and the loan fee. Set against the
+  // rate you could have bought a stabilised building at, the gap is what the
+  // effort bought you. Under it, you spent money to own a worse deal.
+  //
+  // The NOI to use is the first year the scope is finished — during the work
+  // the building is not yet earning what it was renovated to earn. With no
+  // renovation that is Year 1 and this is simply the all-in cap rate.
+  let stabYear=1;
+  while(stabYear<hp&&(rows[stabYear-1].rehab||0)>0)stabYear++;
+  const stabNOI=rows[stabYear-1].noi;
+  const yoc=totalCost>0?stabNOI/totalCost:0;
+  const yocGoingIn=totalCost>0?y1.noi/totalCost:0;
+  // Only meaningful against a cap-rate exit; a per-unit comp exit prices off
+  // sales evidence rather than a yield, so there is nothing to compare to.
+  const yocSpread=(exitMethod==='cap'&&eCapR>0&&totalCost>0)?(yoc-eCapR):null;
 
   return{inp,equity,equityAtClose,totalCost,acqC,LF,rows,
     rehab:{total:rehabTotal,financed:rehabFin,cash:rehabCash,deferred:rehabDeferred,
       byYear:rehabByYear,months:Math.max(0,+(inp.rehabMonths)||0),pctFinanced:rehabFinPct},
     exit:{grossSale,sellAmt,netSale,payoff,proceeds,method:exitMethod,ppu:exPPU,units:exUnits,appr:apprR},
     ret:{irr,em:em2,npv,profit,totalCF,retOnCost},
-    sum:{capR:y1.capR,coc:y1.coc,dscr:y1.dscr,noi:y1.noi,cf:y1.cfbt,beOcc,devCost},lihtc,debtSizing};
+    sum:{capR:y1.capR,coc:y1.coc,dscr:y1.dscr,noi:y1.noi,cf:y1.cfbt,beOcc,devCost,
+      yoc,yocGoingIn,yocSpread,stabYear,stabNOI},lihtc,debtSizing};
 }
 
 export{buildPF};

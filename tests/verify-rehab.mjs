@@ -8,6 +8,7 @@
 // compute exactly as it did before this existed, down to the last cent.
 import { DEFS, buildPF, calcAfterTax } from '../src/engine/index.js';
 import { getRehab, rehabSchedule, resolveCapex } from '../src/engine/income.js';
+const BLANKS_LIKE = { assetType: 'Multifamily', numUnits: 0, avgRent: 0, purchasePrice: 0, holdingPeriod: 7 };
 import { buildWorkbook } from '../src/engine/excel.js';
 import { memoHTML } from '../src/engine/memo.js';
 
@@ -128,6 +129,40 @@ console.log('one-time capex is spent once:');
   check('NOI is untouched by either', once.rows[0].noi === annual.rows[0].noi);
   check('resolveCapex defaults to year 1 for callers that omit it',
     resolveCapex({ capexAnnual: 150000, capexBasis: 'once' }, 0, 1) === 150000);
+}
+
+console.log('yield on cost answers whether the work was worth doing:');
+{
+  const plain = buildPF(base());
+  // with no renovation it is simply the all-in cap rate, and it must sit below
+  // the going-in cap rate because the denominator carries costs the price does not
+  check('no renovation: measured from Year 1', plain.sum.stabYear === 1);
+  check('no renovation: below the going-in cap rate', plain.sum.yoc < plain.sum.capR);
+  check('no renovation: equals Year 1 NOI over all-in cost',
+    near(plain.sum.yoc, plain.rows[0].noi / plain.totalCost, 1e-12));
+  check('going-in and stabilised agree when nothing is spent',
+    near(plain.sum.yoc, plain.sum.yocGoingIn, 1e-12));
+
+  // an 18-month scope spans years 1 and 2, so year 3 is the first clean one
+  const r = buildPF(withRehab({ rehabMonths: 18 }));
+  check('renovation: stabilised year is the first with no spend', r.sum.stabYear === 3);
+  check('renovation: uses that year\'s NOI', near(r.sum.yoc, r.rows[2].noi / r.totalCost, 1e-12));
+  check('renovation: denominator includes the budget', r.totalCost > plain.totalCost);
+  check('renovation: going-in still measures Year 1',
+    near(r.sum.yocGoingIn, r.rows[0].noi / r.totalCost, 1e-12));
+  // spending without raising rents must lower the yield — that is the warning
+  check('spending money without raising rents lowers the yield', r.sum.yoc < plain.sum.yoc);
+  // and raising rents to match must lift it back above
+  const lifted = buildPF(withRehab({ rehabMonths: 18, avgRent: base().avgRent * 1.25,
+    unitMix: base().unitMix.map((u) => ({ ...u, rent: Math.round(u.rent * 1.25) })) }));
+  check('...and raising them lifts it', lifted.sum.yoc > plain.sum.yoc);
+
+  check('spread is measured against the exit cap',
+    near(r.sum.yocSpread, r.sum.yoc - (r.inp.exitCapRate / 100), 1e-12));
+  check('a comp-priced exit has no yield to compare against',
+    buildPF({ ...base(), exitMethod: 'ppu', exitPPU: 200000 }).sum.yocSpread === null);
+  check('a zero-cost deal does not divide by zero',
+    buildPF({ ...BLANKS_LIKE }).sum.yoc === 0);
 }
 
 console.log('the exports carry it without crashing:');

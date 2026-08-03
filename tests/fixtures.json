@@ -487,7 +487,12 @@
     "noi": 465248,
     "cf": 97384.41032709414,
     "beOcc": 0.8421914011021538,
-    "devCost": 0
+    "devCost": 0,
+    "yoc": 0.058782399949461446,
+    "yocGoingIn": 0.058782399949461446,
+    "yocSpread": 0.0012823999494614435,
+    "stabYear": 1,
+    "stabNOI": 465248
    },
    "lihtc": null,
    "debtSizing": null
@@ -1203,7 +1208,12 @@
     "noi": 27449.6,
     "cf": 3498.7101735494325,
     "beOcc": 0.8805811473502096,
-    "devCost": 0
+    "devCost": 0,
+    "yoc": 0.06711393643031785,
+    "yocGoingIn": 0.06711393643031785,
+    "yocSpread": -0.0003860635696821546,
+    "stabYear": 1,
+    "stabNOI": 27449.6
    },
    "lihtc": null,
    "debtSizing": null
@@ -1919,7 +1929,12 @@
     "noi": 27449.6,
     "cf": 3498.7101735494325,
     "beOcc": 0.8805811473502096,
-    "devCost": 0
+    "devCost": 0,
+    "yoc": 0.06711393643031785,
+    "yocGoingIn": 0.06711393643031785,
+    "yocSpread": null,
+    "stabYear": 1,
+    "stabNOI": 27449.6
    },
    "lihtc": null,
    "debtSizing": null
@@ -2636,7 +2651,12 @@
     "noi": 10668.8,
     "cf": -12383.931457958672,
     "beOcc": 1.3469208800627779,
-    "devCost": 0
+    "devCost": 0,
+    "yoc": 0.027101387609945064,
+    "yocGoingIn": 0.027101387609945064,
+    "yocSpread": null,
+    "stabYear": 1,
+    "stabNOI": 10668.8
    },
    "lihtc": null,
    "debtSizing": null
@@ -3356,7 +3376,12 @@
     "noi": 395500,
     "cf": 159249.99999999997,
     "beOcc": 0.7076666666666667,
-    "devCost": 0
+    "devCost": 0,
+    "yoc": 0.06621740404336361,
+    "yocGoingIn": 0.06621740404336361,
+    "yocSpread": -0.003782595956636395,
+    "stabYear": 1,
+    "stabNOI": 395500
    },
    "lihtc": null,
    "debtSizing": null
@@ -4083,7 +4108,12 @@
     "noi": 219694.4,
     "cf": 41451.21737498377,
     "beOcc": 0.861028032072404,
-    "devCost": 0
+    "devCost": 0,
+    "yoc": 0.0589269496412526,
+    "yocGoingIn": 0.0589269496412526,
+    "yocSpread": -0.003573050358747401,
+    "stabYear": 1,
+    "stabNOI": 219694.4
    },
    "lihtc": null,
    "debtSizing": null
@@ -4808,7 +4838,12 @@
     "noi": 492451.2,
     "cf": 492451.2,
     "beOcc": 0.2923461538461538,
-    "devCost": 7749000
+    "devCost": 7749000,
+    "yoc": 0.06345202937765752,
+    "yocGoingIn": 0.06345202937765752,
+    "yocSpread": 0.010952029377657525,
+    "stabYear": 1,
+    "stabNOI": 492451.2
    },
    "lihtc": null,
    "debtSizing": null
@@ -5516,7 +5551,12 @@
     "noi": 396600,
     "cf": 94183.48816456535,
     "beOcc": 0.8453516798171496,
-    "devCost": 22750000
+    "devCost": 22750000,
+    "yoc": 0.017375224672113214,
+    "yocGoingIn": 0.017375224672113214,
+    "yocSpread": -0.042624775327886784,
+    "stabYear": 1,
+    "stabNOI": 396600
    },
    "lihtc": {
     "land": 1500000,

@@ -608,6 +608,16 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
     {l:'Break-Even Occ.',v:f.pct(sum.beOcc,1),sub:'min occupancy for +CF',c:beC,tt:'Occupancy needed to cover all cash outflows'},
     {l:'Net Sale Proceeds',v:f.$(exit.proceeds),sub:inp.exitMethod==='ppu'?`comp exit at ${f.$(inp.exitPPU||0)}/unit`:`exit at ${inp.exitCapRate}% cap`,tt:'Net proceeds after selling costs & loan payoff'},
     ...(t==='development'?[{l:'Return on Cost',v:f.pct(y1.noi/(sum.devCost||1),2),sub:'stabilized NOI / TDC',tt:'Stabilized NOI over total development cost (development yield)'}]:[]),
+    // The metric that answers "was the work worth doing" — shown against the
+    // exit cap because the number alone means nothing without it.
+    {l:'Yield on Cost',v:f.pct(sum.yoc,2),
+      sub:sum.yocSpread==null
+        ? (sum.stabYear>1?`Yr ${sum.stabYear} NOI / all-in cost`:'NOI / all-in cost')
+        : `${sum.yocSpread>=0?'+':''}${Math.round(sum.yocSpread*10000)} bps vs exit cap`,
+      c:sum.yocSpread==null?null:(sum.yocSpread>=0.01?'var(--pos)':sum.yocSpread<0?'var(--neg)':'var(--warn)'),
+      tt:sum.stabYear>1
+        ? `NOI in Year ${sum.stabYear}, the first year after the renovation, over every dollar in: price, closing costs, loan fee and the work`
+        : 'NOI over every dollar in: price, closing costs, loan fee and any renovation. Above the cap rate you could buy at, the deal creates value'},
   ];
   return(
     <div className="fu">
