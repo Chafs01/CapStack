@@ -1,11 +1,11 @@
-import{calcIRR}from'./finance.js';
+import{calcIRR,holdPeriod}from'./finance.js';
 // ─── AFTER-TAX CASH FLOW ───────────────────────────────────────────────────
 // Depreciation shield on operating income, plus recapture and capital-gains
 // tax at sale, producing an after-tax levered IRR.
 function calcAfterTax(res,inp){
   const t=(inp.assetType||'').toLowerCase();
   if(t==='affordable')return null;
-  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const hp=holdPeriod(inp);
   const isDev=t==='development';
   const costBasis=res.totalCost||0;
   const land=isDev?(inp.landCost||inp.purchasePrice||0):((inp.purchasePrice||0)*((inp.landPct!=null?inp.landPct:20)/100));

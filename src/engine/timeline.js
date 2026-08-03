@@ -1,4 +1,4 @@
-import{calcIRR}from'./finance.js';
+import{calcIRR,holdPeriod}from'./finance.js';
 // ─── CONSTRUCTION & LEASE-UP TIMELINE ─────────────────────────────────────
 // Honest project-level IRR for ground-up deals: equity sits idle during
 // construction, income ramps through lease-up, and construction-period
@@ -33,7 +33,7 @@ function calcProjectTimeline(res,inp){
   if(t!=='development')return null;
   const cM=Math.max(0,Math.round(inp.constructionPeriodMonths||0));
   const lM=Math.max(0,Math.round(inp.leaseUpMonths||0));
-  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const hp=holdPeriod(inp);
   const equity=res.equity;
   const loan0=Math.max(0,res.totalCost-res.equity);
   const mRate=(inp.interestRate||0)/100/12;

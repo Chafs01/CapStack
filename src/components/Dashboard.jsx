@@ -1,4 +1,5 @@
 import{useState}from'react';
+import{holdPeriod}from'../engine/finance.js';
 import{Bar,Line,LineChart,ComposedChart,XAxis,YAxis,CartesianGrid,Tooltip,Legend,ResponsiveContainer}from'recharts';
 import{f}from'../engine/format.js';
 import{buildPF}from'../engine/buildPF.js';
@@ -145,7 +146,7 @@ function SensTable({inp,readOnly}){
 // ─── ANALYST NOTES (auto-generated) ───────────────────────────────────────
 function analystNotes(res,inp){
   const{rows,ret,sum,exit,equity}=res;
-  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const hp=holdPeriod(inp);
   const notes=[];
   if(inp.exitMethod==='ppu'&&!(inp.exitPPU>0)){
     notes.push('No comparable price per unit has been entered, so the exit is valued at zero. Every return figure here understates the deal until that assumption is set.');

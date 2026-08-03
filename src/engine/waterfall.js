@@ -1,10 +1,10 @@
-import{calcIRR}from'./finance.js';
+import{calcIRR,holdPeriod}from'./finance.js';
 // ─── EQUITY WATERFALL (LP / GP promote) ───────────────────────────────────
 // Standard real estate PE waterfall: return of capital + preferred return,
 // then tiered promote splits at LP IRR hurdles. Tiers are LP IRR bands; the
 // partnership cash in each band is split by the stated LP/GP share.
 function calcWaterfall(res,inp){
-  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const hp=holdPeriod(inp);
   const E=res.equity||0;
   if(E<=0)return null;
   const lpShare=(inp.lpSharePct!=null?inp.lpSharePct:90)/100;

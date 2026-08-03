@@ -1,4 +1,5 @@
 import{f}from'./format.js';
+import{holdPeriod}from'./finance.js';
 import{buildPF}from'./buildPF.js';
 import{resolveLine,resolveCostLine,resolveCapex,lossRate,getHardCost,getSoftCost}from'./income.js';
 // ─── DEAL MEMO GENERATOR ──────────────────────────────────────────────────
@@ -13,7 +14,7 @@ const esc=v=>String(v==null?'':v)
 function generateMemo(res,inp){
   const t=(inp.assetType||'').toLowerCase();
   const isAff=t==='affordable';
-  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const hp=holdPeriod(inp);
   const name=inp.propertyName||'the Property';
   const $=f.$; const pct=(n,d=1)=>f.pct(n,d);
   const units=inp.numUnits||0;
@@ -218,7 +219,7 @@ function memoHTML(res,inp,opts){
   const name=esc(inp.propertyName||'Pro Forma Analysis');
   const address=esc(inp.address||'');
   const assetType=esc(inp.assetType||'');
-  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const hp=holdPeriod(inp);
   const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
   const metric=(l,v)=>`<tr><td>${l}</td><td style="text-align:right;font-weight:600">${v}</td></tr>`;
   let metricsRows='';
@@ -385,7 +386,7 @@ function downloadMemo(res,inp){
   // Markdown output, not HTML — escaping entities here would corrupt the file
   // ("Smith & Co" becoming "Smith &amp; Co"), so values stay raw.
   const name=inp.propertyName||'Pro Forma Analysis';
-  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const hp=holdPeriod(inp);
   const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
   const m=(l,v)=>`| ${l} | ${v} |`;
   let rows;

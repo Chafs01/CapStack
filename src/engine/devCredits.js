@@ -1,4 +1,4 @@
-import{calcIRR}from'./finance.js';
+import{calcIRR,holdPeriod}from'./finance.js';
 // ─── DEVELOPMENT TAX CREDITS (historic / brownfield / stacked) ────────────
 // Each credit computed on its own basis x rate x syndication price. Credit
 // equity stacks into development sources & uses as an additive overlay; the
@@ -25,7 +25,7 @@ function calcDevCredits(res,inp){
   if(!isAff){
     baseIRR=res.ret.irr;
     const newEq=Math.max(1,(res.equity||0)-totalEquity);
-    const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+    const hp=holdPeriod(inp);
     const cf=[-newEq];
     for(let y=1;y<=hp;y++){let c=res.rows[y-1].cfbt;if(y===hp)c+=res.exit.proceeds;cf.push(c);}
     sponsorIRR=calcIRR(cf);

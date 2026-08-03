@@ -1,4 +1,23 @@
 // Core financial math: payment, amortization, IRR (Newton + bisection fallback), NPV.
+//
+// The hold period, clamped, lives here too — it was the same expression copied
+// into ten engine and component files, so the ceiling could only be raised by
+// finding all ten, and any one missed would quietly disagree with the rest
+// about how long the deal runs.
+//
+// 20 years, not 10. Ten is a fund convention: an institution's hold is bounded
+// by the life of its fund. Someone buying a fourplex to keep is on a 30-year
+// amortisation and wants to watch the loan actually amortise, which the old
+// ceiling made impossible to model. Past about ten years the compounding
+// growth assumptions dominate everything else, so the later years are a
+// projection rather than an underwrite — the wizard says so where it is set.
+const MAX_HOLD=20;
+// The pro forma always runs one year past the longest hold, because pricing an
+// exit off a cap rate needs the following year's NOI.
+const PF_YEARS=MAX_HOLD+1;
+function holdPeriod(inp){
+  return Math.min(Math.max((inp&&inp.holdingPeriod)||7,1),MAX_HOLD);
+}
 function monthlyPmt(P,r_annual,yrs){
   if(!P||P<=0)return 0;
   if(!r_annual||r_annual<=0)return P/(yrs*12);
@@ -43,4 +62,4 @@ function calcNPV(cfs,rate){
   return cfs.reduce((s,c,t)=>s+c/Math.pow(1+rate,t),0);
 }
 
-export{monthlyPmt,loanBal,calcIRR,calcNPV};
+export{monthlyPmt,loanBal,calcIRR,calcNPV,holdPeriod,MAX_HOLD,PF_YEARS};

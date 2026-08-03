@@ -1,19 +1,40 @@
 import{useState,useEffect}from'react';
 import{f}from'../engine/format.js';
-import{calcIRR}from'../engine/finance.js';
+import{calcIRR,holdPeriod}from'../engine/finance.js';
 import{buildPF}from'../engine/buildPF.js';
 import{ASSETS,dealTypeLabel}from'./Step1.jsx';
-import{loadDeals,loadDealsLocal,renameDeal,deleteDeal,migrateLocalDeals,updateDealNotes}from'../lib/deals.js';
-function DealNotes({id,initial,user}){
+import{loadDeals,loadDealsLocal,renameDeal,deleteDeal,restoreDeal,migrateLocalDeals,updateDealNotes}from'../lib/deals.js';
+// Notes had no way out. Once open, the only × on the row was the one that
+// deletes the deal — so the control that looked like "close this" destroyed
+// the thing it was attached to. It closes itself now, and the × that deletes
+// is no longer the nearest exit.
+// onSaved keeps the parent's copy of the deal current. Without it the list
+// still held the notes as they were when the page loaded, so Undo after a
+// delete restored the deal with whatever had been typed since thrown away.
+function DealNotes({id,initial,user,onSaved}){
   const [val,setVal]=useState(initial);
   const [open,setOpen]=useState(!!initial);
   if(!open)return(
-    <button onClick={()=>setOpen(true)} style={{marginTop:10,marginLeft:33,background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontSize:'var(--fs-3)',padding:0,fontFamily:"'Inter',sans-serif"}}>+ Add notes</button>
+    <button onClick={()=>setOpen(true)} style={{marginTop:10,marginLeft:33,background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontSize:'var(--fs-3)',padding:0,fontFamily:"'Inter',sans-serif"}}>
+      {val?'Show notes':'+ Add notes'}
+    </button>
   );
   return(
-    <textarea value={val} placeholder="Notes: address, broker, thesis, next steps..."
-      onChange={e=>{setVal(e.target.value);updateDealNotes(id,e.target.value,user);}}
-      style={{marginTop:10,marginLeft:33,width:'calc(100% - 33px)',minHeight:54,padding:'9px 12px',border:'1px solid var(--border2)',borderRadius:8,fontSize:'var(--fs-4)',fontFamily:"'Inter',sans-serif",color:'var(--text)',resize:'vertical',outline:'none',background:'var(--surface2)'}}/>
+    <div style={{marginTop:10,marginLeft:33}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
+        <span style={{fontSize:'var(--fs-2)',fontWeight:700,letterSpacing:'.12em',textTransform:'uppercase',color:'var(--muted2)'}}>Notes</span>
+        {/* saving is already continuous, so this only collapses the panel */}
+        <button onClick={()=>setOpen(false)} title="Close notes"
+          style={{background:'none',border:'none',cursor:'pointer',color:'var(--muted)',fontSize:'var(--fs-3)',padding:'2px 4px',fontFamily:"'Inter',sans-serif"}}>
+          Done
+        </button>
+      </div>
+      <textarea value={val} placeholder="Notes: address, broker, thesis, next steps..." autoFocus
+        onChange={e=>{setVal(e.target.value);updateDealNotes(id,e.target.value,user);onSaved&&onSaved(e.target.value);}}
+        onKeyDown={e=>{if(e.key==='Escape')setOpen(false);}}
+        style={{width:'100%',minHeight:54,padding:'9px 12px',border:'1px solid var(--border2)',borderRadius:8,fontSize:'var(--fs-4)',fontFamily:"'Inter',sans-serif",color:'var(--text)',resize:'vertical',outline:'none',background:'var(--surface2)'}}/>
+      <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginTop:3}}>Saved as you type</div>
+    </div>
   );
 }
 
@@ -31,7 +52,7 @@ function calcPortfolio(deals){
       stdCount++; const eq=res.equity||0; stdEquity+=eq;
       totalProceeds+=res.exit.proceeds||0; totalNOI+=res.sum.noi||0;
       wIRRnum+=(res.ret.irr||0)*eq; wEMnum+=(res.ret.em||0)*eq; byType[at].equity+=eq;
-      const hp=Math.min(Math.max(d.inp.holdingPeriod||7,1),10);
+      const hp=holdPeriod(d.inp);
       pooled[0]=(pooled[0]||0)-eq;
       for(let y=1;y<=hp;y++){let c=res.rows[y-1].cfbt; if(y===hp)c+=res.exit.proceeds; pooled[y]=(pooled[y]||0)+c;}
     }
@@ -124,10 +145,24 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify,embedded}){
     }catch(e){alert('Upload failed: '+e.message);}
   };
 
+  // Deleting a deal used to be one click on a small × — the same gesture as
+  // closing something, and there is no other copy of the deal anywhere. Now it
+  // asks first, and then still offers the deal back, because a confirm step
+  // catches a misclick but not a misunderstanding.
+  const [confirmId,setConfirmId]=useState(null);
   const del=async id=>{
+    const entry=deals.find(x=>x.id===id);
+    setConfirmId(null);
     await deleteDeal(id,user);
     setDeals(d=>d.filter(x=>x.id!==id));
     setSel(s=>s.filter(x=>x!==id));
+    notify&&notify(`"${(entry&&entry.name)||'Deal'}" deleted`,entry?{label:'Undo',run:async()=>{
+      try{
+        await restoreDeal(entry,user);
+        setDeals(await loadDeals(user));
+        notify&&notify('Deal restored');
+      }catch(e){notify&&notify('Could not restore: '+e.message);}
+    }}:null);
   };
   const [editingId,setEditingId]=useState(null);
   const [editName,setEditName]=useState('');
@@ -209,10 +244,22 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify,embedded}){
                     </div>
                     <div style={{display:'flex',gap:8,flexShrink:0}}>
                       <button className="btn-s" style={{padding:'6px 14px',fontSize:'var(--fs-4)'}} onClick={()=>onLoad(d)}>Open</button>
-                      <button onClick={()=>del(d.id)} title="Delete" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:32,height:32,fontSize:'var(--fs-6)'}}>&times;</button>
+                      {confirmId===d.id?(
+                        <span style={{display:'inline-flex',alignItems:'center',gap:6,whiteSpace:'nowrap'}}>
+                          <span style={{fontSize:'var(--fs-3)',color:'var(--neg)',fontWeight:600}}>Delete?</span>
+                          <button onClick={()=>del(d.id)} autoFocus
+                            style={{background:'var(--neg)',border:'1px solid var(--neg)',borderRadius:3,color:'#fff',cursor:'pointer',padding:'6px 11px',fontSize:'var(--fs-3)',fontWeight:600,fontFamily:"'Inter',sans-serif"}}>Delete</button>
+                          <button onClick={()=>setConfirmId(null)}
+                            style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--text)',cursor:'pointer',padding:'6px 11px',fontSize:'var(--fs-3)',fontFamily:"'Inter',sans-serif"}}>Keep</button>
+                        </span>
+                      ):(
+                        <button onClick={()=>setConfirmId(d.id)} title="Delete deal" aria-label={`Delete ${d.name}`}
+                          style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:32,height:32,fontSize:'var(--fs-6)'}}>&times;</button>
+                      )}
                     </div>
                   </div>
-                  <DealNotes id={d.id} initial={d.notes||''} user={user}/>
+                  <DealNotes id={d.id} initial={d.notes||''} user={user}
+                    onSaved={n=>setDeals(ds=>ds.map(x=>x.id===d.id?{...x,notes:n}:x))}/>
                 </div>
               );
             })}

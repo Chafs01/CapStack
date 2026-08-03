@@ -71,6 +71,22 @@ async function persistDeal(inp,res,user,opts){
   }
   return entry.id;
 }
+// Puts a deleted deal back exactly as it was — same id, same saved date, same
+// notes — so Undo restores the row rather than creating a lookalike. persistDeal
+// cannot do this: it stamps a new savedAt and drops notes on the update path.
+async function restoreDeal(entry,user){
+  if(!entry||!entry.id)return;
+  if(user&&sb){
+    const{error}=await sb.from('deals').insert({id:entry.id,user_id:user.id,name:entry.name,
+      asset_type:entry.assetType,saved_at:entry.savedAt,inp_data:entry.inp,
+      summary:entry.summary,notes:entry.notes||''});
+    if(error)throw new Error(error.message);
+    return;
+  }
+  const deals=loadDealsLocal().filter(d=>d.id!==entry.id);
+  deals.unshift(entry);
+  saveDealsLocal(deals);
+}
 async function migrateLocalDeals(user){
   const local=loadDealsLocal();
   if(!local.length)return 0;
@@ -85,4 +101,4 @@ async function updateDealNotes(id,notes,user){
   else{const d=loadDealsLocal();const x=d.find(r=>r.id===id);if(x){x.notes=notes;saveDealsLocal(d);}}
 }
 
-export{DEALS_KEY,isDealLike,loadDealsLocal,saveDealsLocal,normalizeDeal,loadDeals,renameDeal,deleteDeal,dealSummary,persistDeal,migrateLocalDeals,updateDealNotes};
+export{DEALS_KEY,isDealLike,loadDealsLocal,saveDealsLocal,normalizeDeal,loadDeals,renameDeal,deleteDeal,restoreDeal,dealSummary,persistDeal,migrateLocalDeals,updateDealNotes};

@@ -1,4 +1,4 @@
-import{monthlyPmt,loanBal,calcIRR,calcNPV}from'./finance.js';
+import{monthlyPmt,loanBal,calcIRR,calcNPV,holdPeriod,PF_YEARS}from'./finance.js';
 import{getGPI,getOpEx,getDevCost,getOtherIncome,resolveCapex,lossRate,getRehab,rehabSchedule,opexParts}from'./income.js';
 import{calcLIHTC}from'./lihtc.js';
 function buildPF(inp){
@@ -63,7 +63,7 @@ function buildPF(inp){
   const IO=inp.ioPeriod||0;
   const pmt12=monthlyPmt(LA,IR/100,AY)*12;
   const ioAnnual=LA*(IR/100);
-  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const hp=holdPeriod(inp);
   const rg=inp.revenueGrowth||3;
   const eg=inp.expenseGrowth||2.5;
   const eCapR=(inp.exitCapRate||5.5)/100;
@@ -73,7 +73,7 @@ function buildPF(inp){
   const devCost=(t==='development'||t==='affordable')?getDevCost(inp):0;
 
   const rows=[];
-  for(let yr=1;yr<=11;yr++){
+  for(let yr=1;yr<=PF_YEARS;yr++){
     const rm=Math.pow(1+rg/100,yr-1);
     const em=Math.pow(1+eg/100,yr-1);
     const gpi=gpi0*rm;

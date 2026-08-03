@@ -1,4 +1,5 @@
 import{f}from'./format.js';
+import{holdPeriod}from'./finance.js';
 import{getDevCost,opexParts}from'./income.js';
 import{buildPF}from'./buildPF.js';
 import{calcWaterfall}from'./waterfall.js';
@@ -12,7 +13,7 @@ import{calcAfterTax}from'./afterTax.js';
 async function buildWorkbook(res,inp,withResults=true,openUrl){
   const mod=await import('exceljs');
   const E=mod.default||mod;
-  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const hp=holdPeriod(inp);
   const t=(inp.assetType||'').toLowerCase();
   const isDev=t==='development';
   // sales-comp exit prices per unit and appreciates; income exit uses the cap

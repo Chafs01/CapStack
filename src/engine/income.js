@@ -1,4 +1,5 @@
 // Income & cost assembly from deal inputs.
+import{PF_YEARS}from'./finance.js';
 function umGPI(m){return(m||[]).reduce((s,r)=>s+(+r.count||0)*(+r.rent||0)*12,0);}
 function rtGPI(r){return(r||[]).reduce((s,x)=>s+(+x.sf||0)*(+x.rentPerSF||0),0);}
 function getGPI(inp){
@@ -210,14 +211,14 @@ function getRehab(inp){
 // index y is spend during year y, so months 1-12 land in year 1.
 const REHAB_MAX_MONTHS=60;
 function rehabSchedule(inp,cashTotal){
-  const out=new Array(12).fill(0);
+  const out=new Array(PF_YEARS+1).fill(0);
   if(!(cashTotal>0))return out;
   const raw=+((inp&&inp.rehabMonths))||0;
   const months=Math.max(0,Math.min(raw,REHAB_MAX_MONTHS));
   if(months<=0){out[0]=cashTotal;return out;}
   const perMonth=cashTotal/months;
   for(let m=1;m<=months;m++){
-    const yr=Math.min(Math.ceil(m/12),11);
+    const yr=Math.min(Math.ceil(m/12),PF_YEARS);
     out[yr]+=perMonth;
   }
   return out;

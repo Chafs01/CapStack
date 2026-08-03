@@ -1,5 +1,5 @@
 import{f,pn}from'../engine/format.js';
-import{monthlyPmt}from'../engine/finance.js';
+import{monthlyPmt,MAX_HOLD}from'../engine/finance.js';
 import{getGPI,getOpEx,getDevCost,getOtherIncome,lossRate}from'../engine/income.js';
 import{buildPF}from'../engine/buildPF.js';
 import{Fld,Slider,Card,Metric}from'./ui.jsx';
@@ -130,11 +130,18 @@ function Step4({inp,onChange}){
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 28px'}} className="g2">
           <Slider label="Revenue Growth Rate" min={0} max={8} step={0.25} value={inp.revenueGrowth||3} onChange={v=>onChange({revenueGrowth:v})} fmt2={v=>`${v}% / yr`}/>
           <Slider label="Expense Growth Rate" min={0} max={8} step={0.25} value={inp.expenseGrowth||2.5} onChange={v=>onChange({expenseGrowth:v})} fmt2={v=>`${v}% / yr`}/>
-          <Slider label="Holding Period" min={3} max={10} step={1} value={inp.holdingPeriod||7} onChange={v=>onChange({holdingPeriod:v})} fmt2={v=>`${v} yrs`}/>
+          <Slider label="Holding Period" min={3} max={MAX_HOLD} step={1} value={inp.holdingPeriod||7} onChange={v=>onChange({holdingPeriod:v})} fmt2={v=>`${v} yrs`}/>
           {inp.exitMethod!=='ppu'&&<Slider label="Exit Cap Rate" min={3.5} max={10} step={0.25} value={inp.exitCapRate||5.5} onChange={v=>onChange({exitCapRate:v})} fmt2={v=>`${v}%`}/>}
           <Slider label="Selling Costs" min={1} max={6} step={0.25} value={inp.sellingCostsPct||3} onChange={v=>onChange({sellingCostsPct:v})} fmt2={v=>`${v}%`}/>
           <Slider label="Discount Rate (NPV)" min={4} max={15} step={0.25} value={inp.discountRate||8} onChange={v=>onChange({discountRate:v})} fmt2={v=>`${v}%`}/>
         </div>
+        {(inp.holdingPeriod||7)>10&&(
+          <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',lineHeight:1.55,marginTop:2}}>
+            Past ten years the growth rates compound into everything, so the later
+            figures are a projection rather than an underwrite. Useful for seeing the
+            loan amortise; not a number to put in front of a lender.
+          </p>
+        )}
       </Card>
 
       {t!=='affordable'&&(

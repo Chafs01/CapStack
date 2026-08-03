@@ -1,4 +1,4 @@
-import{monthlyPmt,loanBal,calcIRR}from'./finance.js';
+import{monthlyPmt,loanBal,calcIRR,holdPeriod}from'./finance.js';
 // ─── REFINANCE / CASH-OUT EVENT ───────────────────────────────────────────
 // Mid-hold refinance: a new loan is sized on the property's value at refi,
 // the old loan is retired, net proceeds are returned to equity, and the
@@ -6,7 +6,7 @@ import{monthlyPmt,loanBal,calcIRR}from'./finance.js';
 function calcRefinance(res,inp){
   const t=(inp.assetType||'').toLowerCase();
   if(!inp.refiEnabled||t==='affordable')return null;
-  const hp=Math.min(Math.max(inp.holdingPeriod||7,1),10);
+  const hp=holdPeriod(inp);
   // A mid-hold refinance needs a hold to be in the middle of. With a one-year
   // hold the refi year clamps to 0 and the balance lookup runs off the front
   // of the schedule, which threw and took the whole dashboard down with it.

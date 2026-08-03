@@ -1,4 +1,4 @@
-import{useState,useCallback,useEffect,lazy,Suspense}from'react';
+import{useState,useCallback,useEffect,useRef,lazy,Suspense}from'react';
 import{sb}from'./lib/supabase.js';
 import{buildPF}from'./engine/buildPF.js';
 import{DEFS,BLANKS}from'./engine/defaults.js';
@@ -15,6 +15,7 @@ import{Legal,CONTACT}from'./components/Legal.jsx';
 import{ErrorBoundary}from'./components/ErrorBoundary.jsx';
 import{initTelemetry,track}from'./lib/telemetry.js';
 import{encodeDeal,decodeDeal,shareURL,readDealFromHash,clearHash}from'./lib/share.js';
+import{routeFor,pathFor}from'./lib/routes.js';
 import{saveDraft,loadDraft,clearDraft,hasContent}from'./lib/draft.js';
 // The dashboard carries the charting library and only renders after a pro
 // forma is generated, so it loads as its own chunk.
@@ -32,9 +33,15 @@ function draftAge(at){
   return days===1?'yesterday':`${days} days ago`;
 }
 
+// The address bar is read once, before the first paint, so a deep link renders
+// its own screen rather than flashing the landing page and correcting itself.
+const ENTRY=(typeof window!=='undefined')
+  ?(routeFor(window.location.pathname)||{view:'landing',step:0})
+  :{view:'landing',step:0};
+
 function App(){
-  const [view,setView]=useState('landing');
-  const [step,setStep]=useState(0);
+  const [view,setView]=useState(ENTRY.view||'landing');
+  const [step,setStep]=useState(ENTRY.step||0);
   const [assetType,setAssetType]=useState('multifamily');
   const [inp,setInp]=useState(BLANKS.multifamily);
   const [res,setRes]=useState(null);
@@ -56,7 +63,7 @@ function App(){
   const [draft,setDraft]=useState(null);
   const [toast,setToast]=useState('');
   const [toastAct,setToastAct]=useState(null);
-  const [legalTab,setLegalTab]=useState('privacy');
+  const [legalTab,setLegalTab]=useState(ENTRY.legalTab||'privacy');
   const notify=useCallback((m,act)=>{
     setToast(m);setToastAct(act||null);
     // an offer to undo needs long enough to actually read and act on
@@ -64,6 +71,45 @@ function App(){
   },[]);
 
   useEffect(()=>{initTelemetry();},[]);
+
+  // ── Address bar ─────────────────────────────────────────────────────────
+  // Each screen writes its own path, so Back walks the screens the user
+  // actually visited instead of leaving the site. The first sync replaces
+  // rather than pushes: arriving on an address we do not recognise should
+  // correct the URL, not bury the page the visitor came from under one of
+  // ours that they then have to press Back through twice.
+  const synced=useRef(false);
+  useEffect(()=>{
+    const want=pathFor({view,step,legalTab});
+    if(window.location.pathname===want){synced.current=true;return;}
+    try{
+      const url=want+window.location.search+window.location.hash;
+      if(synced.current)window.history.pushState(null,'',url);
+      else window.history.replaceState(null,'',url);
+    }catch(e){/* history blocked — the app still works, the URL just stops tracking */}
+    synced.current=true;
+  },[view,step,legalTab]);
+
+  // Back and Forward move between screens rather than out of the site.
+  useEffect(()=>{
+    const pop=()=>{
+      const r=routeFor(window.location.pathname)||{view:'landing',step:0};
+      setView(r.view);
+      setStep(r.step||0);
+      if(r.legalTab)setLegalTab(r.legalTab);
+      window.scrollTo({top:0});
+    };
+    window.addEventListener('popstate',pop);
+    return()=>window.removeEventListener('popstate',pop);
+  },[]);
+
+  // /analysis names a screen whose deal lives in memory, not in the address —
+  // so a bookmark or a reload arrives with nowhere to get the numbers from.
+  // The wizard is the honest landing place; an empty dashboard is not. A share
+  // link is the exception, since it carries its own deal and is still decoding.
+  useEffect(()=>{
+    if(ENTRY.view==='app'&&ENTRY.step===4&&!readDealFromHash())setStep(0);
+  },[]);
 
   // Offer to restore rather than restoring silently — reappearing numbers the
   // user did not just type are more alarming than helpful. A shared link takes
