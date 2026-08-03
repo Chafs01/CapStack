@@ -16,7 +16,9 @@ const check = (label, ok, detail = '') => {
 const STATES = [
   { view: 'landing' },
   { view: 'signin' },
+  { view: 'deals' },
   { view: 'profile' },
+  { view: 'contact' },
   { view: 'legal', legalTab: 'privacy' },
   { view: 'legal', legalTab: 'terms' },
   { view: 'app', step: 0 },
@@ -50,6 +52,11 @@ console.log('\nno two screens share an address:');
 console.log('\naddresses a person might actually type:');
 {
   check('a trailing slash is the same page', routeFor('/account/').view === 'profile');
+  check('/deals is the saved deals list', routeFor('/deals').view === 'deals');
+  check('/contact is the contact page', routeFor('/contact').view === 'contact');
+  // the whole point of /deals is that it is not /account
+  check('deals and account are different addresses',
+    pathFor({ view: 'deals' }) !== pathFor({ view: 'profile' }));
   check('casing does not matter', routeFor('/ACCOUNT').view === 'profile');
   check('the root is the landing page', routeFor('/').view === 'landing');
   check('an empty path is the landing page', routeFor('').view === 'landing');

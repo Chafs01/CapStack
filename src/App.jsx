@@ -12,6 +12,7 @@ import{Step3}from'./components/Step3.jsx';
 import{Step4}from'./components/Step4.jsx';
 import{AuthView,ResetPasswordModal,SaveModal,Toast}from'./components/modals.jsx';
 import{Legal,CONTACT}from'./components/Legal.jsx';
+import{Contact}from'./components/Contact.jsx';
 import{ErrorBoundary}from'./components/ErrorBoundary.jsx';
 import{initTelemetry,track}from'./lib/telemetry.js';
 import{encodeDeal,decodeDeal,shareURL,readDealFromHash,clearHash}from'./lib/share.js';
@@ -193,7 +194,7 @@ function App(){
   // session expiring mid-deal, or a bookmark straight to the wizard.
   useEffect(()=>{
     if(!needsAuth||isShared||isDemo)return;
-    if(view==='app'||view==='profile')openAuth();
+    if(view==='app'||view==='profile'||view==='deals')openAuth();
   },[needsAuth,isShared,isDemo,view,openAuth]);
   // Signing out is a deliberate exit, so it ends on the landing page. Leaving
   // the user on the account page shows them a page about an account they no
@@ -330,7 +331,11 @@ function App(){
         <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap',justifyContent:'flex-end'}}>
           {view!=='landing'&&step<4&&step>0&&<span className="mono hide-m" style={{fontSize:'var(--fs-2)',color:'var(--on-dark-dim)'}}>STEP {step}/{STEPS.length}</span>}
           {view==='landing'&&<button className="btn-p" style={{padding:'7px 18px',fontSize:'var(--fs-4)'}} onClick={requireAuth(startFresh)}>Start an analysis</button>}
-          <button onClick={()=>{setView('profile');window.scrollTo({top:0});}} style={{background:'none',border:'none',cursor:'pointer',fontSize:'var(--fs-3)',color:view==='profile'?'var(--on-dark-accent)':'var(--on-dark-muted)',fontWeight:view==='profile'?700:500,padding:0,fontFamily:"'Inter',sans-serif"}}>{user?'Account':'Saved deals'}</button>
+          {/* Two entries, not one. Showing saved deals used to mean opening the
+              account page, which puts an email address and a plan on screen —
+              fine in private, wrong when the screen is being recorded. */}
+          <button onClick={()=>{setView('deals');window.scrollTo({top:0});}} style={{background:'none',border:'none',cursor:'pointer',fontSize:'var(--fs-3)',color:view==='deals'?'var(--on-dark-accent)':'var(--on-dark-muted)',fontWeight:view==='deals'?700:500,padding:0,fontFamily:"'Inter',sans-serif"}}>Saved deals</button>
+          {user&&<button onClick={()=>{setView('profile');window.scrollTo({top:0});}} className="hide-m" style={{background:'none',border:'none',cursor:'pointer',fontSize:'var(--fs-3)',color:view==='profile'?'var(--on-dark-accent)':'var(--on-dark-muted)',fontWeight:view==='profile'?700:500,padding:0,fontFamily:"'Inter',sans-serif"}}>Account</button>}
           {user?(
             <div style={{display:'flex',alignItems:'center',gap:8}}>
               {user.user_metadata?.avatar_url
@@ -355,6 +360,15 @@ function App(){
             onLoadDeal={handleLoadDeal} onStart={startFresh} notify={notify}/>
         </ErrorBoundary>
       )}
+      {view==='deals'&&(
+        <ErrorBoundary resetKey={user?user.id:'anon'} onBack={()=>{setView('app');setStep(0);}}>
+          <div className="fu" style={{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px'}}>
+            <SavedDeals onLoad={handleLoadDeal} onClose={requireAuth(startFresh)}
+              user={user} onSignIn={openAuth} notify={notify}/>
+          </div>
+        </ErrorBoundary>
+      )}
+      {view==='contact'&&<Contact onBack={()=>setView('landing')}/>}
       {view==='legal'&&<Legal tab={legalTab} onTab={setLegalTab} onBack={()=>setView('landing')}/>}
       {view==='signin'&&(
         <ErrorBoundary resetKey="signin" onBack={()=>setView('landing')}>
@@ -459,8 +473,7 @@ function App(){
         <span style={{margin:'0 8px',color:'var(--border2)'}}>·</span>
         {/* a real address rather than a form: early on, being able to reply and
             ask a follow-up is worth more than a tidy inbox */}
-        <a href={`mailto:${CONTACT}?subject=${encodeURIComponent('SmartCapStack')}`}
-          style={{color:'var(--accent)',fontSize:'var(--fs-2)',textDecoration:'none',borderBottom:'1px solid var(--border2)'}}>Contact</a>
+        <button onClick={()=>{setView('contact');window.scrollTo(0,0);}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--accent)',fontSize:'var(--fs-2)',padding:0,fontFamily:"'Inter',sans-serif"}}>Contact</button>
         <br/>
         <span style={{fontSize:'var(--fs-2)'}}>All projections are estimates for informational purposes only. Not financial advice.</span>
       </div>

@@ -17,10 +17,15 @@ const STEP_SLUGS=['','property','income','financing'];
 // rather than a step and gets its own address.
 const RESULTS_STEP=4;
 
+// /deals is deliberately separate from /account. The account page carries an
+// email address and a plan; the deals list carries none of that, so it can be
+// opened in front of an audience without showing anyone's personal details.
 const STATIC={
   '/':{view:'landing'},
   '/signin':{view:'signin'},
+  '/deals':{view:'deals'},
   '/account':{view:'profile'},
+  '/contact':{view:'contact'},
   '/privacy':{view:'legal',legalTab:'privacy'},
   '/terms':{view:'legal',legalTab:'terms'},
   '/analysis':{view:'app',step:RESULTS_STEP},
@@ -54,7 +59,9 @@ function routeFor(pathname){
 function pathFor(state){
   const view=state&&state.view;
   if(view==='signin')return'/signin';
+  if(view==='deals')return'/deals';
   if(view==='profile')return'/account';
+  if(view==='contact')return'/contact';
   if(view==='legal')return (state.legalTab==='terms')?'/terms':'/privacy';
   if(view==='app'){
     const step=Math.max(0,Math.min(+state.step||0,RESULTS_STEP));
