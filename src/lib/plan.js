@@ -22,10 +22,26 @@
 
 const FREE_DEAL_LIMIT=3;
 
+// Accounts that always hold the top tier, whatever their billing says — the
+// owner's own, so running the product never means paying yourself.
+//
+// Supabase user IDs, not email addresses. This file ships to every visitor's
+// browser, and an email address in a public bundle is an address that gets
+// scraped. A UUID leaks nothing and cannot be used to sign in as anyone.
+//
+// To add yours: Supabase dashboard → Authentication → Users → click your row →
+// copy the UID, and paste it below. There is no need to redeploy to change a
+// normal user's plan — that lives in metadata — but this list survives any
+// change to billing, metadata, or the account's subscription state.
+const OWNER_IDS=[
+  // 'paste-your-supabase-user-uuid-here',
+];
+
 // The plan lives on the Supabase user's metadata. Anything unrecognised — and
 // anyone signed out — is free, so a failure to read the plan withholds
 // features rather than giving them away.
 function plan(user){
+  if(user&&user.id&&OWNER_IDS.includes(user.id))return'plus';
   const p=user&&user.user_metadata&&user.user_metadata.plan;
   return (p==='pro'||p==='plus')?p:'free';
 }
@@ -70,4 +86,4 @@ function canSaveDeal(deals,user,existingId){
 }
 
 export{plan,isPaid,canExport,canSeeAnalysis,canRollUp,dealLimit,accessibleIds,
-  canSaveDeal,FREE_DEAL_LIMIT};
+  canSaveDeal,FREE_DEAL_LIMIT,OWNER_IDS};

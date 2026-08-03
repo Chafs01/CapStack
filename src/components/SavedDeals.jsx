@@ -243,8 +243,14 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify,embedded}){
                       )}
                       <div style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>{dealTypeLabel(d.inp)} &middot; saved {fmtDate(d.savedAt)}</div>
                     </div>
+                    {/* A locked row keeps its name and date so you can see the
+                        deal is still here, but not its results — those are the
+                        thing being upgraded for. The shape stays so the row
+                        does not reflow when a plan changes. */}
                     <div style={{display:'flex',gap:20,fontSize:'var(--fs-4)',flexShrink:0}}>
-                      {s.type==='affordable'?(
+                      {locked?(
+                        <><Metric l="IRR" v="&mdash;"/><Metric l="Multiple" v="&mdash;"/><Metric l="DSCR" v="&mdash;"/></>
+                      ):s.type==='affordable'?(
                         <><Metric l="LIHTC Equity" v={f.$(s.equity)}/><Metric l="DSCR" v={s.dscr?s.dscr.toFixed(2):'n/a'}/><Metric l="Gap" v={f.$(Math.abs(s.gap||0))}/></>
                       ):(
                         <><Metric l="IRR" v={f.pct(s.irr,1)}/><Metric l="Multiple" v={f.x(s.em)}/><Metric l="DSCR" v={s.dscr?s.dscr.toFixed(2):'n/a'}/></>

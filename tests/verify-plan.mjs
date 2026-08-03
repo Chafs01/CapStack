@@ -6,7 +6,7 @@
 // every unknown state resolves to "free" for features and to "keep the data"
 // for storage.
 import { plan, isPaid, canExport, canSeeAnalysis, canRollUp, dealLimit,
-  accessibleIds, canSaveDeal, FREE_DEAL_LIMIT } from '../src/lib/plan.js';
+  accessibleIds, canSaveDeal, FREE_DEAL_LIMIT, OWNER_IDS } from '../src/lib/plan.js';
 
 let failures = 0;
 const check = (label, ok, detail = '') => {
@@ -28,6 +28,27 @@ for (const bad of [undefined, null, {}, { user_metadata: null }, { user_metadata
 check('a signed-out visitor is free', plan(null) === 'free');
 check('pro is recognised', plan(asUser('pro')) === 'pro');
 check('plus is recognised', plan(asUser('plus')) === 'plus');
+
+console.log('\nowner accounts hold the top tier regardless of billing:');
+{
+  // simulated rather than asserted against a real id, so the test does not
+  // break the day an owner is added or removed
+  const OWNED = 'owner-uuid-under-test';
+  const withOwner = (id) => ({ id, user_metadata: { plan: 'free' } });
+  const realList = OWNER_IDS.slice();
+  check('the shipped list holds no email addresses', realList.every((v) => !String(v).includes('@')),
+    realList.join(','));
+  check('every entry looks like a uuid, not a name',
+    realList.every((v) => /^[0-9a-f-]{20,}$/i.test(String(v))), realList.join(','));
+  // and the mechanism itself
+  OWNER_IDS.push(OWNED);
+  check('an owner is plus even with free metadata', plan(withOwner(OWNED)) === 'plus');
+  check('an owner can export', canExport(withOwner(OWNED)) === true);
+  check('an owner is uncapped', dealLimit(withOwner(OWNED)) === Infinity);
+  check('a non-owner with the same shape is still free', plan(withOwner('someone-else')) === 'free');
+  OWNER_IDS.length = 0; realList.forEach((v) => OWNER_IDS.push(v));
+  check('the list is restored after the test', OWNER_IDS.length === realList.length);
+}
 
 console.log('\npaid features follow the plan:');
 {
