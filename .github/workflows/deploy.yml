@@ -40,6 +40,7 @@ jobs:
       - run: node tests/verify-rehab.mjs
       - run: node tests/verify-routes.mjs
       - run: node tests/verify-comps.mjs
+      - run: node tests/verify-plan.mjs
       - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
