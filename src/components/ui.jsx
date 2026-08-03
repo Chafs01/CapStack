@@ -106,6 +106,41 @@ function InfoDot({label,children}){
   );
 }
 
+// A control that exists but is not yours yet. Shown rather than hidden, on
+// purpose: a free user who never sees the button does not know the feature
+// exists, so hiding it makes the product quietly smaller instead of making the
+// upgrade wanted.
+//
+// Not a `disabled` button — disabled elements swallow mouse events in some
+// browsers, which would make the explanation unreachable in exactly the place
+// it is needed. aria-disabled says the same thing to assistive tech while
+// leaving hover and tap working.
+function LockedBtn({label,why,className='btn-s',style}){
+  const [pin,setPin]=useState(false);
+  const [hov,setHov]=useState(false);
+  const wrap=useRef(null);
+  const open=pin||hov;
+  useEffect(()=>{
+    if(!pin)return;
+    const away=e=>{if(wrap.current&&!wrap.current.contains(e.target))setPin(false)};
+    const esc=e=>{if(e.key==='Escape')setPin(false)};
+    document.addEventListener('mousedown',away);
+    document.addEventListener('keydown',esc);
+    return()=>{document.removeEventListener('mousedown',away);document.removeEventListener('keydown',esc)};
+  },[pin]);
+  return(
+    <span className="info-w" ref={wrap} style={{marginLeft:0}}>
+      <button type="button" className={className} aria-disabled="true"
+        onClick={()=>setPin(p=>!p)}
+        onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+        style={{...style,opacity:.42,cursor:'not-allowed'}}>
+        {label} <span aria-hidden="true" style={{fontSize:'.85em'}}>&#128274;</span>
+      </button>
+      {open&&<span className="info-p" role="tooltip" style={{textAlign:'center',maxWidth:260}}>{why}</span>}
+    </span>
+  );
+}
+
 // Section card — replaces the single giant white slab the wizard used to be.
 function Card({title,sub,right,info,children,pad=true,style}){
   return(
@@ -163,4 +198,4 @@ function Chip({tone='neutral',children}){
   return<span style={{fontSize:'var(--fs-2)',padding:'4px 10px',borderRadius:20,background:bg,color:fg,fontWeight:700,letterSpacing:.2,whiteSpace:'nowrap'}}>{children}</span>;
 }
 
-export{Fld,NumIn,Slider,Card,Metric,InfoDot,fillCells,SecHdr,Chip};
+export{Fld,NumIn,Slider,Card,Metric,InfoDot,LockedBtn,fillCells,SecHdr,Chip};

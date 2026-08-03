@@ -437,7 +437,7 @@ function App(){
                     analyses are readable by anyone, but the workbook leaves
                     with you, so downloading it is where the account is asked
                     for. */}
-                <Dashboard res={res} inp={inp}
+                <Dashboard res={res} inp={inp} user={user}
                   viewOnly={isShared||isDemo}
                   viewOnlyLabel={isDemo?'Sample · view only':undefined}
                   canDownload={!!user}

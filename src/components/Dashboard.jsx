@@ -11,7 +11,8 @@ import{calcScenarios}from'../engine/scenarios.js';
 import{calcDevCredits}from'../engine/devCredits.js';
 import{openMemo}from'../engine/memo.js';
 import{dealHealth,isResidential1to4,HEALTH_THRESHOLDS as HT}from'../engine/health.js';
-import{Chip,fillCells,Card}from'./ui.jsx';
+import{canExport,canSeeAnalysis}from'../lib/plan.js';
+import{Chip,fillCells,Card,LockedBtn}from'./ui.jsx';
 import{dealTypeLabel}from'./Step1.jsx';
 // ─── RESULTS CHARTS ────────────────────────────────────────────────────────
 function ChartTip({active,payload,label}){
@@ -186,8 +187,9 @@ function analystNotes(res,inp){
 // wall of green that buries the two lines that matter.
 const HEALTH_TONE={fail:'neg',warn:'warn',pass:'pos',na:'muted2'};
 const HEALTH_MARK={fail:'\u2715',warn:'\u0021',pass:'\u2713',na:'\u2013'};
-function HealthPanel({res,inp}){
+function HealthPanel({res,inp,user}){
   const H=dealHealth(res,inp);
+  const seeDetail=canSeeAnalysis(user);
   const [openPass,setOpenPass]=useState(false);
   if(!H.ready)return null;
   const issues=H.checks.filter(c=>c.status==='fail'||c.status==='warn');
@@ -213,8 +215,22 @@ function HealthPanel({res,inp}){
         <div style={{fontSize:'var(--fs-6)',fontWeight:600,color:'var(--text)',letterSpacing:'-.01em'}}>{head.t}</div>
         <div style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginTop:4,lineHeight:1.55}}>{head.s}</div>
       </div>
-      {issues.map(c=><Row key={c.id} c={c}/>)}
-      {rest.length>0&&(
+      {/* The verdict and the counts are shown to everyone: a free user should
+          know their own deal has two things wrong with it. What it costs to
+          learn is WHICH two — silence would teach nothing and create no want. */}
+      {!seeDetail&&issues.length>0&&(
+        <div style={{borderTop:'1px solid var(--border)',paddingTop:14,marginTop:4}}>
+          <div style={{fontSize:'var(--fs-4)',color:'var(--text)',lineHeight:1.55}}>
+            <b>{issues.length}</b> of {H.checks.length} checks {issues.length===1?'needs':'need'} attention
+            {H.counts.fail>0&&<> &mdash; <span style={{color:'var(--neg)',fontWeight:600}}>{H.counts.fail} would stop a lender</span></>}.
+          </div>
+          <div style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginTop:5,lineHeight:1.55}}>
+            Upgrade to see what a reviewer would press on, and what to do about it.
+          </div>
+        </div>
+      )}
+      {seeDetail&&issues.map(c=><Row key={c.id} c={c}/>)}
+      {seeDetail&&rest.length>0&&(
         <div style={{borderTop:'1px solid var(--border)',paddingTop:12,marginTop:issues.length?4:12}}>
           <button className="btn-s" onClick={()=>setOpenPass(v=>!v)} style={{fontSize:'var(--fs-3)'}}>
             {openPass?'Hide':'Show'} {rest.length} check{rest.length===1?'':'s'} that passed
@@ -579,7 +595,7 @@ function LihtcPanel({L,res}){
 // analysis is readable, but the tools are not. Reading someone's finished deal
 // has no substitute value for underwriting your own, so it stays open — what
 // is withheld is the working model, which is the product.
-function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabel,canDownload,onRunOwn}){
+function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabel,canDownload,onRunOwn,user}){
   const [tab,setTab]=useState('charts');
   const hp=inp.holdingPeriod||7;
   const {rows,ret,sum,exit,equity,totalCost,acqC,LF,rehab}=res;
@@ -592,6 +608,7 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
   const npvC=ret.npv>=0?null:'var(--neg)';
   const cocC=sum.coc<0?'var(--neg)':sum.coc<0.02?'var(--warn)':null;
   const beC=sum.beOcc>0.95?'var(--neg)':sum.beOcc>0.90?'var(--warn)':null;
+  const paid=canExport(user);
   const NOTES=analystNotes(res,inp);
   const chartData=rows.slice(0,hp).map(r=>({yr:`Yr ${r.yr}`,NOI:Math.round(r.noi),'Cash Flow':Math.round(r.cfbt)}));
   const ratesData=rows.slice(0,hp).map(r=>({yr:`Yr ${r.yr}`,'Cap Rate':+(r.capR*100).toFixed(2),'CoC Return':+(r.coc*100).toFixed(2)}));
@@ -649,21 +666,29 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
           ):(
             <>
               <button className="btn-s" onClick={onSave}>Save deal</button>
-              {onShare&&<button className="btn-s" onClick={onShare}>Share link</button>}
-              <button className="btn-s" onClick={()=>openMemo(res,inp)}>Memo / PDF</button>
+              {/* The three artifacts. Everything on this screen stays readable
+                  on any plan — what is sold is the thing you can take away. */}
+              {onShare&&(paid
+                ?<button className="btn-s" onClick={onShare}>Share link</button>
+                :<LockedBtn label="Share link" why="Upgrade to send a link to this analysis."/>)}
+              {paid
+                ?<button className="btn-s" onClick={()=>openMemo(res,inp)}>Memo / PDF</button>
+                :<LockedBtn label="Memo / PDF" why="Upgrade to produce a formatted investment memo."/>}
               {/* No Markdown button. It produced a .md file — a developer's
                   format, in a tool for people buying buildings — and it sat in
                   this bar competing for attention with the two outputs that
                   actually matter. downloadMemo() is still exported if it ever
                   earns its place back (pasting a memo into an LLM is the one
                   plausible case), but it is not worth a permanent button. */}
-              <button className="btn-p" onClick={onExport}>Export Excel</button>
+              {paid
+                ?<button className="btn-p" onClick={onExport}>Export Excel</button>
+                :<LockedBtn className="btn-p" label="Export Excel" why="Upgrade to export the live-formula workbook you can take to a lender."/>}
             </>
           )}
         </div>
       </div>
 
-      <HealthPanel res={res} inp={inp}/>
+      <HealthPanel res={res} inp={inp} user={user}/>
 
       {/* two headline returns get real prominence; the rest support them */}
       <div className="hair g2" style={{gridTemplateColumns:'1fr 1fr',marginBottom:14}}>
@@ -712,7 +737,13 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
 
       <div className="glass" style={{padding:'20px 24px',marginBottom:22}}>
         <div className="sect-lbl">Analyst Notes<span style={{fontWeight:400,letterSpacing:0,textTransform:'none',fontSize:'var(--fs-2)',color:'var(--muted)'}}>auto-generated from your inputs</span></div>
-        {NOTES.map((n,i)=>(
+        {!paid&&NOTES.length>0&&(
+          <p style={{fontSize:'var(--fs-4)',color:'var(--muted)',lineHeight:1.65,margin:0}}>
+            <b style={{color:'var(--text)'}}>{NOTES.length}</b> observation{NOTES.length===1?'':'s'} on this
+            underwriting. Upgrade to read them.
+          </p>
+        )}
+        {paid&&NOTES.map((n,i)=>(
           <p key={i} style={{fontSize:'var(--fs-4)',color:'var(--text)',lineHeight:1.65,marginBottom:i===NOTES.length-1?0:9}}>{n}</p>
         ))}
         {t==='development'&&<p style={{fontSize:'var(--fs-3)',color:'var(--warn)',marginTop:10,lineHeight:1.5}}>Note: the headline IRR is the stabilized-operations return. See the Construction &amp; Lease-Up panel for the project-level IRR that accounts for the build period, lease-up ramp, and capitalized interest.</p>}
