@@ -49,7 +49,7 @@ function Step3({inp,onChange}){
   const capexHint=capexBasis==='perUnit'
     ? (units>0?`${f.$((inp.capexAnnual||0)*units)} a year across ${units} units`:'enter units above to see the annual total')
     : capexBasis==='pctEGI'
-    ? 'rides income — no separate growth rate applied'
+    ? 'rides income — recalculated against each year, not grown'
     : capexBasis==='once'
     ? 'spent in Year 1 only — does not repeat or grow'
     : (units>0?`${f.$((inp.capexAnnual||0)/units)} per unit / yr`:'annual reserve for capital work');
@@ -106,9 +106,10 @@ function Step3({inp,onChange}){
         <OpExEditor rows={opexRows} onChange={setOpex} units={inp.numUnits||0}/>
         {mgmtLine?(
           <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',lineHeight:1.55,marginBottom:16}}>
-            Management is entered as a line above. Quoted as a % of EGI it is fixed off
-            Year 1 income and then grown with the other expenses; remove the line to go
-            back to the separate fee, which is recalculated against each year's income.
+            Management is entered as a line above. Quoted as a % of EGI it behaves
+            identically to this field — recalculated against each year's income — so it
+            is only the bookkeeping that differs. Remove the line to go back to the
+            separate field.
           </p>
         ):(
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'}} className="g2">

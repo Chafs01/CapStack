@@ -90,6 +90,38 @@ function resolveCapex(inp,egi,expenseFactor,yr){
 function opexItemsTotal(inp,egi){
   return listTotal(inp&&inp.opexItems,inp&&inp.numUnits,egi);
 }
+// Operating expenses split into the part that inflates and the part that rides
+// income, because those are two different things and growing them the same way
+// is wrong for one of them.
+//
+// A line quoted as a share of EGI means that share of the income the deal
+// actually produces, in every year — not a Year 1 dollar figure that then
+// inflates on its own. Management is the case that makes it obvious: it is
+// contractually a percentage of collections, so in a year when rents rise the
+// fee rises with them. Capex quoted the same way already worked this way, and
+// so did the dedicated management field; only the itemised expense list did
+// not, which meant the same fee computed differently depending on which box
+// you typed it in.
+//
+// Returns the fixed dollars (grown with the expense rate by the caller) and
+// the combined rate to apply to each year's EGI. Management's own percentage
+// is deliberately not included — buildPF adds that separately.
+function opexParts(inp){
+  const rows=inp&&inp.opexItems;
+  if(!Array.isArray(rows))return{
+    fixed:(inp&&inp.propertyTax||0)+(inp&&inp.insurance||0)+(inp&&inp.maintenance||0)
+      +(inp&&inp.utilities||0)+(inp&&inp.reserves||0)+(inp&&inp.administrative||0),
+    pctRate:0};
+  const gpi=getGPI(inp);
+  const egi=gpi*(1-lossRate(inp))+getOtherIncome(inp);
+  let fixed=0,pctRate=0;
+  for(const r of rows){
+    if(!r||typeof r!=='object')continue;
+    if(r.basis==='pctEGI'){const v=+r.amount;if(isFinite(v))pctRate+=v/100;}
+    else fixed+=resolveLine(r,inp&&inp.numUnits,egi);
+  }
+  return{fixed,pctRate};
+}
 // Physical vacancy and credit loss are different things and get argued over
 // separately, so they are entered separately. Both come off gross potential
 // income. A deal saved before the split carries only vacancyRate, and credit
@@ -191,4 +223,4 @@ function rehabSchedule(inp,cashTotal){
   return out;
 }
 
-export{umGPI,rtGPI,getGPI,getOpEx,getDevCost,getHardCost,getSoftCost,opexItemsTotal,getOtherIncome,listTotal,resolveLine,resolveCostLine,costListTotal,resolveCapex,lossRate,getRehab,rehabSchedule,REHAB_MAX_MONTHS};
+export{umGPI,rtGPI,getGPI,getOpEx,getDevCost,getHardCost,getSoftCost,opexItemsTotal,opexParts,getOtherIncome,listTotal,resolveLine,resolveCostLine,costListTotal,resolveCapex,lossRate,getRehab,rehabSchedule,REHAB_MAX_MONTHS};

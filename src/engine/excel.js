@@ -1,5 +1,5 @@
 import{f}from'./format.js';
-import{getDevCost}from'./income.js';
+import{getDevCost,opexParts}from'./income.js';
 import{buildPF}from'./buildPF.js';
 import{calcWaterfall}from'./waterfall.js';
 import{calcAfterTax}from'./afterTax.js';
@@ -88,7 +88,13 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
   // engine-derived values for caching
   const R0=res.rows[0];
   const gpi1=R0.gpi, oth1=R0.egi-(R0.gpi-R0.vacL-(R0.credL||0));
-  const baseExM=R0.opex-R0.mgmt;
+  // Expenses split the same way the engine splits them: fixed dollars that
+  // inflate, and a share of EGI that rides income. Without any percentage
+  // lines the fixed part is the whole Year 1 figure and the workbook is
+  // exactly the workbook it has always been.
+  const OPX=opexParts(inp);
+  const hasOpexPct=(OPX.pctRate||0)>0;
+  const baseExM=hasOpexPct?OPX.fixed:(R0.opex-R0.mgmt);
   const basisVal=isDev?getDevCost(inp):(inp.purchasePrice||0);
   // A financed renovation is part of the loan the model actually drew, so the
   // workbook has to state that loan rather than the one typed on Step 4 —
@@ -138,7 +144,7 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
     ['oth1','Other Income (Yr 1)',Math.round(oth1),F$,true],
     ['vac','Physical Vacancy',(inp.vacancyRate||0)/100,FP,true],
     ['cred','Credit Loss',(inp.creditLossRate||0)/100,FP,true],
-    ['exm','OpEx excl. Mgmt (Yr 1)',Math.round(baseExM),F$,true],
+    ['exm',hasOpexPct?'OpEx — fixed lines (Yr 1)':'OpEx excl. Mgmt (Yr 1)',Math.round(baseExM),F$,true],
     ['mgmt','Management Fee (% of EGI)',(inp.managementFeePct||0)/100,FP,true],
     ['rg','Revenue Growth (Annual)',(inp.revenueGrowth||0)/100,FP,true],
     ['eg','Expense Growth (Annual)',(inp.expenseGrowth||0)/100,FP,true],
@@ -146,7 +152,8 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
     ['feep','Loan Fees (% of Loan)',(inp.loanFeesPct||0)/100,FP,true],
     ['disc','Discount Rate (NPV)',(inp.discountRate||0)/100,FP,true],
     ['capex',CAPEX_LBL,cxBasis==='pctEGI'?(inp.capexAnnual||0)/100:(inp.capexAnnual||0),cxBasis==='pctEGI'?FP2:F$,true],
-  ].concat(hasRehab?[['rehab','Renovation Budget (one-time)',RH.total,F$,true]]:[]));
+  ].concat(hasOpexPct?[['expct','OpEx quoted as % of EGI',OPX.pctRate,FP2,true]]:[])
+   .concat(hasRehab?[['rehab','Renovation Budget (one-time)',RH.total,F$,true]]:[]));
   // wire left-side formulas now that refs exist
   const setRef=(key,f,r,fmt)=>{const a=refs[key].replace('Summary!','').replace(/\$/g,'');const c=ws.getCell(a);c.value=fml(f,r);if(fmt)c.numFmt=fmt;};
   setRef('acq',`${refs.price}*${refs.acqp}`,res.acqC);
@@ -218,9 +225,13 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
   opsRow('oth','Plus: Other Income',`${refs.oth1}`,oth1,(yr,p)=>`${p}*(1+${refs.rg})`,yr=>oth1*Math.pow(1+(inp.revenueGrowth||0)/100,yr-1),F$);
   line('egi','Effective Gross Income',[null].concat(yrs.map(yr=>({f:`${colOf(yr)}${rowIdx.gpi}+${colOf(yr)}${rowIdx.vac}+${colOf(yr)}${rowIdx.cred}+${colOf(yr)}${rowIdx.oth}`,r:ER[yr-1].egi}))),F$,{total:true});
   sect('OPERATING EXPENSES');
-  opsRow('exm','OpEx excl. Management',`-${refs.exm}`,-baseExM,(yr,p)=>`${p}*(1+${refs.eg})`,yr=>-(baseExM*Math.pow(1+(inp.expenseGrowth||0)/100,yr-1)),F$N);
+  opsRow('exm',hasOpexPct?'OpEx — fixed lines':'OpEx excl. Management',`-${refs.exm}`,-baseExM,(yr,p)=>`${p}*(1+${refs.eg})`,yr=>-(baseExM*Math.pow(1+(inp.expenseGrowth||0)/100,yr-1)),F$N);
+  // Percentage-of-EGI expenses get their own line, driven off EGI exactly like
+  // the management fee below, so the workbook grows them the way the app does.
+  if(hasOpexPct)line('expc','OpEx — % of EGI',[null].concat(yrs.map(yr=>({f:`-${colOf(yr)}${rowIdx.egi}*${refs.expct}`,r:-(ER[yr-1].egi*OPX.pctRate)}))),F$N);
   line('mgmt','Management Fee',[null].concat(yrs.map(yr=>({f:`-${colOf(yr)}${rowIdx.egi}*${refs.mgmt}`,r:-ER[yr-1].mgmt}))),F$N);
-  line('opx','Total Operating Expenses',[null].concat(yrs.map(yr=>({f:`${colOf(yr)}${rowIdx.exm}+${colOf(yr)}${rowIdx.mgmt}`,r:-ER[yr-1].opex}))),F$N,{total:true});
+  const opxF=yr=>`${colOf(yr)}${rowIdx.exm}`+(hasOpexPct?`+${colOf(yr)}${rowIdx.expc}`:'')+`+${colOf(yr)}${rowIdx.mgmt}`;
+  line('opx','Total Operating Expenses',[null].concat(yrs.map(yr=>({f:opxF(yr),r:-ER[yr-1].opex}))),F$N,{total:true});
   line('noi','Net Operating Income',[null].concat(yrs.map(yr=>({f:`${colOf(yr)}${rowIdx.egi}+${colOf(yr)}${rowIdx.opx}`,r:ER[yr-1].noi}))),F$,{total:true});
   sect('DEBT SERVICE');
   const dsF=yr=>`-IF(${refs.loan}=0,0,IF(${yr}<=${refs.io},${refs.loan}*${refs.rate},IF(${refs.rate}=0,${refs.loan}/${refs.amort},${refs.loan}*${refs.rate}/12/(1-(1+${refs.rate}/12)^(-${refs.amort}*12))*12)))`;
@@ -338,7 +349,10 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
   // per-scenario cash flow built from the editable axis cells + Summary inputs.
   const lr=6+growths.length+1;
   const CB=lr+4;                 // first row of the hidden calc block
-  const noiF=(G,k)=>`(((${refs.gpi1}*(1-${refs.vac})+${refs.oth1})*(1+${G})^${k-1})*(1-${refs.mgmt})-${refs.exm}*(1+${refs.eg})^${k-1})`;
+  // EGI-linked expenses come off the same bracket the management fee does, so
+  // the sensitivity grid grows them the way the pro forma sheet does.
+  const egiPctRef=hasOpexPct?`(${refs.mgmt}+${refs.expct})`:`${refs.mgmt}`;
+  const noiF=(G,k)=>`(((${refs.gpi1}*(1-${refs.vac})+${refs.oth1})*(1+${G})^${k-1})*(1-${egiPctRef})-${refs.exm}*(1+${refs.eg})^${k-1})`;
   const dsRef=k=>`'Annual Pro Forma'!${CL(3+k)}${rowIdx.ds}`;
   const balRef=`'Annual Pro Forma'!${CL(3+hp)}${rowIdx.bal}`;
 

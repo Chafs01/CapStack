@@ -1,9 +1,10 @@
 import{monthlyPmt,loanBal,calcIRR,calcNPV}from'./finance.js';
-import{getGPI,getOpEx,getDevCost,getOtherIncome,resolveCapex,lossRate,getRehab,rehabSchedule}from'./income.js';
+import{getGPI,getOpEx,getDevCost,getOtherIncome,resolveCapex,lossRate,getRehab,rehabSchedule,opexParts}from'./income.js';
 import{calcLIHTC}from'./lihtc.js';
 function buildPF(inp){
   const gpi0=getGPI(inp);
   const opex0=getOpEx(inp);
+  const OPX=opexParts(inp);
   const vacPct=+(inp.vacancyRate)||0, credPct=+(inp.creditLossRate)||0;
   const PP=inp.purchasePrice||0;
   const acqC=PP*(inp.acquisitionCostsPct||0)/100;
@@ -81,7 +82,10 @@ function buildPF(inp){
     const credL=gpi*credPct/100;
     const egi=gpi-vacL-credL+getOtherIncome(inp)*rm;
     const mgmt=egi*(inp.managementFeePct||0)/100;
-    const opex=(opex0-((getGPI(inp)*(1-lossRate(inp))+getOtherIncome(inp))*(inp.managementFeePct||0)/100))*em+mgmt;
+    // Fixed lines inflate; percentage-of-EGI lines ride that year's income,
+    // the same way management always has. With no percentage lines this is
+    // arithmetically identical to growing the whole Year 1 total.
+    const opex=OPX.fixed*em+egi*OPX.pctRate+mgmt;
     const noi=egi-opex;
     const isIO=yr<=IO;
     const monthsPaid=isIO?0:(yr-IO)*12;

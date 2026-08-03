@@ -7,7 +7,7 @@
 // lender sizes on, which is precisely the number people rely on.
 import { DEFS, buildPF, calcWaterfall, calcAfterTax } from '../src/engine/index.js';
 import { BLANKS } from '../src/engine/defaults.js';
-import { getOpEx, opexItemsTotal, getOtherIncome, resolveCapex, resolveLine, lossRate } from '../src/engine/income.js';
+import { getOpEx, opexItemsTotal, opexParts, getOtherIncome, resolveCapex, resolveLine, lossRate } from '../src/engine/income.js';
 import { buildWorkbook } from '../src/engine/excel.js';
 import { openMemo, generateMemo } from '../src/engine/memo.js';
 import { dealHealth } from '../src/engine/health.js';
@@ -367,6 +367,67 @@ console.log('\nclearing every line means zero, not a reset to the defaults:');
   try { res = buildPF({ ...cleared, otherIncomeItems: [] }); } catch (e) { threw = e.message; }
   check('a deal with both lists emptied still builds', threw === null && !!res, threw);
   check('...with finite figures', !!res && Number.isFinite(res.rows[0].noi));
+}
+
+console.log('\na percent-of-EGI expense rides income, it does not inflate on its own:');
+{
+  const base = DEFS.multifamily;
+  const eg = base.expenseGrowth || 2.5;
+  const pct = { ...base, opexItems: [{ cat: 'Repairs & Maintenance', basis: 'pctEGI', amount: 5 }],
+    propertyTax: 0, insurance: 0, maintenance: 0, utilities: 0, reserves: 0, administrative: 0 };
+  const r = buildPF(pct);
+  const y1 = r.rows[0], y5 = r.rows[4];
+  check('Year 1 is 5% of Year 1 EGI', near(y1.opex - y1.mgmt, y1.egi * 0.05, 1));
+  check('Year 5 is 5% of Year 5 EGI', near(y5.opex - y5.mgmt, y5.egi * 0.05, 1));
+  // the bug this pins: it must NOT be Year 1 dollars grown at the expense rate
+  const inflated = y1.egi * 0.05 * Math.pow(1 + eg / 100, 4);
+  check('...and not the Year 1 figure inflated', Math.abs((y5.opex - y5.mgmt) - inflated) > 1,
+    `${y5.opex - y5.mgmt} vs inflated ${inflated}`);
+  check('it therefore tracks EGI growth, not expense growth',
+    near((y5.opex - y5.mgmt) / (y1.opex - y1.mgmt), y5.egi / y1.egi, 1e-9));
+
+  const asField = { ...base, opexItems: [], propertyTax: 0, insurance: 0, maintenance: 0,
+    utilities: 0, reserves: 0, administrative: 0, managementFeePct: 8 };
+  const asLine = { ...asField, managementFeePct: 0,
+    opexItems: [{ cat: 'Property Management', basis: 'pctEGI', amount: 8 }] };
+  // Same money, reported differently on purpose: entered as a line it lives
+  // inside opex, so the broken-out mgmt column is zero. Everything that is
+  // actually a result has to agree.
+  {
+    const a = buildPF(asField), b = buildPF(asLine);
+    const same = a.rows.every((x, i) => near(x.opex, b.rows[i].opex, 1e-6)
+      && near(x.noi, b.rows[i].noi, 1e-6) && near(x.cfbt, b.rows[i].cfbt, 1e-6));
+    check('management as a line matches management as the dedicated field', same);
+    check('...and produces the same IRR', near(a.ret.irr, b.ret.irr, 1e-12));
+    check('...though only the field reports a separate mgmt figure',
+      a.rows[0].mgmt > 0 && b.rows[0].mgmt === 0);
+  }
+
+  const fixed = { ...base, opexItems: [{ cat: 'Insurance', amount: 28000 }],
+    propertyTax: 0, insurance: 0, maintenance: 0, utilities: 0, reserves: 0, administrative: 0 };
+  const fr = buildPF(fixed);
+  check('a fixed line still inflates at the expense rate',
+    near(fr.rows[4].opex - fr.rows[4].mgmt, 28000 * Math.pow(1 + eg / 100, 4), 1));
+  const p2 = opexParts({ ...base, opexItems: [
+    { cat: 'Insurance', amount: 28000 }, { cat: 'Repairs & Maintenance', basis: 'pctEGI', amount: 5 }] });
+  check('opexParts splits the two apart', near(p2.fixed, 28000, 1e-9) && near(p2.pctRate, 0.05, 1e-9));
+  check('a deal with no list reads the legacy fields as fixed',
+    near(opexParts(DEFS.multifamily).fixed, 95000 + 28000 + 60000 + 25000 + 20000 + 10000, 1e-9)
+    && opexParts(DEFS.multifamily).pctRate === 0);
+
+  // the workbook has to agree, or the export contradicts the screen
+  await buildWorkbook(r, pct).then((wb) => {
+    const sh = wb.getWorksheet('Annual Pro Forma');
+    let opxRow = null;
+    sh.eachRow((row) => { if (String(row.getCell(2).value) === 'Total Operating Expenses') opxRow = row; });
+    check('workbook has a total opex row', !!opxRow);
+    if (opxRow) {
+      const c = opxRow.getCell(3 + 5).value;
+      const cached = c && c.result !== undefined ? c.result : c;
+      check('workbook Year 5 opex matches the engine', near(Math.abs(cached), y5.opex, 1),
+        `${cached} vs ${y5.opex}`);
+    }
+  });
 }
 
 if (failures) { console.log(`\n${failures} FAILURE(S) — itemised expenses or capex regressed.`); process.exit(1); }
