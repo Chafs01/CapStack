@@ -4,6 +4,8 @@ import{calcIRR,holdPeriod}from'../engine/finance.js';
 import{buildPF}from'../engine/buildPF.js';
 import{ASSETS,dealTypeLabel}from'./Step1.jsx';
 import{loadDeals,loadDealsLocal,renameDeal,deleteDeal,restoreDeal,migrateLocalDeals,updateDealNotes}from'../lib/deals.js';
+import{accessibleIds,canRollUp,isPaid,FREE_DEAL_LIMIT}from'../lib/plan.js';
+import{LockedBtn}from'./ui.jsx';
 // Notes had no way out. Once open, the only × on the row was the one that
 // deletes the deal — so the control that looked like "close this" destroyed
 // the thing it was attached to. It closes itself now, and the × that deletes
@@ -176,6 +178,9 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify,embedded}){
       notify&&notify('Deal renamed');
     }catch(e){alert('Rename failed: '+e.message);}
   };
+  // Over the cap the extra deals are kept and listed — locked, never deleted.
+  const openIds=accessibleIds(deals,user);
+  const lockedCount=deals.length-openIds.size;
   const toggle=id=>setSel(sel.includes(id)?sel.filter(s=>s!==id):(sel.length<2?[...sel,id]:[sel[1],id]));
   const fmtDate=iso=>{try{return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch(e){return '';}};
 
@@ -198,7 +203,9 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify,embedded}){
         {!embedded&&<h2 style={{fontSize:'var(--fs-9)',fontWeight:800}}>Saved Deals</h2>}
         <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
           {sel.length===2&&<button className="btn-p" onClick={()=>setCompare(true)}>Compare selected</button>}
-          {deals.length>0&&<button className="btn-s" onClick={()=>setPortfolio(true)}>Portfolio roll-up</button>}
+          {deals.length>0&&(canRollUp(user)
+            ?<button className="btn-s" onClick={()=>setPortfolio(true)}>Portfolio roll-up</button>
+            :<LockedBtn label="Portfolio roll-up" why="Upgrade to pool every saved deal into one set of returns."/>)}
           <button className="btn-s" onClick={onClose}>+ New analysis</button>
         </div>
       </div>
@@ -215,10 +222,11 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify,embedded}){
           <div style={{display:'grid',gap:10}}>
             {deals.map(d=>{
               const s=d.summary||{}; const picked=sel.includes(d.id);
+              const locked=!openIds.has(d.id);
               return(
-                <div key={d.id} className="glass" style={{padding:'16px 18px',borderColor:picked?'var(--accent)':'var(--border)',borderWidth:picked?2:1}}>
+                <div key={d.id} className="glass" style={{padding:'16px 18px',borderColor:picked?'var(--accent)':'var(--border)',borderWidth:picked?2:1,opacity:locked?.55:1}}>
                   <div style={{display:'flex',alignItems:'center',gap:16,flexWrap:'wrap'}}>
-                    <input type="checkbox" checked={picked} onChange={()=>toggle(d.id)} style={{width:17,height:17,accentColor:'var(--accent)',flexShrink:0}}/>
+                    <input type="checkbox" checked={picked} onChange={()=>toggle(d.id)} disabled={locked} style={{width:17,height:17,accentColor:'var(--accent)',flexShrink:0}}/>
                     <div style={{flex:1,minWidth:0}}>
                       {editingId===d.id?(
                         <input className="input-f" autoFocus value={editName}
@@ -243,7 +251,10 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify,embedded}){
                       )}
                     </div>
                     <div style={{display:'flex',gap:8,flexShrink:0}}>
-                      <button className="btn-s" style={{padding:'6px 14px',fontSize:'var(--fs-4)'}} onClick={()=>onLoad(d)}>Open</button>
+                      {locked
+                        ?<LockedBtn label="Open" why="Upgrade to reopen this deal. It is still here — nothing has been deleted."
+                           style={{padding:'6px 14px',fontSize:'var(--fs-4)'}}/>
+                        :<button className="btn-s" style={{padding:'6px 14px',fontSize:'var(--fs-4)'}} onClick={()=>onLoad(d)}>Open</button>}
                       {confirmId===d.id?(
                         <span style={{display:'inline-flex',alignItems:'center',gap:6,whiteSpace:'nowrap'}}>
                           <span style={{fontSize:'var(--fs-3)',color:'var(--neg)',fontWeight:600}}>Delete?</span>

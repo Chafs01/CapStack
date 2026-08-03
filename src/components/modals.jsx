@@ -1,6 +1,8 @@
-import{useState}from'react';
+import{useState,useEffect}from'react';
 import{sb}from'../lib/supabase.js';
 import{persistDeal}from'../lib/deals.js';
+import{canSaveDeal,dealLimit,FREE_DEAL_LIMIT}from'../lib/plan.js';
+import{loadDeals}from'../lib/deals.js';
 import{track}from'../lib/telemetry.js';
 import{Fld}from'./ui.jsx';
 
@@ -286,7 +288,20 @@ function SaveModal({inp,res,user,existingId,onClose,onSaved,onSignIn}){
   const [name,setName]=useState(inp.propertyName||'');
   const [busy,setBusy]=useState(false);
   const [err,setErr]=useState('');
+  // The cap is on how many deals are kept, so it is checked against what is
+  // already stored rather than trusted from a prop. Read once when the modal
+  // opens; null means "not counted yet", which never blocks a save.
+  const [count,setCount]=useState(null);
+  useEffect(()=>{let live=true;
+    loadDeals(user).then(d=>{if(live)setCount(Array.isArray(d)?d.length:0)}).catch(()=>{});
+    return()=>{live=false};
+  },[user]);
+  const known=count==null?[]:new Array(count);
+  const atCap=count!=null&&!canSaveDeal(known,user,existingId);
+  // "Save as new copy" needs a free slot even when the deal it copies has one
+  const copyAtCap=count!=null&&!canSaveDeal(known,user,null);
   const doSave=async asNew=>{
+    if(asNew?copyAtCap:atCap)return;
     setBusy(true);setErr('');
     try{
       const useId=asNew?null:existingId;
@@ -307,10 +322,16 @@ function SaveModal({inp,res,user,existingId,onClose,onSaved,onSignIn}){
         </p>
         <Fld label="Deal name" value={name} onChange={v=>setName(v)}/>
         {err&&<div style={{color:'var(--neg)',fontSize:'var(--fs-4)',marginBottom:10,marginTop:-4}}>{err}</div>}
-        <button className="btn-p" onClick={()=>doSave(false)} disabled={busy} style={{width:'100%',marginTop:4}}>
-          {busy?'Saving…':(existingId?'Update deal':'Save deal')}
+        {atCap&&(
+          <div style={{background:'var(--warn-tint)',border:'1px solid var(--warn-brd)',padding:'11px 14px',marginBottom:12,fontSize:'var(--fs-4)',color:'var(--text)',lineHeight:1.5}}>
+            You have {count} saved deals, the limit on the free plan. Upgrade to save more &mdash;
+            or delete one you no longer need. Nothing you have saved is at risk.
+          </div>
+        )}
+        <button className="btn-p" onClick={()=>doSave(false)} disabled={busy||atCap} style={{width:'100%',marginTop:4,opacity:atCap?.5:1,cursor:atCap?'not-allowed':undefined}}>
+          {busy?'Saving…':atCap?`Free plan keeps ${FREE_DEAL_LIMIT} deals`:(existingId?'Update deal':'Save deal')}
         </button>
-        {existingId&&<button className="btn-s" onClick={()=>doSave(true)} disabled={busy} style={{width:'100%',marginTop:8}}>Save as new copy</button>}
+        {existingId&&<button className="btn-s" onClick={()=>doSave(true)} disabled={busy||copyAtCap} style={{width:'100%',marginTop:8,opacity:copyAtCap?.5:1,cursor:copyAtCap?'not-allowed':undefined}}>Save as new copy</button>}
         {!user&&<button onClick={onSignIn} style={{display:'block',margin:'14px auto 0',background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontWeight:600,fontSize:'var(--fs-4)',fontFamily:"'Inter',sans-serif"}}>Sign in to save to the cloud</button>}
       </div>
     </div>
