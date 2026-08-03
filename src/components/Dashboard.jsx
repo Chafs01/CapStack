@@ -9,7 +9,7 @@ import{calcProjectTimeline}from'../engine/timeline.js';
 import{calcRefinance}from'../engine/refinance.js';
 import{calcScenarios}from'../engine/scenarios.js';
 import{calcDevCredits}from'../engine/devCredits.js';
-import{openMemo,downloadMemo}from'../engine/memo.js';
+import{openMemo}from'../engine/memo.js';
 import{dealHealth,isResidential1to4,HEALTH_THRESHOLDS as HT}from'../engine/health.js';
 import{Chip,fillCells,Card}from'./ui.jsx';
 import{dealTypeLabel}from'./Step1.jsx';
@@ -651,7 +651,12 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
               <button className="btn-s" onClick={onSave}>Save deal</button>
               {onShare&&<button className="btn-s" onClick={onShare}>Share link</button>}
               <button className="btn-s" onClick={()=>openMemo(res,inp)}>Memo / PDF</button>
-              <button className="btn-s" onClick={()=>downloadMemo(res,inp)}>Markdown</button>
+              {/* No Markdown button. It produced a .md file — a developer's
+                  format, in a tool for people buying buildings — and it sat in
+                  this bar competing for attention with the two outputs that
+                  actually matter. downloadMemo() is still exported if it ever
+                  earns its place back (pasting a memo into an LLM is the one
+                  plausible case), but it is not worth a permanent button. */}
               <button className="btn-p" onClick={onExport}>Export Excel</button>
             </>
           )}
