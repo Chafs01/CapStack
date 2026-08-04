@@ -94,7 +94,12 @@ Deno.serve(async (req) => {
 
     return json({ url: session.url });
   } catch (e) {
-    console.error('checkout error', e);
-    return json({ error: 'Could not start checkout.' }, 500);
+    // Stripe's own message is far more useful than a generic failure — "No such
+    // price" and "Invalid API Key" are one-line diagnoses, and hiding them
+    // turns a two-minute fix into a hunt through dashboards. Nothing here is
+    // sensitive: the caller is authenticated, and Stripe never echoes the key.
+    const msg = (e && (e as { message?: string }).message) || String(e);
+    console.error('checkout error', msg);
+    return json({ error: `Checkout failed: ${msg}` }, 500);
   }
 });
