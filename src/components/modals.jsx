@@ -1,7 +1,7 @@
 import{useState,useEffect}from'react';
 import{sb}from'../lib/supabase.js';
 import{persistDeal}from'../lib/deals.js';
-import{canSaveDeal,dealLimit,FREE_DEAL_LIMIT}from'../lib/plan.js';
+import{canSaveDeal,dealLimit,plan}from'../lib/plan.js';
 import{loadDeals}from'../lib/deals.js';
 import{track}from'../lib/telemetry.js';
 import{Fld}from'./ui.jsx';
@@ -324,13 +324,16 @@ function SaveModal({inp,res,user,existingId,onClose,onSaved,onSignIn,onUpgrade})
         {err&&<div style={{color:'var(--neg)',fontSize:'var(--fs-4)',marginBottom:10,marginTop:-4}}>{err}</div>}
         {atCap&&(
           <div style={{background:'var(--warn-tint)',border:'1px solid var(--warn-brd)',padding:'11px 14px',marginBottom:12,fontSize:'var(--fs-4)',color:'var(--text)',lineHeight:1.5}}>
-            You have {count} saved deals, the limit on the free plan. Upgrade to save more &mdash;
-            or delete one you no longer need. Nothing you have saved is at risk.
+            You have {count} saved {count===1?'deal':'deals'}, the limit on the{' '}
+            {plan(user)==='pro'?'Pro':'free'} plan. {plan(user)==='pro'
+              ?'Broker saves without limit.'
+              :'Upgrade to save more.'} You can also delete one you no longer need &mdash;
+            nothing you have saved is at risk.
             {onUpgrade&&<button className="btn-s" onClick={onUpgrade} style={{display:'block',marginTop:9,fontSize:'var(--fs-3)'}}>See plans</button>}
           </div>
         )}
         <button className="btn-p" onClick={()=>doSave(false)} disabled={busy||atCap} style={{width:'100%',marginTop:4,opacity:atCap?.5:1,cursor:atCap?'not-allowed':undefined}}>
-          {busy?'Saving…':atCap?`Free plan keeps ${FREE_DEAL_LIMIT} deals`:(existingId?'Update deal':'Save deal')}
+          {busy?'Saving…':atCap?`Plan limit: ${dealLimit(user)} saved`:(existingId?'Update deal':'Save deal')}
         </button>
         {existingId&&<button className="btn-s" onClick={()=>doSave(true)} disabled={busy||copyAtCap} style={{width:'100%',marginTop:8,opacity:copyAtCap?.5:1,cursor:copyAtCap?'not-allowed':undefined}}>Save as new copy</button>}
         {!user&&<button onClick={onSignIn} style={{display:'block',margin:'14px auto 0',background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontWeight:600,fontSize:'var(--fs-4)',fontFamily:"'Inter',sans-serif"}}>Sign in to save to the cloud</button>}

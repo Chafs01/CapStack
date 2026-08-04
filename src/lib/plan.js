@@ -20,7 +20,12 @@
 // Function generating the workbook), which is a much larger change and is not
 // worth making until someone actually abuses this.
 
-const FREE_DEAL_LIMIT=3;
+// Saved-deal caps per tier. Free keeps one so the feature is real but not a
+// substitute for paying; Pro covers an ordinary search; only the top tier is
+// uncapped. Storage is not the cost — a saved deal is about 1.2 KB — so these
+// are a tiering choice, not an infrastructure one.
+const FREE_DEAL_LIMIT=1;
+const PRO_DEAL_LIMIT=10;
 
 // Accounts that always hold the top tier, whatever their billing says — the
 // owner's own, so running the product never means paying yourself.
@@ -71,7 +76,12 @@ function branding(user){
   return{name,line};
 }
 
-const dealLimit=user=>isPaid(user)?Infinity:FREE_DEAL_LIMIT;
+function dealLimit(user){
+  const p=plan(user);
+  if(p==='plus')return Infinity;
+  if(p==='pro')return PRO_DEAL_LIMIT;
+  return FREE_DEAL_LIMIT;
+}
 
 // Which saved deals a user can still open. Over the limit the rest are kept
 // and listed by name — never deleted, because destroying someone's
@@ -102,4 +112,4 @@ function canSaveDeal(deals,user,existingId){
 }
 
 export{plan,isPaid,canExport,canSeeAnalysis,canRollUp,canBrand,branding,dealLimit,
-  accessibleIds,canSaveDeal,FREE_DEAL_LIMIT,OWNER_IDS};
+  accessibleIds,canSaveDeal,FREE_DEAL_LIMIT,PRO_DEAL_LIMIT,OWNER_IDS};

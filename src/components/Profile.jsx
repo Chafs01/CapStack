@@ -129,9 +129,9 @@ function BrandRows({user,notify}){
 
 const PLAN_LABEL={free:'Free',pro:'Pro — $10 / month',plus:'Broker — $50 / month'};
 const PLAN_SUB={
-  free:'Every number the model produces, on screen. Exports, the analysis layer, and more than three saved deals need a paid plan.',
-  pro:'Unlimited saved deals, the full analysis, Excel and memo exports, share links, and portfolio roll-up.',
-  plus:'Everything in Pro, and your own name on every export instead of ours.',
+  free:'Every number the model produces, on screen. Exports, the analysis layer, and more than one saved deal need a paid plan.',
+  pro:'Ten saved deals, the full analysis, Excel and memo exports, share links, and portfolio roll-up.',
+  plus:'Everything in Pro, unlimited saved deals, and your own name on every export instead of ours.',
 };
 function Profile({user,onSignIn,onSignOut,onLoadDeal,onStart,notify,onUpgrade,onManageBilling}){
   const [count,setCount]=useState(null);
