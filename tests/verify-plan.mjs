@@ -6,7 +6,7 @@
 // every unknown state resolves to "free" for features and to "keep the data"
 // for storage.
 import { plan, isPaid, canExport, canSeeAnalysis, canRollUp, dealLimit,
-  accessibleIds, canSaveDeal, canBrand, branding, FREE_DEAL_LIMIT, PRO_DEAL_LIMIT, OWNER_IDS } from '../src/lib/plan.js';
+  accessibleIds, canSaveDeal, canBrand, branding, FREE_DEAL_LIMIT, OWNER_IDS } from '../src/lib/plan.js';
 
 let failures = 0;
 const check = (label, ok, detail = '') => {
@@ -81,13 +81,13 @@ console.log('\nbranding is the top tier only, and never half-applied:');
   check('a signed-out visitor has no branding', branding(null) === null);
 }
 
-console.log('\neach tier has its own cap:');
+console.log('\nonly the free tier is capped:');
 {
   check('free keeps 1', dealLimit(null) === 1 && FREE_DEAL_LIMIT === 1);
-  check('pro keeps 10', dealLimit(asUser('pro')) === 10 && PRO_DEAL_LIMIT === 10);
+  // paying removes the limit outright — no second cap further up, so nobody
+  // who already pays is ever metered
+  check('pro is uncapped', dealLimit(asUser('pro')) === Infinity);
   check('broker is uncapped', dealLimit(asUser('plus')) === Infinity);
-  check('the caps ascend', FREE_DEAL_LIMIT < PRO_DEAL_LIMIT && PRO_DEAL_LIMIT < Infinity);
-  // an owner is top tier, so never capped
   check('an unknown plan gets the free cap', dealLimit(asUser('nonsense')) === FREE_DEAL_LIMIT);
 }
 
@@ -102,13 +102,12 @@ console.log('\nover the cap it is the MOST RECENT that stay open:');
   // saved yesterday and leave one from months ago
   check('it is not the earliest', !open.has('d5'));
 
-  // pro's cap only bites past ten
-  const many = Array.from({ length: 14 }, (_, i) => deal('p' + i, i));
-  const proOpen = accessibleIds(many, asUser('pro'));
-  check('pro opens ten of fourteen', proOpen.size === 10, String(proOpen.size));
-  check('pro keeps the ten newest', proOpen.has('p0') && proOpen.has('p9') && !proOpen.has('p10'));
-  check('pro under its cap has everything open', accessibleIds(deals, asUser('pro')).size === deals.length);
-  check('broker has every deal open', accessibleIds(many, asUser('plus')).size === many.length);
+  // a paying user is never locked out of anything, at any volume
+  const many = Array.from({ length: 40 }, (_, i) => deal('p' + i, i));
+  check('pro opens all forty', accessibleIds(many, asUser('pro')).size === 40);
+  check('broker opens all forty', accessibleIds(many, asUser('plus')).size === 40);
+  check('the owner opens all forty',
+    accessibleIds(many, { id: OWNER_IDS[0] }).size === 40);
 }
 
 console.log('\nnothing is lost or mis-locked in the awkward cases:');
@@ -116,7 +115,7 @@ console.log('\nnothing is lost or mis-locked in the awkward cases:');
   check('no deals at all', accessibleIds([], null).size === 0);
   check('a non-array does not throw', accessibleIds(null, null).size === 0);
   const three = [deal('a', 1), deal('b', 2), deal('c', 3)];
-  check('exactly at the cap, all stay open',
+  check('a paid user at any count has all open',
     accessibleIds(three, asUser('pro')).size === 3);
   check('under the cap, all stay open', accessibleIds([deal('a', 1)], null).size === 1);
   // a missing or unparseable date must not silently win the "most recent" race
@@ -140,10 +139,10 @@ console.log('\nsaving respects the cap without stranding anyone:');
     canSaveDeal(one, null, 'a') === true);
   check('free, over the cap after a downgrade: can still update',
     canSaveDeal(ten, null, 't3') === true);
-  check('pro under ten: can save', canSaveDeal(one, asUser('pro')) === true);
-  check('pro at ten: cannot save an eleventh', canSaveDeal(ten, asUser('pro')) === false);
-  check('pro at ten: can still update', canSaveDeal(ten, asUser('pro'), 't0') === true);
+  check('pro at ten: can save an eleventh', canSaveDeal(ten, asUser('pro')) === true);
   check('broker at ten: can save', canSaveDeal(ten, asUser('plus')) === true);
+  check('pro at forty: still can save',
+    canSaveDeal(Array.from({ length: 40 }, (_, i) => deal('x' + i, i)), asUser('pro')) === true);
   check('a non-array count does not block saving', canSaveDeal(null, null) === true);
 }
 
