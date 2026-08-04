@@ -26,6 +26,7 @@ const STATIC={
   '/deals':{view:'deals'},
   '/account':{view:'profile'},
   '/contact':{view:'contact'},
+  '/pricing':{view:'pricing'},
   '/privacy':{view:'legal',legalTab:'privacy'},
   '/terms':{view:'legal',legalTab:'terms'},
   '/analysis':{view:'app',step:RESULTS_STEP},
@@ -62,6 +63,7 @@ function pathFor(state){
   if(view==='deals')return'/deals';
   if(view==='profile')return'/account';
   if(view==='contact')return'/contact';
+  if(view==='pricing')return'/pricing';
   if(view==='legal')return (state.legalTab==='terms')?'/terms':'/privacy';
   if(view==='app'){
     const step=Math.max(0,Math.min(+state.step||0,RESULTS_STEP));

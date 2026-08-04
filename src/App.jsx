@@ -13,11 +13,13 @@ import{Step4}from'./components/Step4.jsx';
 import{AuthView,ResetPasswordModal,SaveModal,Toast}from'./components/modals.jsx';
 import{Legal,CONTACT}from'./components/Legal.jsx';
 import{Contact}from'./components/Contact.jsx';
+import{Pricing}from'./components/Pricing.jsx';
 import{ErrorBoundary}from'./components/ErrorBoundary.jsx';
 import{initTelemetry,track}from'./lib/telemetry.js';
 import{encodeDeal,decodeDeal,shareURL,readDealFromHash,clearHash}from'./lib/share.js';
 import{routeFor,pathFor}from'./lib/routes.js';
 import{branding}from'./lib/plan.js';
+import{openBillingPortal,checkoutOutcome,clearCheckoutParam}from'./lib/billing.js';
 import{saveDraft,loadDraft,clearDraft,hasContent}from'./lib/draft.js';
 // The dashboard carries the charting library and only renders after a pro
 // forma is generated, so it loads as its own chunk.
@@ -311,6 +313,40 @@ function App(){
     notify('Fields cleared',{label:'Undo',run:()=>{setInp(prev);notify('Restored');}});
   },[inp,assetType,notify]);
 
+  // Upgrade prompts all land in one place, so a plan change is one route.
+  const goPricing=useCallback(()=>{setView('pricing');window.scrollTo({top:0});},[]);
+  const manageBilling=useCallback(async()=>{
+    try{await openBillingPortal();}
+    catch(e){notify(e.message||'Could not open the billing portal.');}
+  },[notify]);
+
+  // Coming back from Stripe, the plan is granted by the webhook rather than by
+  // the redirect, and the two can land a moment apart. Refreshing the session
+  // pulls the new metadata; the query string is cleared either way so a reload
+  // does not re-announce a purchase that already happened.
+  useEffect(()=>{
+    const outcome=checkoutOutcome();
+    if(!outcome)return;
+    clearCheckoutParam();
+    if(outcome==='cancelled'){notify('Checkout cancelled — nothing was charged.');return;}
+    notify('Payment received — setting up your plan…');
+    let tries=0;
+    const poll=async()=>{
+      tries++;
+      try{
+        const{data}=await sb.auth.refreshSession();
+        const u=data&&data.user;
+        if(u){setUser(u);
+          const p=u.user_metadata&&u.user_metadata.plan;
+          if(p==='pro'||p==='plus'){notify('You are on '+(p==='plus'?'Broker':'Pro')+'. Thank you.');return;}
+        }
+      }catch(e){/* keep trying */}
+      if(tries<6)setTimeout(poll,1500);
+      else notify('Payment received. If your plan does not appear shortly, reload the page.');
+    };
+    if(sb)setTimeout(poll,1200);
+  },[notify]);
+
   const handleSave=()=>setShowSave(true);
   const handleLoadDeal=(d)=>{
     setAssetType(d.inp&&d.inp.propClass?d.inp.propClass:(d.assetType?d.assetType.toLowerCase():'multifamily'));
@@ -356,7 +392,7 @@ function App(){
         onSample={requireAuth(()=>{const sd={...DEFS.multifamily,propertyName:'Sample Deal'};exportXLSX(buildPF(sd),sd);})}/>}
       {view==='profile'&&(
         <ErrorBoundary resetKey={user?user.id:'anon'} onBack={()=>{setView('app');setStep(0);}}>
-          <Profile user={user} onSignIn={openAuth}
+          <Profile user={user} onSignIn={openAuth} onUpgrade={goPricing} onManageBilling={manageBilling}
             onSignOut={handleSignOut}
             onLoadDeal={handleLoadDeal} onStart={startFresh} notify={notify}/>
         </ErrorBoundary>
@@ -365,10 +401,12 @@ function App(){
         <ErrorBoundary resetKey={user?user.id:'anon'} onBack={()=>{setView('app');setStep(0);}}>
           <div className="fu" style={{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px'}}>
             <SavedDeals onLoad={handleLoadDeal} onClose={requireAuth(startFresh)}
-              user={user} onSignIn={openAuth} notify={notify}/>
+              user={user} onSignIn={openAuth} notify={notify} onUpgrade={goPricing}/>
           </div>
         </ErrorBoundary>
       )}
+      {view==='pricing'&&<Pricing user={user} onBack={()=>setView(user?'profile':'landing')}
+        onSignIn={openAuth} notify={notify}/>}
       {view==='contact'&&<Contact onBack={()=>setView('landing')}/>}
       {view==='legal'&&<Legal tab={legalTab} onTab={setLegalTab} onBack={()=>setView('landing')}/>}
       {view==='signin'&&(
@@ -438,7 +476,7 @@ function App(){
                     analyses are readable by anyone, but the workbook leaves
                     with you, so downloading it is where the account is asked
                     for. */}
-                <Dashboard res={res} inp={inp} user={user}
+                <Dashboard res={res} inp={inp} user={user} onUpgrade={goPricing}
                   viewOnly={isShared||isDemo}
                   viewOnlyLabel={isDemo?'Sample · view only':undefined}
                   canDownload={!!user}
@@ -453,7 +491,7 @@ function App(){
       </div>
 
       {showReset&&<ResetPasswordModal onDone={()=>{setShowReset(false);notify('Password updated');}}/>}
-      {showSave&&res&&<SaveModal inp={inp} res={res} user={user} existingId={currentDealId}
+      {showSave&&res&&<SaveModal inp={inp} res={res} user={user} existingId={currentDealId} onUpgrade={()=>{setShowSave(false);goPricing();}}
         onClose={()=>setShowSave(false)}
         onSaved={(id,mode,name)=>{
           setCurrentDealId(id);

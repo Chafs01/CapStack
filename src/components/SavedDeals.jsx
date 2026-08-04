@@ -123,7 +123,7 @@ function PortfolioView({onBack,user}){
 // `embedded` drops the page chrome — outer padding, the big heading, and the
 // sign-in banner — so the Profile page can host this list under its own header
 // without two competing titles stacked on top of each other.
-function SavedDeals({onLoad,onClose,user,onSignIn,notify,embedded}){
+function SavedDeals({onLoad,onClose,user,onSignIn,notify,embedded,onUpgrade}){
   const [portfolio,setPortfolio]=useState(false);
   const [deals,setDeals]=useState([]);
   const [loadingDeals,setLoadingDeals]=useState(true);
@@ -205,7 +205,7 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify,embedded}){
           {sel.length===2&&<button className="btn-p" onClick={()=>setCompare(true)}>Compare selected</button>}
           {deals.length>0&&(canRollUp(user)
             ?<button className="btn-s" onClick={()=>setPortfolio(true)}>Portfolio roll-up</button>
-            :<LockedBtn label="Portfolio roll-up" why="Upgrade to pool every saved deal into one set of returns."/>)}
+            :<LockedBtn label="Portfolio roll-up" why="Upgrade to pool every saved deal into one set of returns." onUpgrade={onUpgrade}/>)}
           <button className="btn-s" onClick={onClose}>+ New analysis</button>
         </div>
       </div>
@@ -258,7 +258,7 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify,embedded}){
                     </div>
                     <div style={{display:'flex',gap:8,flexShrink:0}}>
                       {locked
-                        ?<LockedBtn label="Open" why="Upgrade to reopen this deal. It is still here — nothing has been deleted."
+                        ?<LockedBtn label="Open" why="Upgrade to reopen this deal. It is still here — nothing has been deleted." onUpgrade={onUpgrade}
                            style={{padding:'6px 14px',fontSize:'var(--fs-4)'}}/>
                         :<button className="btn-s" style={{padding:'6px 14px',fontSize:'var(--fs-4)'}} onClick={()=>onLoad(d)}>Open</button>}
                       {confirmId===d.id?(

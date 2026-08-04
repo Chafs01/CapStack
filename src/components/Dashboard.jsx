@@ -187,7 +187,7 @@ function analystNotes(res,inp){
 // wall of green that buries the two lines that matter.
 const HEALTH_TONE={fail:'neg',warn:'warn',pass:'pos',na:'muted2'};
 const HEALTH_MARK={fail:'\u2715',warn:'\u0021',pass:'\u2713',na:'\u2013'};
-function HealthPanel({res,inp,user,showAll}){
+function HealthPanel({res,inp,user,showAll,onUpgrade}){
   const H=dealHealth(res,inp);
   const seeDetail=showAll||canSeeAnalysis(user);
   const [openPass,setOpenPass]=useState(false);
@@ -227,6 +227,7 @@ function HealthPanel({res,inp,user,showAll}){
           <div style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginTop:5,lineHeight:1.55}}>
             Upgrade to see what a reviewer would press on, and what to do about it.
           </div>
+          {onUpgrade&&<button className="btn-s" onClick={onUpgrade} style={{marginTop:10,fontSize:'var(--fs-3)'}}>See plans</button>}
         </div>
       )}
       {seeDetail&&issues.map(c=><Row key={c.id} c={c}/>)}
@@ -595,7 +596,7 @@ function LihtcPanel({L,res}){
 // analysis is readable, but the tools are not. Reading someone's finished deal
 // has no substitute value for underwriting your own, so it stays open — what
 // is withheld is the working model, which is the product.
-function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabel,canDownload,onRunOwn,user}){
+function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabel,canDownload,onRunOwn,user,onUpgrade}){
   const [tab,setTab]=useState('charts');
   const hp=inp.holdingPeriod||7;
   const {rows,ret,sum,exit,equity,totalCost,acqC,LF,rehab}=res;
@@ -676,10 +677,10 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
                   on any plan — what is sold is the thing you can take away. */}
               {onShare&&(paid
                 ?<button className="btn-s" onClick={onShare}>Share link</button>
-                :<LockedBtn label="Share link" why="Upgrade to send a link to this analysis."/>)}
+                :<LockedBtn label="Share link" why="Upgrade to send a link to this analysis." onUpgrade={onUpgrade}/>)}
               {paid
                 ?<button className="btn-s" onClick={()=>openMemo(res,inp,brand)}>Memo / PDF</button>
-                :<LockedBtn label="Memo / PDF" why="Upgrade to produce a formatted investment memo."/>}
+                :<LockedBtn label="Memo / PDF" why="Upgrade to produce a formatted investment memo." onUpgrade={onUpgrade}/>}
               {/* No Markdown button. It produced a .md file — a developer's
                   format, in a tool for people buying buildings — and it sat in
                   this bar competing for attention with the two outputs that
@@ -688,13 +689,13 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
                   plausible case), but it is not worth a permanent button. */}
               {paid
                 ?<button className="btn-p" onClick={onExport}>Export Excel</button>
-                :<LockedBtn className="btn-p" label="Export Excel" why="Upgrade to export the live-formula workbook you can take to a lender."/>}
+                :<LockedBtn className="btn-p" label="Export Excel" why="Upgrade to export the live-formula workbook you can take to a lender." onUpgrade={onUpgrade}/>}
             </>
           )}
         </div>
       </div>
 
-      <HealthPanel res={res} inp={inp} user={user} showAll={viewOnly}/>
+      <HealthPanel res={res} inp={inp} user={user} showAll={viewOnly} onUpgrade={onUpgrade}/>
 
       {/* two headline returns get real prominence; the rest support them */}
       <div className="hair g2" style={{gridTemplateColumns:'1fr 1fr',marginBottom:14}}>

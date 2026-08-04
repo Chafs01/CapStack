@@ -284,7 +284,7 @@ function Toast({msg,action}){
     </div>
   );
 }
-function SaveModal({inp,res,user,existingId,onClose,onSaved,onSignIn}){
+function SaveModal({inp,res,user,existingId,onClose,onSaved,onSignIn,onUpgrade}){
   const [name,setName]=useState(inp.propertyName||'');
   const [busy,setBusy]=useState(false);
   const [err,setErr]=useState('');
@@ -326,6 +326,7 @@ function SaveModal({inp,res,user,existingId,onClose,onSaved,onSignIn}){
           <div style={{background:'var(--warn-tint)',border:'1px solid var(--warn-brd)',padding:'11px 14px',marginBottom:12,fontSize:'var(--fs-4)',color:'var(--text)',lineHeight:1.5}}>
             You have {count} saved deals, the limit on the free plan. Upgrade to save more &mdash;
             or delete one you no longer need. Nothing you have saved is at risk.
+            {onUpgrade&&<button className="btn-s" onClick={onUpgrade} style={{display:'block',marginTop:9,fontSize:'var(--fs-3)'}}>See plans</button>}
           </div>
         )}
         <button className="btn-p" onClick={()=>doSave(false)} disabled={busy||atCap} style={{width:'100%',marginTop:4,opacity:atCap?.5:1,cursor:atCap?'not-allowed':undefined}}>

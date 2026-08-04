@@ -19,6 +19,7 @@ const STATES = [
   { view: 'deals' },
   { view: 'profile' },
   { view: 'contact' },
+  { view: 'pricing' },
   { view: 'legal', legalTab: 'privacy' },
   { view: 'legal', legalTab: 'terms' },
   { view: 'app', step: 0 },
@@ -54,6 +55,7 @@ console.log('\naddresses a person might actually type:');
   check('a trailing slash is the same page', routeFor('/account/').view === 'profile');
   check('/deals is the saved deals list', routeFor('/deals').view === 'deals');
   check('/contact is the contact page', routeFor('/contact').view === 'contact');
+  check('/pricing is the plans page', routeFor('/pricing').view === 'pricing');
   // the whole point of /deals is that it is not /account
   check('deals and account are different addresses',
     pathFor({ view: 'deals' }) !== pathFor({ view: 'profile' }));

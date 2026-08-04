@@ -115,7 +115,7 @@ function InfoDot({label,children}){
 // browsers, which would make the explanation unreachable in exactly the place
 // it is needed. aria-disabled says the same thing to assistive tech while
 // leaving hover and tap working.
-function LockedBtn({label,why,className='btn-s',style}){
+function LockedBtn({label,why,className='btn-s',style,onUpgrade}){
   const [pin,setPin]=useState(false);
   const [hov,setHov]=useState(false);
   const wrap=useRef(null);
@@ -136,7 +136,18 @@ function LockedBtn({label,why,className='btn-s',style}){
         style={{...style,opacity:.42,cursor:'not-allowed'}}>
         {label} <span aria-hidden="true" style={{fontSize:'.85em'}}>&#128274;</span>
       </button>
-      {open&&<span className="info-p" role="tooltip" style={{textAlign:'center',maxWidth:260}}>{why}</span>}
+      {open&&(
+        <span className="info-p" role="tooltip" style={{textAlign:'center',maxWidth:260}}>
+          {why}
+          {onUpgrade&&(
+            <button type="button" className="btn-p"
+              onClick={e=>{e.stopPropagation();onUpgrade();}}
+              style={{display:'block',width:'100%',marginTop:10,padding:'7px 12px',fontSize:'var(--fs-3)'}}>
+              See plans
+            </button>
+          )}
+        </span>
+      )}
     </span>
   );
 }
