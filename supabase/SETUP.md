@@ -57,8 +57,12 @@ Run this yourself — it carries your secret key, which should not be pasted
 into a chat, a file in this repo, or anything that gets committed:
 
 ```bash
-npx -y supabase@latest secrets set STRIPE_SECRET_KEY=sk_test_xxx STRIPE_PRICE_PRO=price_xxx STRIPE_PRICE_PLUS=price_yyy SITE_URL=https://smartcapstack.com
+npx -y supabase@latest secrets set STRIPE_SECRET_KEY=sk_REPLACE_ME STRIPE_PRICE_PRO=price_1U0pBWINa0PM9rLRuXNIznst STRIPE_PRICE_PLUS=price_1U0pF0INa0PM9rLRnGIl2Bl1 SITE_URL=https://smartcapstack.com
 ```
+
+Price IDs are not secrets — they name a price and cannot charge anyone without
+the account's key — so they are recorded here. The `sk_` key is the one that
+must not be committed anywhere.
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are provided
 to functions automatically — you do not set those.
