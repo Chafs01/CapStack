@@ -129,6 +129,17 @@ this scale — the audience is people buying buildings, not people de-minifying
 JavaScript. If it ever matters, the fix is generating the workbook in an Edge
 Function rather than in the page.
 
+**Free trials.** Deferred deliberately until one real charge has been through
+the whole flow — with a trial in place the first test never exercises the part
+that actually takes money, and a problem there would surface days later when
+someone's trial converts.
+
+The webhook already treats `trialing` as an active plan, so the only change
+needed is `trial_period_days` in `subscription_data` inside
+`create-checkout-session`. One line, one redeploy of that function, and nothing
+about the products or prices changes. Card up front — the no-card variant needs
+separate plumbing and converts far worse.
+
 **Annual billing.** Monthly only for now. Adding a yearly price later is a new
 Price in Stripe and one more entry in the `PRICES` map in
 `create-checkout-session`.
