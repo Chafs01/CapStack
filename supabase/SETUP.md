@@ -28,15 +28,22 @@ Developers → API keys → **Secret key**. Starts `sk_test_` in test mode.
 This key can charge cards and read your customers. It goes into Supabase in the
 next step and must never be pasted into the app, this repo, or a browser.
 
-## 3. Install the Supabase CLI and deploy the functions
+## 3. Deploy the functions
+
+Homebrew is not installed on this machine, so the CLI runs through `npx` —
+nothing to install, it fetches on demand. Run these from the project folder:
 
 ```bash
-brew install supabase/tap/supabase
-supabase login
-supabase link --project-ref kleclpgdnciskeigamrr
-supabase functions deploy create-checkout-session
-supabase functions deploy billing-portal
-supabase functions deploy stripe-webhook --no-verify-jwt
+npx -y supabase@latest login
+```
+
+That opens a browser to authorise. Then:
+
+```bash
+npx -y supabase@latest link --project-ref kleclpgdnciskeigamrr
+npx -y supabase@latest functions deploy create-checkout-session
+npx -y supabase@latest functions deploy billing-portal
+npx -y supabase@latest functions deploy stripe-webhook --no-verify-jwt
 ```
 
 The `--no-verify-jwt` on the webhook is deliberate and only for that one:
@@ -46,12 +53,11 @@ user and must keep the default.
 
 ## 4. Give Supabase the secrets
 
+Run this yourself — it carries your secret key, which should not be pasted
+into a chat, a file in this repo, or anything that gets committed:
+
 ```bash
-supabase secrets set \
-  STRIPE_SECRET_KEY=sk_test_xxx \
-  STRIPE_PRICE_PRO=price_xxx \
-  STRIPE_PRICE_PLUS=price_yyy \
-  SITE_URL=https://smartcapstack.com
+npx -y supabase@latest secrets set STRIPE_SECRET_KEY=sk_test_xxx STRIPE_PRICE_PRO=price_xxx STRIPE_PRICE_PLUS=price_yyy SITE_URL=https://smartcapstack.com
 ```
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are provided
@@ -71,7 +77,7 @@ Stripe → Developers → Webhooks → **Add endpoint**.
 Copy the **signing secret** (starts `whsec_`) and add it:
 
 ```bash
-supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_xxx
+npx -y supabase@latest secrets set STRIPE_WEBHOOK_SECRET=whsec_xxx
 ```
 
 ## 6. Make your own account permanent
@@ -101,8 +107,7 @@ With test keys still in place, on the live site or a local build:
 5. Account → **Manage billing** → cancel. The plan should return to Free.
 
 If the plan does not change, look at the webhook: Stripe → Webhooks → your
-endpoint → recent deliveries shows the response. `supabase functions logs
-stripe-webhook` shows the other side.
+endpoint → recent deliveries shows the response. `npx -y supabase@latest functions logs stripe-webhook` shows the other side.
 
 ## 8. Go live
 
