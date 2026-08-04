@@ -39,7 +39,7 @@ const PRO_DEAL_LIMIT=10;
 // normal user's plan — that lives in metadata — but this list survives any
 // change to billing, metadata, or the account's subscription state.
 const OWNER_IDS=[
-  // 'paste-your-supabase-user-uuid-here',
+  '961be5ac-1322-4d2c-8668-b34ff2d03af0',   // Jordan
 ];
 
 // The plan lives on the Supabase user's metadata. Anything unrecognised — and
