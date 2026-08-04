@@ -6,7 +6,7 @@
 // every unknown state resolves to "free" for features and to "keep the data"
 // for storage.
 import { plan, isPaid, canExport, canSeeAnalysis, canRollUp, dealLimit,
-  accessibleIds, canSaveDeal, FREE_DEAL_LIMIT, OWNER_IDS } from '../src/lib/plan.js';
+  accessibleIds, canSaveDeal, canBrand, branding, FREE_DEAL_LIMIT, OWNER_IDS } from '../src/lib/plan.js';
 
 let failures = 0;
 const check = (label, ok, detail = '') => {
@@ -58,6 +58,27 @@ console.log('\npaid features follow the plan:');
     check(`${label}: roll-up ${want}`, canRollUp(u) === want);
     check(`${label}: isPaid ${want}`, isPaid(u) === want);
   }
+}
+
+console.log('\nbranding is the top tier only, and never half-applied:');
+{
+  const withBrand = (p, extra = {}) => ({ user_metadata: { plan: p, ...extra } });
+  check('free cannot brand', canBrand(null) === false);
+  check('pro cannot brand', canBrand(withBrand('pro')) === false);
+  check('plus can', canBrand(withBrand('plus')) === true);
+  // the money question: a downgraded user must not keep putting their name on exports
+  check('a pro with a stored brand name still gets none',
+    branding(withBrand('pro', { brand_name: 'Redline Partners' })) === null);
+  check('a free user with a stored brand name still gets none',
+    branding(withBrand('free', { brand_name: 'Redline Partners' })) === null);
+  const b = branding(withBrand('plus', { brand_name: '  Redline Partners  ', brand_line: '  hi@redline.com  ' }));
+  check('plus with a name gets it, trimmed', b && b.name === 'Redline Partners' && b.line === 'hi@redline.com');
+  check('plus with no name falls back to ours', branding(withBrand('plus')) === null);
+  check('plus with a blank name falls back to ours',
+    branding(withBrand('plus', { brand_name: '   ' })) === null);
+  check('a name without a contact line is fine',
+    (branding(withBrand('plus', { brand_name: 'Solo' })) || {}).line === '');
+  check('a signed-out visitor has no branding', branding(null) === null);
 }
 
 console.log('\nthe free cap is three, and paid is uncapped:');

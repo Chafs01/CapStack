@@ -2,6 +2,7 @@ import{useState,useEffect}from'react';
 import{SavedDeals}from'./SavedDeals.jsx';
 import{loadDeals,loadDealsLocal}from'../lib/deals.js';
 import{CONTACT}from'./Legal.jsx';
+import{plan,canBrand,isPaid}from'../lib/plan.js';
 import{sb}from'../lib/supabase.js';
 // ─── PROFILE / ACCOUNT ────────────────────────────────────────────────────
 // One place that answers "what is mine here": who you are signed in as, what
@@ -77,7 +78,62 @@ function Sec({title,sub,right,children}){
 
 const fmtDate=iso=>{try{return new Date(iso).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});}catch(e){return '—';}};
 
-function Profile({user,onSignIn,onSignOut,onLoadDeal,onStart,notify}){
+
+// The top tier's feature, and the only one that changes what leaves the app
+// rather than whether it may. Stored on user_metadata like the display name —
+// no table, no policy, and updateUser fires an auth state change so the next
+// export picks it up without a reload.
+function BrandRows({user,notify}){
+  const m=(user&&user.user_metadata)||{};
+  const [name,setName]=useState(m.brand_name||'');
+  const [line,setLine]=useState(m.brand_line||'');
+  const [busy,setBusy]=useState(false);
+  useEffect(()=>{const mm=(user&&user.user_metadata)||{};setName(mm.brand_name||'');setLine(mm.brand_line||'');},[user]);
+  const dirty=name.trim()!==(m.brand_name||'')||line.trim()!==(m.brand_line||'');
+  const save=async()=>{
+    if(!dirty||busy)return;
+    if(!sb){notify&&notify('Cloud features are unavailable right now.');return;}
+    setBusy(true);
+    try{
+      const{error}=await sb.auth.updateUser({data:{brand_name:name.trim(),brand_line:line.trim()}});
+      if(error)throw error;
+      notify&&notify(name.trim()?'Branding updated':'Branding removed');
+    }catch(e){notify&&notify(e.message||'Could not save your branding.');}
+    setBusy(false);
+  };
+  return(
+    <>
+      <div style={{display:'grid',gridTemplateColumns:'190px 1fr',gap:20,padding:'13px 0',borderTop:'1px solid var(--border)'}} className="g2">
+        <div className="eyebrow" style={{paddingTop:10}}>Firm name</div>
+        <div style={{minWidth:0}}>
+          <input className="input-f" value={name} placeholder="e.g. Redline Realty Partners"
+            onChange={e=>setName(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')save();}}
+            style={{maxWidth:340}}/>
+          <div style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginTop:5,lineHeight:1.5}}>
+            Replaces SmartCapStack on the memo and the workbook. Leave it empty and exports carry ours.
+          </div>
+        </div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'190px 1fr',gap:20,padding:'13px 0',borderTop:'1px solid var(--border)'}} className="g2">
+        <div className="eyebrow" style={{paddingTop:10}}>Contact line</div>
+        <div style={{minWidth:0,display:'flex',gap:14,alignItems:'flex-start',flexWrap:'wrap'}}>
+          <input className="input-f" value={line} placeholder="jordan@firm.com · (555) 010-0100"
+            onChange={e=>setLine(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')save();}}
+            style={{flex:'1 1 260px',maxWidth:340}}/>
+          {dirty&&<button className="btn-p" onClick={save} disabled={busy}>{busy?'Saving…':'Save'}</button>}
+        </div>
+      </div>
+    </>
+  );
+}
+
+const PLAN_LABEL={free:'Free',pro:'Pro — $10 / month',plus:'Broker — $50 / month'};
+const PLAN_SUB={
+  free:'Every number the model produces, on screen. Exports, the analysis layer, and more than three saved deals need a paid plan.',
+  pro:'Unlimited saved deals, the full analysis, Excel and memo exports, share links, and portfolio roll-up.',
+  plus:'Everything in Pro, and your own name on every export instead of ours.',
+};
+function Profile({user,onSignIn,onSignOut,onLoadDeal,onStart,notify,onUpgrade,onManageBilling}){
   const [count,setCount]=useState(null);
   const [latest,setLatest]=useState(null);
 
@@ -123,11 +179,20 @@ function Profile({user,onSignIn,onSignOut,onLoadDeal,onStart,notify}){
 
       {/* ── plan ─────────────────────────────────────────────────────── */}
       <Sec title="Plan" sub="What you have access to right now.">
-        <Row label="Current plan" value="Free — early access"
-          sub="Every feature is unlocked: unlimited analyses, Excel export, the investment memo, saved deals, and share links."/>
-        <Row label="Cost" value="None"
-          sub="SmartCapStack is free while it finds its footing. If that changes, it will not change retroactively for work you have already done."/>
+        <Row label="Current plan" value={PLAN_LABEL[plan(user)]}
+          sub={PLAN_SUB[plan(user)]}/>
+        {isPaid(user)&&<Row label="Billing" value={<button className="btn-s" onClick={onManageBilling}>Manage billing</button>}
+          sub="Change your card, switch plan, or cancel. Opens Stripe's billing portal."/>}
+        {!isPaid(user)&&<Row label="Upgrade" value={<button className="btn-p" onClick={onUpgrade}>See plans</button>}
+          sub="Unlock the analysis layer, the exports, and unlimited saved deals."/>}
       </Sec>
+
+      {/* ── branding: the top tier's reason to exist ─────────────────── */}
+      {canBrand(user)&&(
+        <Sec title="Branding" sub="What your exports say instead of SmartCapStack.">
+          <BrandRows user={user} notify={notify}/>
+        </Sec>
+      )}
 
       {/* ── account ──────────────────────────────────────────────────── */}
       <Sec title="Account">

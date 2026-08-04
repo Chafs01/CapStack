@@ -10,7 +10,7 @@ import{calcAfterTax}from'./afterTax.js';
 // `openUrl` is the link back into the app for this exact deal. Passed in
 // rather than built here so the workbook stays free of the share encoding and
 // the node tests can build workbooks without a browser.
-async function buildWorkbook(res,inp,withResults=true,openUrl){
+async function buildWorkbook(res,inp,withResults=true,openUrl,brand){
   const mod=await import('exceljs');
   const E=mod.default||mod;
   const hp=holdPeriod(inp);
@@ -21,7 +21,7 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
   const exPPU=inp.exitPPU||0, exAppr=(inp.apprRate!=null?inp.apprRate:3)/100;
   const name=inp.propertyName||'Untitled Property';
   const wb=new E.Workbook();
-  wb.creator='SmartCapStack';wb.created=new Date();
+  wb.creator=(brand&&brand.name)||'SmartCapStack';wb.created=new Date();
 
   const NAVY='FF181716',NAVY2='FF3A3733',HDR='FFEAE6DD',BAND='FFF3EFE8',WHITE='FFFFFFFF',FWDBG='FFEFECE4';
   const GREENBG='FFE2EFDA',AMBERBG='FFFFF2CC',REDBG='FFFBE0DE';
@@ -48,7 +48,7 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
   // ============ SUMMARY ============
   const ws=wb.addWorksheet('Summary',{views:[{showGridLines:false}]});
   ws.columns=[{width:2},{width:28},{width:15},{width:2.5},{width:28},{width:15},{width:2}];
-  banner(ws,2,2,6,name.toUpperCase(),`${inp.assetType} Investment Analysis  |  ${hp}-Year Hold  |  Blue cells are inputs, black cells are live formulas  |  Prepared ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}`);
+  banner(ws,2,2,6,name.toUpperCase(),`${inp.assetType} Investment Analysis  |  ${hp}-Year Hold  |  Blue cells are inputs, black cells are live formulas  |  ${brand&&brand.name?brand.name+'  |  ':''}Prepared ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}`);
 
   if(openUrl){
     // The workbook is the thing that gets emailed around. A way back means a
@@ -317,7 +317,7 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
 
   const fr=Math.max(rL,rR)+1;
   ws.mergeCells(fr,2,fr,6);
-  Object.assign(ws.getCell(fr,2),{value:'Prepared with SmartCapStack. All outputs above are live Excel formulas; change any blue input cell and the model recalculates. Projections are estimates for informational purposes only and do not constitute investment advice.',font:{name:'Calibri',size:8.5,italic:true,color:{argb:'FF808080'}}});
+  Object.assign(ws.getCell(fr,2),{value:(brand&&brand.name?(brand.name+(brand.line?' \u00b7 '+brand.line:'')+'. '):'Prepared with SmartCapStack. ')+'All outputs above are live Excel formulas; change any blue input cell and the model recalculates. Projections are estimates for informational purposes only and do not constitute investment advice.',font:{name:'Calibri',size:8.5,italic:true,color:{argb:'FF808080'}}});
 
   // ============ SENSITIVITY ============
   const sn=wb.addWorksheet('Sensitivity',{views:[{showGridLines:false}]});
@@ -709,13 +709,13 @@ async function buildWorkbook(res,inp,withResults=true,openUrl){
   return wb;
 }
 
-async function exportXLSX(res,inp,openUrl){
-  const wb=await buildWorkbook(res,inp,true,openUrl);
+async function exportXLSX(res,inp,openUrl,brand){
+  const wb=await buildWorkbook(res,inp,true,openUrl,brand);
   const buf=await wb.xlsx.writeBuffer();
   const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download=((inp.propertyName||'Pro Forma').trim().replace(/[^a-z0-9]+/gi,'_').replace(/^_|_$/g,'')||'Pro_Forma')+'_SmartCapStack.xlsx';
+  a.download=((inp.propertyName||'Pro Forma').trim().replace(/[^a-z0-9]+/gi,'_').replace(/^_|_$/g,'')||'Pro_Forma')+(brand&&brand.name?'':'_SmartCapStack')+'.xlsx';
   a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),2000);
 }

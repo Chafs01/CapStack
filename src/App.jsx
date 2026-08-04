@@ -17,6 +17,7 @@ import{ErrorBoundary}from'./components/ErrorBoundary.jsx';
 import{initTelemetry,track}from'./lib/telemetry.js';
 import{encodeDeal,decodeDeal,shareURL,readDealFromHash,clearHash}from'./lib/share.js';
 import{routeFor,pathFor}from'./lib/routes.js';
+import{branding}from'./lib/plan.js';
 import{saveDraft,loadDraft,clearDraft,hasContent}from'./lib/draft.js';
 // The dashboard carries the charting library and only renders after a pro
 // forma is generated, so it loads as its own chunk.
@@ -444,7 +445,7 @@ function App(){
                   onRunOwn={requireAuth(startFresh)} onExport={requireAuth(async()=>{track('excel_exported');
                   // a link home, so the workbook is portable rather than a dead end
                   let back;try{back=shareURL(await encodeDeal(inp));}catch(e){}
-                  exportXLSX(res,inp,back);})} onBack={()=>setStep(3)} onSave={handleSave} onShare={handleShare}/>
+                  exportXLSX(res,inp,back,branding(user));})} onBack={()=>setStep(3)} onSave={handleSave} onShare={handleShare}/>
               </ErrorBoundary>
             </Suspense>
           )

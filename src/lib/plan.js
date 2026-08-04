@@ -54,6 +54,22 @@ const canExport=user=>isPaid(user);
 // below — so this gates the substance, not the existence.
 const canSeeAnalysis=user=>isPaid(user);
 const canRollUp=user=>isPaid(user);
+// The top tier's reason to exist: exports carry your name instead of ours.
+// Near-zero cost to serve and worth the most to a broker, whose memo is a
+// marketing document for a listing rather than a working file.
+const canBrand=user=>plan(user)==='plus';
+
+// What a branded export should say. Read here rather than in each exporter so
+// the memo and the workbook cannot drift, and so an unbranded plan can never
+// leak a half-set name into a document.
+function branding(user){
+  if(!canBrand(user))return null;
+  const m=(user&&user.user_metadata)||{};
+  const name=String(m.brand_name||'').trim();
+  if(!name)return null;                      // nothing set — fall back to ours
+  const line=String(m.brand_line||'').trim();
+  return{name,line};
+}
 
 const dealLimit=user=>isPaid(user)?Infinity:FREE_DEAL_LIMIT;
 
@@ -85,5 +101,5 @@ function canSaveDeal(deals,user,existingId){
   return n<dealLimit(user);
 }
 
-export{plan,isPaid,canExport,canSeeAnalysis,canRollUp,dealLimit,accessibleIds,
-  canSaveDeal,FREE_DEAL_LIMIT,OWNER_IDS};
+export{plan,isPaid,canExport,canSeeAnalysis,canRollUp,canBrand,branding,dealLimit,
+  accessibleIds,canSaveDeal,FREE_DEAL_LIMIT,OWNER_IDS};

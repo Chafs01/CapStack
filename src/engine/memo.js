@@ -206,13 +206,18 @@ function sensSection(res,inp){
   </table>`;
 }
 
-// opts.branding: may this memo carry someone else's name instead of ours?
+// opts.brand: {name, line} when the plan allows a branded memo — the reader
+// should see the sender's firm, not ours. Absent, the memo carries our name and
+// the "Prepared with" credit. Previously this was a boolean that produced a
+// contenteditable "Your Firm Name" placeholder, which meant the name had to be
+// retyped into every memo and was lost the moment the document was saved.
 // This is the white-label line, and it is deliberately a soft lock -- the memo
 // is HTML in the reader's own browser, so anyone determined can delete the mark
 // from devtools regardless of plan. What a plan buys is not having to. Off by
 // default, so the free document always identifies where it came from.
 function memoHTML(res,inp,opts){
-  const branding=!!(opts&&opts.branding);
+  const brand=(opts&&opts.brand)||null;
+  const branding=!!brand;
   const sections=generateMemo(res,inp);
   const t=(inp.assetType||'').toLowerCase();
   const isAff=t==='affordable';
@@ -285,7 +290,9 @@ function memoHTML(res,inp,opts){
       border-bottom:2.5px solid #181716;padding-bottom:16px;margin-bottom:6px;}
     .mast h1{font-size:27px;line-height:1.15;color:#181716;margin:0 0 6px;letter-spacing:-.01em;}
     .mast .sub{font-size:12px;color:#6b6259;font-family:Arial,Helvetica,sans-serif;letter-spacing:.02em;}
-    .brand{font-family:Arial,Helvetica,sans-serif;font-size:9.5px;letter-spacing:.22em;
+    
+.brandline{font-size:9pt;font-weight:400;letter-spacing:0;text-transform:none;opacity:.7;margin-top:3px}
+.brand{font-family:Arial,Helvetica,sans-serif;font-size:9.5px;letter-spacing:.22em;
       color:#8a8179;text-transform:uppercase;white-space:nowrap;padding-top:5px;}
     .dateline{font-family:Arial,Helvetica,sans-serif;font-size:10px;letter-spacing:.14em;
       text-transform:uppercase;color:#8a8179;margin:0 0 26px;}
@@ -349,7 +356,7 @@ function memoHTML(res,inp,opts){
       <h1 contenteditable="true" spellcheck="false">${name}</h1>
       <div class="sub" contenteditable="true">${assetType} Investment Memorandum${address?' &nbsp;&middot;&nbsp; '+address:''}</div>
     </div>
-    <div class="brand${branding?' editable':''}"${branding?' contenteditable="true" spellcheck="false" title="Your name or firm"':''}>${branding?'Your Firm Name':'SmartCapStack'}</div>
+    <div class="brand">${branding?esc(brand.name):'SmartCapStack'}${branding&&brand.line?`<div class="brandline">${esc(brand.line)}</div>`:''}</div>
   </div>
   <div class="dateline">${today}</div>
   <div class="mtitle">KEY METRICS</div>
@@ -374,9 +381,9 @@ function memoHTML(res,inp,opts){
   return html;
 }
 
-function openMemo(res,inp){
+function openMemo(res,inp,brand){
   const w=window.open('','_blank');
-  if(w){w.document.write(memoHTML(res,inp));w.document.close();}
+  if(w){w.document.write(memoHTML(res,inp,brand?{brand}:undefined));w.document.close();}
   else alert('Please allow pop-ups to generate the memo.');
 }
 
