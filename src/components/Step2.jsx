@@ -189,17 +189,25 @@ function Step2({inp,onChange,assetType}){
             still enter its market rent; vacancy is taken as a percentage on the next
             step.</>}>
           <UnitMixEditor rows={inp.unitMix} onChange={setMix}/>
+          <div style={G2} className="g2">
+            <Fld label="Market-Rent Premium" suffix="%" hint="full upside over today's in-place rent"
+              value={inp.marketRentPremiumPct||0} onChange={v=>onChange({marketRentPremiumPct:pn(v)})}/>
+            <Fld label="Fully Stabilized in Year" hint="ramps evenly from Year 1"
+              value={inp.rentStabilizationYear||1} onChange={v=>onChange({rentStabilizationYear:Math.max(1,pn(v))})}/>
+          </div>
+          <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',lineHeight:1.55}}>The unit mix is in-place rent today. Add only supportable market-rent upside here; the model phases it in instead of pretending renovated rents exist on day one.</p>
         </Card>
       )}
 
       {t==='commercial'&&(
-        <Card title="Space & Income" sub="Rentable area and tenant rents"
+        <Card title="Space & Income" sub="Simplified screening — annualized rent by tenant or space"
           info={<>Commercial rent is quoted per square foot per year, so 25,000 SF at $28
             is $700,000 of base rent. CAM or NNN income is what tenants reimburse you for
             taxes, insurance and common-area upkeep — on a true triple-net lease that is
             most of the operating cost, so if you enter the reimbursement here you must
             also enter the matching expense on the next step or the deal will look far
-            better than it is.</>}>
+            better than it is. This screen does not model lease expirations, rent steps,
+            downtime, tenant improvements, or leasing commissions.</>}>
           <div style={G2} className="g2">
             <Fld label="Total Rentable SF" value={inp.totalSF} onChange={v=>onChange({totalSF:pn(v)})}/>
             <Fld label="CAM / NNN Income" prefix="$" value={inp.camIncome||0} onChange={v=>onChange({camIncome:pn(v)})}/>

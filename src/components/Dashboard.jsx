@@ -543,7 +543,7 @@ function LihtcPanel({L,res}){
   const gapLabel=Math.abs(gap)<1?'Balanced':(gap>0?'Funding shortfall':'Surplus');
   return(
     <div className="glass" style={{padding:'22px 24px',marginBottom:22,borderTop:'3px solid '+PUR}}>
-      <div className="sect-lbl" style={{color:PUR}}>LIHTC &amp; Syndication Analysis</div>
+      <div className="sect-lbl" style={{color:PUR}}>Preliminary LIHTC Feasibility</div>
       <div className="g2" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:28,marginTop:4}}>
         <div>
           <div style={{fontSize:'var(--fs-2)',fontWeight:700,color:PUR,letterSpacing:'.5px',marginBottom:6}}>TAX CREDIT CALCULATION</div>
@@ -587,7 +587,7 @@ function LihtcPanel({L,res}){
           <div style={{fontSize:'var(--fs-7)',fontWeight:800,color:PUR}}>{L.totalUses>0?(L.lihtcEquity/L.totalUses*100).toFixed(1):0}%</div>
         </div>
       </div>
-      <p style={{fontSize:'var(--fs-3)',color:'var(--purple)',marginTop:14,lineHeight:1.5}}>The permanent loan is sized to your minimum DSCR on stabilized NOI. This analysis covers the credit calculation and capital stack; the operating metrics below reflect stabilized cash flow. Full LP and GP partnership returns with credit delivery are a separate analysis.</p>
+      <p style={{fontSize:'var(--fs-3)',color:'var(--purple)',marginTop:14,lineHeight:1.5}}>The permanent loan is sized to your minimum DSCR on stabilized NOI. This is preliminary feasibility: it estimates basis, credits, and sources and uses, but does not model investor pay-ins, separate acquisition and rehabilitation basis, tax losses, state QAP scoring, or Year 15. Those require a transaction-specific syndication model.</p>
     </div>
   );
 }
@@ -601,10 +601,12 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
   const hp=inp.holdingPeriod||7;
   const {rows,ret,sum,exit,equity,totalCost,acqC,LF,rehab}=res;
   const t=inp.assetType.toLowerCase();
+  const project=t==='development'?calcProjectTimeline(res,inp):null;
   const y1=rows[0];
   // Color is reserved for figures that actually need attention. A healthy deal
   // renders entirely neutral, so anything tinted genuinely means something.
   const irrC=!isFinite(ret.irr)||ret.irr<0?'var(--neg)':ret.irr<0.08?'var(--warn)':null;
+  const projectIrrC=project&&(!isFinite(project.projectIRR)||project.projectIRR<0?'var(--neg)':project.projectIRR<0.08?'var(--warn)':null);
   const dscrC=!sum.dscr?null:sum.dscr<1.15?'var(--neg)':sum.dscr<1.25?'var(--warn)':null;
   const npvC=ret.npv>=0?null:'var(--neg)';
   const cocC=sum.coc<0?'var(--neg)':sum.coc<0.02?'var(--warn)':null;
@@ -625,8 +627,8 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
   const ratesData=rows.slice(0,hp).map(r=>({yr:`Yr ${r.yr}`,'Cap Rate':+(r.capR*100).toFixed(2),'CoC Return':+(r.coc*100).toFixed(2)}));
   const balData=rows.slice(0,hp).map(r=>({yr:`Yr ${r.yr}`,'Loan Balance':Math.round(r.bal/1000)*1000,'NOI':Math.round(r.noi)}));
   const HERO=[
-    {l:'Levered IRR',v:f.pct(ret.irr,1),sub:`${hp}-year hold`,c:irrC,tt:'Internal Rate of Return on invested equity'},
-    {l:'Equity Multiple',v:f.x(ret.em),sub:`${f.$(ret.profit)} total profit on ${f.$(equity)} equity`,tt:'Total equity returned ÷ equity invested'},
+    {l:project?'Project IRR':'Levered IRR',v:f.pct(project?project.projectIRR:ret.irr,1),sub:project?'includes construction and lease-up':`${hp}-year hold`,c:project?projectIrrC:irrC,tt:project?'Return from land acquisition through construction, lease-up, operations and exit':'Internal Rate of Return on invested equity'},
+    {l:project?'Project Equity Multiple':'Equity Multiple',v:f.x(project?project.projectEM:ret.em),sub:project?'full project timeline':`${f.$(ret.profit)} total profit on ${f.$(equity)} equity`,tt:'Total equity returned ÷ equity invested'},
   ];
   const REST=[
     {l:'Year 1 Cap Rate',v:f.pct(sum.capR,2),sub:t==='development'?'NOI / total dev cost':'NOI / purchase price',tt:'Unlevered return based on Year 1 NOI'},
@@ -726,7 +728,7 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
       </div>
 
       {res.lihtc&&<LihtcPanel L={res.lihtc} res={res}/>}
-      {calcProjectTimeline(res,inp)&&<ProjectTimelinePanel P={calcProjectTimeline(res,inp)}/>}
+      {project&&<ProjectTimelinePanel P={project}/>}
       {!res.lihtc&&<ScenarioPanel S={calcScenarios(res,inp)}/>}
       {calcDevCredits(res,inp)&&<DevCreditsPanel D={calcDevCredits(res,inp)}/>}
       {!res.lihtc&&inp.refiEnabled&&<RefinancePanel R={calcRefinance(res,inp)}/>}

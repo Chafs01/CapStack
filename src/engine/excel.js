@@ -1,9 +1,10 @@
 import{f}from'./format.js';
 import{holdPeriod}from'./finance.js';
-import{getDevCost,opexParts}from'./income.js';
+import{getDevCost,opexParts,umGPI,rtGPI}from'./income.js';
 import{buildPF}from'./buildPF.js';
 import{calcWaterfall}from'./waterfall.js';
 import{calcAfterTax}from'./afterTax.js';
+import{calcProjectTimeline}from'./timeline.js';
 // ─── EXCEL EXPORT ────────────────────────────────────────────────────────
 // ExcelJS is ~1MB and only needed when someone actually exports, so it loads
 // on demand instead of shipping with the initial page.
@@ -89,6 +90,11 @@ async function buildWorkbook(res,inp,withResults=true,openUrl,brand){
   // engine-derived values for caching
   const R0=res.rows[0];
   const gpi1=R0.gpi, oth1=R0.egi-(R0.gpi-R0.vacL-(R0.credL||0));
+  const isMixed=t==='mixed-use',isMF=t==='multifamily';
+  const hasMixedSplit=isMixed&&(inp.residentialGrowthRate!=null||inp.commercialGrowthRate!=null||inp.residentialVacancyRate!=null||inp.commercialVacancyRate!=null);
+  const hasRentBridge=isMF&&(+inp.marketRentPremiumPct||0)>0;
+  const resGPI1=isMixed?umGPI(inp.unitMix||[]):0;
+  const comGPI1=isMixed?rtGPI(inp.retailIncome||[]):0;
   // Expenses split the same way the engine splits them: fixed dollars that
   // inflate, and a share of EGI that rides income. Without any percentage
   // lines the fixed part is the whole Year 1 figure and the workbook is
@@ -153,7 +159,9 @@ async function buildWorkbook(res,inp,withResults=true,openUrl,brand){
     ['feep','Loan Fees (% of Loan)',(inp.loanFeesPct||0)/100,FP,true],
     ['disc','Discount Rate (NPV)',(inp.discountRate||0)/100,FP,true],
     ['capex',CAPEX_LBL,cxBasis==='pctEGI'?(inp.capexAnnual||0)/100:(inp.capexAnnual||0),cxBasis==='pctEGI'?FP2:F$,true],
-  ].concat(hasOpexPct?[['expct','OpEx quoted as % of EGI',OPX.pctRate,FP2,true]]:[])
+  ].concat(hasRentBridge?[['mrp','Market-Rent Premium',(inp.marketRentPremiumPct||0)/100,FP,true],['stabyr','Fully Stabilized in Year',Math.max(1,inp.rentStabilizationYear||1),FN,true]]:[])
+   .concat(hasMixedSplit?[['resgpi','Residential GPI (Yr 1)',resGPI1,F$,true],['comgpi','Commercial GPI (Yr 1)',comGPI1,F$,true],['resgrow','Residential Rent Growth',((inp.residentialGrowthRate!=null?inp.residentialGrowthRate:inp.revenueGrowth)||0)/100,FP,true],['comgrow','Commercial Rent Growth',((inp.commercialGrowthRate!=null?inp.commercialGrowthRate:inp.revenueGrowth)||0)/100,FP,true],['resvac','Residential Vacancy',((inp.residentialVacancyRate!=null?inp.residentialVacancyRate:inp.vacancyRate)||0)/100,FP,true],['comvac','Commercial Vacancy',((inp.commercialVacancyRate!=null?inp.commercialVacancyRate:inp.vacancyRate)||0)/100,FP,true]]:[])
+   .concat(hasOpexPct?[['expct','OpEx quoted as % of EGI',OPX.pctRate,FP2,true]]:[])
    .concat(hasRehab?[['rehab','Renovation Budget (one-time)',RH.total,F$,true]]:[]));
   // wire left-side formulas now that refs exist
   const setRef=(key,f,r,fmt)=>{const a=refs[key].replace('Summary!','').replace(/\$/g,'');const c=ws.getCell(a);c.value=fml(f,r);if(fmt)c.numFmt=fmt;};
@@ -220,8 +228,16 @@ async function buildWorkbook(res,inp,withResults=true,openUrl,brand){
   function rowIdx_pending(){return pr;}
 
   sect('REVENUE');
-  opsRow('gpi','Gross Potential Income',`${refs.gpi1}`,gpi1,(yr,p)=>`${p}*(1+${refs.rg})`,yr=>ER[yr-1].gpi,F$);
-  line('vac','Less: Vacancy Loss',[null].concat(yrs.map(yr=>({f:`-${colOf(yr)}${rowIdx.gpi}*${refs.vac}`,r:-ER[yr-1].vacL}))),F$N);
+  const gpiFormula=yr=>hasMixedSplit
+    ?`${refs.resgpi}*(1+${refs.resgrow})^(${yr}-1)+${refs.comgpi}*(1+${refs.comgrow})^(${yr}-1)`
+    :hasRentBridge
+    ?`${refs.gpi1}*(1+${refs.rg})^(${yr}-1)*(1+${refs.mrp}*IF(${refs.stabyr}<=1,1,MIN(1,(${yr}-1)/(${refs.stabyr}-1))))`
+    :`${refs.gpi1}*(1+${refs.rg})^(${yr}-1)`;
+  line('gpi','Gross Potential Income',[null].concat(yrs.map(yr=>({f:gpiFormula(yr),r:ER[yr-1].gpi}))),F$);
+  const vacFormula=yr=>hasMixedSplit
+    ?`-(${refs.resgpi}*(1+${refs.resgrow})^(${yr}-1)*${refs.resvac}+${refs.comgpi}*(1+${refs.comgrow})^(${yr}-1)*${refs.comvac})`
+    :`-${colOf(yr)}${rowIdx.gpi}*${refs.vac}`;
+  line('vac','Less: Vacancy Loss',[null].concat(yrs.map(yr=>({f:vacFormula(yr),r:-ER[yr-1].vacL}))),F$N);
   line('cred','Less: Credit Loss',[null].concat(yrs.map(yr=>({f:`-${colOf(yr)}${rowIdx.gpi}*${refs.cred}`,r:-(ER[yr-1].credL||0)}))),F$N);
   opsRow('oth','Plus: Other Income',`${refs.oth1}`,oth1,(yr,p)=>`${p}*(1+${refs.rg})`,yr=>oth1*Math.pow(1+(inp.revenueGrowth||0)/100,yr-1),F$);
   line('egi','Effective Gross Income',[null].concat(yrs.map(yr=>({f:`${colOf(yr)}${rowIdx.gpi}+${colOf(yr)}${rowIdx.vac}+${colOf(yr)}${rowIdx.cred}+${colOf(yr)}${rowIdx.oth}`,r:ER[yr-1].egi}))),F$,{total:true});
@@ -698,6 +714,40 @@ async function buildWorkbook(res,inp,withResults=true,openUrl,brand){
       const A=calcAfterTax(res,inp);
       if(A)buildAfterTaxSheet(A);
     }
+  }
+
+  // Ground-up returns are monthly and must remain a model in the workbook,
+  // not a pasted headline. This schedule reproduces the app's draw interest,
+  // lease-up ramp, stabilized operations, exit, IRR and equity multiple with
+  // live formulas. Changing any blue assumption or linked pro-forma value
+  // recalculates the project return in Excel.
+  if(isDev){
+    const P=calcProjectTimeline(res,inp);
+    const sh=wb.addWorksheet('Development Timeline',{views:[{showGridLines:false,state:'frozen',ySplit:6}]});
+    sh.columns=[{width:10},{width:15},{width:15},{width:15},{width:15},{width:16},{width:16},{width:16}];
+    sh.mergeCells('A1:H1');Object.assign(sh.getCell('A1'),{value:'DEVELOPMENT PROJECT TIMELINE — LIVE MONTHLY FORMULAS',font:{bold:true,color:{argb:WHITE}},fill:fill(NAVY),alignment:{horizontal:'center'}});
+    [['Construction Months',P.constructionMonths],['Lease-Up Months',P.leaseUpMonths],['Construction Loan',P.constructionLoan],['Annual Rate',IR],['Initial Equity',res.equity],['Exit Proceeds',res.exit.proceeds]].forEach(([l,v],i)=>{
+      const row=2+(i%3),col=i<3?1:5;sh.getCell(row,col).value=l;sh.getCell(row,col+1).value=v;sh.getCell(row,col+1).font=inpF;if(i>=2)sh.getCell(row,col+1).numFmt=i===3?FP2:F$;
+    });
+    sh.getCell('A5').value='Draw Pattern';sh.getCell('B5').value=P.drawPattern;sh.getCell('B5').font=inpF;
+    ['Month','Phase','Draw','Beginning Balance','Interest','Ending Balance','Operating / Exit CF','Project CF'].forEach((h,i)=>Object.assign(sh.getCell(6,i+1),{value:h,font:{bold:true,color:{argb:WHITE}},fill:fill(NAVY2),border:box}));
+    const total=P.totalMonths,start=7,end=start+total;
+    for(let m=0;m<=total;m++){
+      const row=start+m,prev=row-1,year=Math.max(1,Math.ceil((m-P.constructionMonths-P.leaseUpMonths)/12));
+      sh.getCell(row,1).value=m;
+      sh.getCell(row,2).value={formula:`IF(A${row}=0,"Closing",IF(A${row}<=$B$2,"Construction",IF(A${row}<=$B$2+$B$3,"Lease-Up","Stabilized")))`};
+      sh.getCell(row,3).value=m===0?0:{formula:`IF(A${row}>$B$2,0,IF($B$5="scurve",$B$4*SIN(PI()*(A${row}-0.5)/$B$2)/SUMPRODUCT(SIN(PI()*(ROW(INDIRECT("1:"&$B$2))-0.5)/$B$2)),$B$4/$B$2))`,result:P.drawRows?.[m-1]?.draw||0};
+      sh.getCell(row,4).value=m===0?0:{formula:`F${prev}`,result:m>1?(P.drawRows?.[m-2]?.balance||P.peakDrawBalance):0};
+      sh.getCell(row,5).value=m===0?0:{formula:`IF(A${row}<=$B$2,(D${row}+C${row})*$F$2/12,0)`,result:P.drawRows?.[m-1]?.interest||0};
+      sh.getCell(row,6).value=m===0?0:{formula:`D${row}+C${row}+E${row}`,result:P.drawRows?.[m-1]?.balance||P.peakDrawBalance};
+      const pfCol=colOf(Math.min(hp,year));
+      const op=m===0?'0':m<=P.constructionMonths?'0':m<=P.constructionMonths+P.leaseUpMonths?`(${PFQ}${pfCol}${rowIdx.noi}/12+${PFQ}${pfCol}${rowIdx.ds}/12)*(A${row}-$B$2)/$B$3`:`${PFQ}${pfCol}${rowIdx.noi}/12+${PFQ}${pfCol}${rowIdx.ds}/12`;
+      sh.getCell(row,7).value={formula:m===total?`${op}+$F$4-SUM($E$7:E${row})`:op};
+      sh.getCell(row,8).value={formula:m===0?'-$F$3':`G${row}`};
+      for(let c=1;c<=8;c++){sh.getCell(row,c).border=box;if(c>=3)sh.getCell(row,c).numFmt=F$N;}
+    }
+    const rr=end+2;sh.getCell(rr,7).value='Project IRR';sh.getCell(rr,8).value={formula:`(1+IRR(H${start}:H${end}))^12-1`,result:P.projectIRR};sh.getCell(rr,8).numFmt=FP;
+    sh.getCell(rr+1,7).value='Project Equity Multiple';sh.getCell(rr+1,8).value={formula:`SUM(H${start+1}:H${end})/$F$3`,result:P.projectEM};sh.getCell(rr+1,8).numFmt=FX;
   }
 
   // Legend + note

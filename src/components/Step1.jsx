@@ -5,10 +5,10 @@ import{Card}from'./ui.jsx';
 const ASSETS=[
   {id:'residential',abbr:'1-4',label:'Residential 1\u20134 Units',sub:'Single-family, condo, duplex, triplex, fourplex',c:'#181716'},
   {id:'multifamily',abbr:'MF',label:'Multifamily 5+ Units',sub:'Apartments \u2014 commercial financing',c:'#181716'},
-  {id:'commercial',abbr:'CRE',label:'Commercial',sub:'Office, retail, industrial NNN',c:'#3a3733'},
+  {id:'commercial',abbr:'CRE',label:'Commercial — Simplified',sub:'Income-property screening for retail, office, or industrial',c:'#3a3733'},
   {id:'mixed-use',abbr:'MXU',label:'Mixed-Use',sub:'Residential + commercial floors',c:'#5c554c'},
-  {id:'development',abbr:'DEV',label:'Development',sub:'Ground-up construction / value-add',c:'#7a7268'},
-  {id:'affordable',abbr:'LIHTC',label:'Affordable / LIHTC',sub:'Tax-credit & syndication underwriting',c:'#958c83'},
+  {id:'development',abbr:'DEV',label:'Ground-Up Development',sub:'Construction, lease-up, and project returns',c:'#7a7268'},
+  {id:'affordable',abbr:'LIHTC',label:'Preliminary Affordable / LIHTC',sub:'Early feasibility and capital-stack sizing',c:'#958c83'},
 ];
 
 const ASSET_DESC={
@@ -21,20 +21,20 @@ const ASSET_DESC={
     models:'You build a unit-mix rent roll, set vacancy and operating expenses, and the model runs a levered return over the hold you choose, with exit at your cap rate.'
   },
   commercial:{
-    what:'Office, retail, and industrial properties driven by tenant and NNN income.',
-    models:'You enter income by tenant or space plus CAM recovery, and the model carries it through to returns driven by lease income and the exit cap.'
+    what:'A simplified income-property screen for retail, office, or industrial real estate.',
+    models:'You enter annual rent by tenant or space plus expense recoveries. It does not model lease expirations, contractual steps, downtime, tenant improvements, or leasing commissions, so use it for early screening rather than lease-level underwriting.'
   },
   'mixed-use':{
     what:'Combined residential and commercial assets under a single capital stack.',
     models:'You model an apartment unit mix and ground-floor retail as separate income streams, and the model blends them into one set of returns.'
   },
   development:{
-    what:'Ground-up construction and heavier value-add projects.',
+    what:'Ground-up residential construction from land acquisition through construction, lease-up, stabilization, and exit.',
     models:'You enter land, hard and soft costs, and a developer fee, and the model bases returns on total development cost rather than a purchase price.'
   },
   affordable:{
-    what:'Low-Income Housing Tax Credit deals and tax-credit syndication.',
-    models:'The model runs the full credit calculation, sizes a loan to your minimum DSCR, raises syndication equity, and fills the gap with a deferred developer fee.'
+    what:'Preliminary Low-Income Housing Tax Credit feasibility and capital-stack sizing.',
+    models:'The model estimates qualified basis, credits, DSCR-sized permanent debt, syndication equity, soft sources, and deferred fee. It does not replace a state allocation, tax opinion, or investor pay-in model.'
   }
 };
 

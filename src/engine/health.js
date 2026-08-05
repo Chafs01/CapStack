@@ -171,7 +171,8 @@ function dealHealth(res, inp) {
   // ── break-even occupancy cushion ────────────────────────────────────────
   const beOcc = num(sum.beOcc);
   if (beOcc !== null && beOcc > 0) {
-    const cushion = 1 - beOcc - (num(inp.vacancyRate) || 0) / 100;
+    const underwrittenVacancy=(num(y1.gpi)||0)>0?(num(y1.vacL)||0)/y1.gpi:(num(inp.vacancyRate)||0)/100;
+    const cushion = 1 - beOcc - underwrittenVacancy;
     if (cushion < T.occCushion) {
       add('break-even', 'warn', `Break-even occupancy of ${(beOcc * 100).toFixed(1)}% leaves little margin`,
         'Small leasing setbacks would turn cash flow negative.',

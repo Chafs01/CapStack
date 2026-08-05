@@ -80,11 +80,15 @@ function Step3({inp,onChange}){
           What is left, plus other income, is effective gross income — the top line
           everything else is measured against.</>}>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'}} className="g2">
-          <Fld label="Physical Vacancy" suffix="%" hint="share of rent lost to empty space"
-            value={inp.vacancyRate||0} onChange={v=>onChange({vacancyRate:pn(v)})}/>
+          {t!=='mixed-use'&&<Fld label="Physical Vacancy" suffix="%" hint="share of rent lost to empty space"
+            value={inp.vacancyRate||0} onChange={v=>onChange({vacancyRate:pn(v)})}/>}
           <Fld label="Credit Loss" suffix="%" hint="billed but never collected"
             value={inp.creditLossRate||0} onChange={v=>onChange({creditLossRate:pn(v)})}/>
         </div>
+        {t==='mixed-use'&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'}} className="g2">
+          <Fld label="Residential Vacancy" suffix="%" value={inp.residentialVacancyRate!=null?inp.residentialVacancyRate:inp.vacancyRate||0} onChange={v=>onChange({residentialVacancyRate:pn(v)})}/>
+          <Fld label="Commercial Vacancy" suffix="%" value={inp.commercialVacancyRate!=null?inp.commercialVacancyRate:inp.vacancyRate||0} onChange={v=>onChange({commercialVacancyRate:pn(v)})}/>
+        </div>}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'}} className="g2">
           {t==='multifamily'&&<><Fld label="Units" value={inp.numUnits} onChange={v=>onChange({numUnits:pn(v)})}/><Fld label="Avg Monthly Rent" prefix="$" value={inp.avgRent} onChange={v=>onChange({avgRent:pn(v)})}/></>}
           {t==='commercial'&&<><Fld label="Total SF" value={inp.totalSF} onChange={v=>onChange({totalSF:pn(v)})}/><Fld label="Base Rent / SF" prefix="$" value={inp.avgRentPerSF} onChange={v=>onChange({avgRentPerSF:pn(v)})}/><Fld label="CAM / NNN Income" prefix="$" value={inp.camIncome||0} onChange={v=>onChange({camIncome:pn(v)})}/></>}

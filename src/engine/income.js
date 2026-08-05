@@ -17,6 +17,31 @@ function getGPI(inp){
   }
   return 0;
 }
+// Asset-aware annual revenue. Old deals have none of the optional fields, so
+// this collapses exactly to the original single growth/vacancy calculation.
+function projectedRevenue(inp,yr){
+  const t=(inp.assetType||'').toLowerCase();
+  const n=Math.max(1,+yr||1)-1;
+  const rg=(+inp.revenueGrowth||0)/100;
+  if(t==='mixed-use'){
+    const split=inp.residentialGrowthRate!=null||inp.commercialGrowthRate!=null||inp.residentialVacancyRate!=null||inp.commercialVacancyRate!=null;
+    if(!split){const gpi=getGPI(inp)*Math.pow(1+rg,n);return{gpi,vacL:gpi*(+inp.vacancyRate||0)/100};}
+    const res0=inp.unitMix&&inp.unitMix.length?umGPI(inp.unitMix):(inp.numUnits||0)*(inp.avgRent||0)*12;
+    const com0=inp.retailIncome&&inp.retailIncome.length?rtGPI(inp.retailIncome):(inp.commercialSF||0)*(inp.commercialRentPerSF||0);
+    const resG=res0*Math.pow(1+(inp.residentialGrowthRate!=null?+inp.residentialGrowthRate:+inp.revenueGrowth||0)/100,n);
+    const comG=com0*Math.pow(1+(inp.commercialGrowthRate!=null?+inp.commercialGrowthRate:+inp.revenueGrowth||0)/100,n);
+    const rv=(inp.residentialVacancyRate!=null?+inp.residentialVacancyRate:+inp.vacancyRate||0)/100;
+    const cv=(inp.commercialVacancyRate!=null?+inp.commercialVacancyRate:+inp.vacancyRate||0)/100;
+    return{gpi:resG+comG,vacL:resG*rv+comG*cv,resGPI:resG,commercialGPI:comG};
+  }
+  let gpi=getGPI(inp)*Math.pow(1+rg,n);
+  if(t==='multifamily'&&(+inp.marketRentPremiumPct||0)>0){
+    const sy=Math.max(1,+inp.rentStabilizationYear||1);
+    const ramp=sy<=1?1:Math.min(1,n/(sy-1));
+    gpi*=1+(+inp.marketRentPremiumPct/100)*ramp;
+  }
+  return{gpi,vacL:gpi*(+inp.vacancyRate||0)/100};
+}
 // Operating expenses are either an itemised list or the six legacy fields.
 // Six fixed lines is fine for a duplex and useless for a real deal, where the
 // work is in the line items themselves — so a list is allowed, with the old
@@ -224,4 +249,4 @@ function rehabSchedule(inp,cashTotal){
   return out;
 }
 
-export{umGPI,rtGPI,getGPI,getOpEx,getDevCost,getHardCost,getSoftCost,opexItemsTotal,opexParts,getOtherIncome,listTotal,resolveLine,resolveCostLine,costListTotal,resolveCapex,lossRate,getRehab,rehabSchedule,REHAB_MAX_MONTHS};
+export{umGPI,rtGPI,getGPI,projectedRevenue,getOpEx,getDevCost,getHardCost,getSoftCost,opexItemsTotal,opexParts,getOtherIncome,listTotal,resolveLine,resolveCostLine,costListTotal,resolveCapex,lossRate,getRehab,rehabSchedule,REHAB_MAX_MONTHS};

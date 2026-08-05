@@ -275,30 +275,31 @@ function DevCostEditor({rows,onChange,cats,bases,label,noun,placeholder,sf,units
 
 // Sales comparables. The per-unit exit price is derived from these rather than
 // typed, so the memo can show what the number was built on.
-function CompEditor({rows,onChange}){
+function CompEditor({rows,onChange,residential=false}){
   rows=rows||[];
   const set=(i,p)=>onChange(rows.map((r,j)=>j===i?{...r,...p}:r));
-  const add=()=>onChange([...rows,{label:'',price:0,units:0}]);
+  const add=()=>onChange([...rows,{label:'',price:0,units:residential?1:0,sf:0,saleDate:''}]);
   const del=i=>onChange(rows.filter((_,j)=>j!==i));
   const S=compsSummary(rows);
   const C='1.5fr 1fr .7fr 1fr 30px';
   return(
     <div style={{marginBottom:14}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,gap:12,flexWrap:'wrap'}}>
-        <label style={{fontSize:'var(--fs-4)',fontWeight:600,color:'var(--text)'}}>Comparable Sales</label>
+        <label style={{fontSize:'var(--fs-4)',fontWeight:600,color:'var(--text)'}}>{residential?'Comparable Property Sales':'Comparable Sales'}</label>
         <span style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>
           {S.used?`${S.used} comp${S.used===1?'':'s'} · avg ${f.$f(S.ppu)}/unit`:'add a comp to derive the exit price'}
         </span>
       </div>
       {rows.length>0&&(
         <div style={{display:'grid',gridTemplateColumns:C,gap:8,padding:'0 2px 6px',fontSize:'var(--fs-2)',fontWeight:700,color:'var(--muted2)'}}>
-          <div>Property</div><div>Sale Price</div><div>Units</div><div>$ / Unit</div><div></div>
+            <div>Property</div><div>Sale Price</div><div>{residential?'Property Units':'Units'}</div><div>{residential?'Value / Unit':'$ / Unit'}</div><div></div>
         </div>
       )}
       {rows.map((r,i)=>{
         const per=compPPU(r);
         return(
-          <div key={i} style={{display:'grid',gridTemplateColumns:C,gap:8,marginBottom:8,alignItems:'center'}}>
+          <div key={i}>
+          <div style={{display:'grid',gridTemplateColumns:C,gap:8,marginBottom:8,alignItems:'center'}}>
             <input aria-label={`Comparable ${i+1} property`} className="input-f" value={r.label||''} onChange={e=>set(i,{label:e.target.value})} placeholder={`Comp ${i+1} — address`}/>
             <div style={{position:'relative'}}>
               <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>$</span>
@@ -309,6 +310,11 @@ function CompEditor({rows,onChange}){
               {per==null?'\u2014':f.$f(per)}
             </div>
             <button onClick={()=>del(i)} aria-label="Remove" title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
+          </div>
+          {residential&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,margin:'-2px 38px 10px 0'}}>
+            <input aria-label={`Comparable ${i+1} sale date`} className="input-f" type="month" value={r.saleDate||''} onChange={e=>set(i,{saleDate:e.target.value})}/>
+            <NumIn aria-label={`Comparable ${i+1} square feet`} value={r.sf||0} onChange={v=>set(i,{sf:pn(v)})} placeholder="Building SF"/>
+          </div>}
           </div>
         );
       })}

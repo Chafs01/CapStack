@@ -1,6 +1,7 @@
 import{f}from'./format.js';
 import{holdPeriod}from'./finance.js';
 import{buildPF}from'./buildPF.js';
+import{calcProjectTimeline}from'./timeline.js';
 import{resolveLine,resolveCostLine,resolveCapex,lossRate,getHardCost,getSoftCost}from'./income.js';
 // ─── DEAL MEMO GENERATOR ──────────────────────────────────────────────────
 // The memo is assembled as an HTML string and handed to document.write, so
@@ -25,8 +26,9 @@ function generateMemo(res,inp){
     S.push(['Executive Summary',
       `This memorandum presents an underwriting summary for ${name}, a ${units?units+'-unit ':''}affordable housing development structured around Low-Income Housing Tax Credits. Total development cost is ${$(L.totalUses)}, funded through a permanent loan of ${$(L.permLoan)} sized to a minimum debt service coverage of ${(inp.minDSCR||1.15).toFixed(2)}x, ${$(L.lihtcEquity)} of tax-credit equity, and the balance from soft sources and a deferred developer fee. The ${(L.creditRate*100).toFixed(0)}% credit generates an annual allocation of ${$(L.annualCredit)} over a ten-year period.`]);
   }else{
+    const P=t==='development'?calcProjectTimeline(res,inp):null;
     S.push(['Executive Summary',
-      `This memorandum presents an investment underwriting summary for ${name}${inp.address?', located at '+inp.address:''}, a ${inp.assetType.toLowerCase()} opportunity. The analysis assumes a ${hp}-year hold and projects a levered internal rate of return of ${pct(res.ret.irr,1)} and an equity multiple of ${f.x(res.ret.em)} on required equity of ${$(res.equity)}. The deal generates a year-one cash-on-cash return of ${pct(res.sum.coc,1)} at a going-in capitalization rate of ${pct(res.sum.capR,2)}.`]);
+      `This memorandum presents an investment underwriting summary for ${name}${inp.address?', located at '+inp.address:''}, a ${inp.assetType.toLowerCase()} opportunity. The analysis assumes a ${hp}-year hold and projects a ${P?'project':'levered'} internal rate of return of ${pct(P?P.projectIRR:res.ret.irr,1)} and an equity multiple of ${f.x(P?P.projectEM:res.ret.em)} on required equity of ${$(res.equity)}.${P?' These returns include construction and lease-up timing.':` The deal generates a year-one cash-on-cash return of ${pct(res.sum.coc,1)} at a going-in capitalization rate of ${pct(res.sum.capR,2)}.`}`]);
   }
   // Investment Highlights / Capital Stack
   if(isAff){
@@ -56,8 +58,10 @@ function generateMemo(res,inp){
   if(isAff){
     S.push(['Summary',`${name} pencils as ${Math.abs(res.lihtc.fundingGap)<1?'a balanced':'a'} tax-credit transaction with ${$(res.lihtc.lihtcEquity)} of credit equity anchoring the capital stack. Further diligence on basis eligibility, the credit price, and soft-source commitments is recommended before proceeding.`]);
   }else{
-    const verdict=res.ret.irr>0.15?'an attractive return profile':(res.ret.irr>0.10?'a reasonable return profile':'a modest return profile');
-    S.push(['Recommendation',`At a projected ${pct(res.ret.irr,1)} levered IRR and ${f.x(res.ret.em)} equity multiple, ${name} presents ${verdict} for a ${hp}-year hold. The recommendation is to advance to confirmatory diligence, with particular attention to the assumptions driving exit value and operating expenses.`]);
+    const P=t==='development'?calcProjectTimeline(res,inp):null;
+    const irr=P?P.projectIRR:res.ret.irr,em=P?P.projectEM:res.ret.em;
+    const verdict=irr>0.15?'an attractive return profile':(irr>0.10?'a reasonable return profile':'a modest return profile');
+    S.push(['Recommendation',`At a projected ${pct(irr,1)} ${P?'project':'levered'} IRR and ${f.x(em)} equity multiple, ${name} presents ${verdict} for a ${hp}-year hold. The recommendation is to advance to confirmatory diligence, with particular attention to the assumptions driving exit value and operating expenses.`]);
   }
   return S;
 }

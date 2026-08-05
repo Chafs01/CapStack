@@ -16,7 +16,7 @@ const TIERS=[
     line:'Underwrite anything. Keep the numbers.',
     points:[
       'Every figure on screen — IRR, cap rate, DSCR, the full pro forma table, sensitivity, yield on cost',
-      'All five asset types, and the section explainers',
+      'All six asset types, and the section explainers',
       'One saved deal',
     ],
     lacks:['No exports','No analyst notes or deal-health detail','No portfolio roll-up'],

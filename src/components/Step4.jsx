@@ -132,9 +132,9 @@ function Step4({inp,onChange}){
               conclusion. Writing the average straight into exitPPU means every
               other module — sensitivity, refinance, the workbook — keeps
               reading the one field it always has. */}
-          <CompEditor rows={comps} onChange={setComps}/>
+          <CompEditor rows={comps} onChange={setComps} residential={inp.propClass==='residential'}/>
           <div style={G2} className="g2">
-            <Fld label="Exit Price per Unit" prefix="$"
+            <Fld label={inp.propClass==='residential'?'Comparable Property Value per Unit':'Exit Price per Unit'} prefix="$"
               hint={compS.used?`average of ${compS.used} comparable${compS.used===1?'':'s'} — edit a comp to change it`:'comparable sale value today'}
               disabled={compS.used>0}
               value={inp.exitPPU!=null?inp.exitPPU:0} onChange={v=>onChange({exitPPU:pn(v)})}/>
@@ -147,7 +147,8 @@ function Step4({inp,onChange}){
           </div>
         )}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 28px'}} className="g2">
-          <Slider label="Revenue Growth Rate" min={0} max={8} step={0.25} value={inp.revenueGrowth||3} onChange={v=>onChange({revenueGrowth:v})} fmt2={v=>`${v}% / yr`}/>
+          <Slider label={t==='mixed-use'?'Other Income Growth':'Revenue Growth Rate'} min={0} max={8} step={0.25} value={inp.revenueGrowth||3} onChange={v=>onChange({revenueGrowth:v})} fmt2={v=>`${v}% / yr`}/>
+          {t==='mixed-use'&&<><Slider label="Residential Rent Growth" min={0} max={8} step={0.25} value={inp.residentialGrowthRate!=null?inp.residentialGrowthRate:inp.revenueGrowth||3} onChange={v=>onChange({residentialGrowthRate:v})} fmt2={v=>`${v}% / yr`}/><Slider label="Commercial Rent Growth" min={0} max={8} step={0.25} value={inp.commercialGrowthRate!=null?inp.commercialGrowthRate:inp.revenueGrowth||3} onChange={v=>onChange({commercialGrowthRate:v})} fmt2={v=>`${v}% / yr`}/></>}
           <Slider label="Expense Growth Rate" min={0} max={8} step={0.25} value={inp.expenseGrowth||2.5} onChange={v=>onChange({expenseGrowth:v})} fmt2={v=>`${v}% / yr`}/>
           <Slider label="Holding Period" min={3} max={MAX_HOLD} step={1} value={inp.holdingPeriod||7} onChange={v=>onChange({holdingPeriod:v})} fmt2={v=>`${v} yrs`}/>
           {inp.exitMethod!=='ppu'&&<Slider label="Exit Cap Rate" min={3.5} max={10} step={0.25} value={inp.exitCapRate||5.5} onChange={v=>onChange({exitCapRate:v})} fmt2={v=>`${v}%`}/>}

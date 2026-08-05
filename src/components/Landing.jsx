@@ -89,7 +89,7 @@ function Landing({onStart,onSample,onDemo}){
         <Row label="Returns & Exit" text="Levered IRR, equity multiple, NPV, cash-on-cash, break-even occupancy, and a full exit breakdown."/>
         <Row label="IRR Sensitivity" text="Returns across revenue-growth and exit-cap scenarios, so you see exactly where the deal breaks."/>
         <Row label="Equity Waterfall" text="LP/GP promote with a preferred return and tiered IRR hurdles, computed year by year."/>
-        <Row label="LIHTC & Tax Credits" text="Qualified basis, credit pricing, DSCR-sized debt, and deferred developer fee."/>
+        <Row label="Preliminary LIHTC" text="Early qualified-basis, credit-pricing, DSCR-sized debt, and deferred-fee feasibility."/>
         <Row label="Lender-Ready Excel" text="Every output exports as a live formula. Change an input cell and the whole model recalculates."/>
         <div className="g2" style={{marginTop:30,display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px 32px'}}>
           {['Scenario analysis (downside / base / upside)','Refinance & cash-out modelling',

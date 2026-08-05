@@ -1,5 +1,5 @@
 import{monthlyPmt,loanBal,calcIRR,calcNPV,holdPeriod,PF_YEARS}from'./finance.js';
-import{getGPI,getOpEx,getDevCost,getOtherIncome,resolveCapex,lossRate,getRehab,rehabSchedule,opexParts}from'./income.js';
+import{getGPI,projectedRevenue,getOpEx,getDevCost,getOtherIncome,resolveCapex,lossRate,getRehab,rehabSchedule,opexParts}from'./income.js';
 import{calcLIHTC}from'./lihtc.js';
 function buildPF(inp){
   const gpi0=getGPI(inp);
@@ -76,9 +76,10 @@ function buildPF(inp){
   for(let yr=1;yr<=PF_YEARS;yr++){
     const rm=Math.pow(1+rg/100,yr-1);
     const em=Math.pow(1+eg/100,yr-1);
-    const gpi=gpi0*rm;
+    const rev=projectedRevenue(inp,yr);
+    const gpi=rev.gpi;
     // shown as two lines because they are two different arguments
-    const vacL=gpi*vacPct/100;
+    const vacL=rev.vacL;
     const credL=gpi*credPct/100;
     const egi=gpi-vacL-credL+getOtherIncome(inp)*rm;
     const mgmt=egi*(inp.managementFeePct||0)/100;
