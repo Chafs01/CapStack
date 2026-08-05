@@ -2,7 +2,7 @@ import{useState,useEffect}from'react';
 import{SavedDeals}from'./SavedDeals.jsx';
 import{loadDeals,loadDealsLocal}from'../lib/deals.js';
 import{CONTACT}from'./Legal.jsx';
-import{plan,canBrand,isPaid}from'../lib/plan.js';
+import{plan,canBrand,isPaid,PAYWALL_ON}from'../lib/plan.js';
 import{sb}from'../lib/supabase.js';
 // ─── PROFILE / ACCOUNT ────────────────────────────────────────────────────
 // One place that answers "what is mine here": who you are signed in as, what
@@ -135,6 +135,10 @@ const PLAN_SUB={
 };
 function Profile({user,onSignIn,onSignOut,onLoadDeal,onStart,notify,onUpgrade,onManageBilling}){
   const [count,setCount]=useState(null);
+  // Someone granted access by the switch is not a subscriber, and saying
+  // "Pro — $10 / month" to a person who has paid nothing is a lie the first
+  // invoice would expose.
+  const early=!PAYWALL_ON&&!(user&&user.user_metadata&&user.user_metadata.plan);
   const [latest,setLatest]=useState(null);
 
   useEffect(()=>{
@@ -179,12 +183,16 @@ function Profile({user,onSignIn,onSignOut,onLoadDeal,onStart,notify,onUpgrade,on
 
       {/* ── plan ─────────────────────────────────────────────────────── */}
       <Sec title="Plan" sub="What you have access to right now.">
-        <Row label="Current plan" value={PLAN_LABEL[plan(user)]}
-          sub={PLAN_SUB[plan(user)]}/>
-        {isPaid(user)&&<Row label="Billing" value={<button className="btn-s" onClick={onManageBilling}>Manage billing</button>}
-          sub="Change your card, switch plan, or cancel. Opens Stripe's billing portal."/>}
-        {!isPaid(user)&&<Row label="Upgrade" value={<button className="btn-p" onClick={onUpgrade}>See plans</button>}
-          sub="Unlock the analysis layer, the exports, and unlimited saved deals."/>}
+        {early?(
+          <Row label="Current plan" value="Early access — free"
+            sub="Everything unlocked while SmartCapStack finds its footing. When paid plans start, accounts that existed beforehand keep this access for good — you will not lose anything you have today."/>
+        ):(<>
+          <Row label="Current plan" value={PLAN_LABEL[plan(user)]} sub={PLAN_SUB[plan(user)]}/>
+          {isPaid(user)&&<Row label="Billing" value={<button className="btn-s" onClick={onManageBilling}>Manage billing</button>}
+            sub="Change your card, switch plan, or cancel. Opens Stripe's billing portal."/>}
+          {!isPaid(user)&&<Row label="Upgrade" value={<button className="btn-p" onClick={onUpgrade}>See plans</button>}
+            sub="Unlock the analysis layer, the exports, and unlimited saved deals."/>}
+        </>)}
       </Sec>
 
       {/* ── branding: the top tier's reason to exist ─────────────────── */}

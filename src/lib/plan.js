@@ -46,13 +46,52 @@ const OWNER_IDS=[
   '961be5ac-1322-4d2c-8668-b34ff2d03af0',   // Jordan
 ];
 
+// ─── THE SWITCH ───────────────────────────────────────────────────────────
+// Off means every signed-in account gets Pro. The gates, the checkout and the
+// webhook all still work — they simply never bite, because nobody resolves to
+// free while this is false.
+//
+// The reason it is off: charging before there is a userbase means a first
+// impression becomes a refund request, and the tier design is currently a
+// guess. The free period IS the customer research. Flip it when signups say
+// the product is worth paying for, not before.
+//
+// Pro rather than Broker on purpose. Broker's whole feature is replacing our
+// name on exports with yours, and during the period we most need word of
+// mouth, every memo should still say SmartCapStack. It also leaves the top
+// tier something real to sell later.
+const PAYWALL_ON=false;
+
+// The date the paywall started, ISO. Anyone whose account predates it keeps
+// full access for good — they signed up on the understanding it was free, and
+// taking that back is how goodwill is spent. Set this on the same day
+// PAYWALL_ON becomes true; leaving it null grandfathers nobody.
+//
+// Supabase already stamps created_at on every user, so this needs no extra
+// table, no migration, and no list to maintain.
+const PAYWALL_FROM=null;
+
+function grandfathered(user){
+  if(!PAYWALL_FROM)return false;
+  const at=user&&user.created_at;
+  if(!at)return false;
+  const t=Date.parse(at), cut=Date.parse(PAYWALL_FROM);
+  return isFinite(t)&&isFinite(cut)&&t<cut;
+}
+
 // The plan lives on the Supabase user's metadata. Anything unrecognised — and
 // anyone signed out — is free, so a failure to read the plan withholds
 // features rather than giving them away.
 function plan(user){
   if(user&&user.id&&OWNER_IDS.includes(user.id))return'plus';
   const p=user&&user.user_metadata&&user.user_metadata.plan;
-  return (p==='pro'||p==='plus')?p:'free';
+  const paid=(p==='pro'||p==='plus')?p:null;
+  // A real subscription always wins, so an early user who chooses to pay for
+  // Broker gets Broker rather than being held at the grandfathered tier.
+  if(paid)return paid;
+  if(!user)return'free';
+  if(!PAYWALL_ON||grandfathered(user))return'pro';
+  return'free';
 }
 const isPaid=user=>plan(user)!=='free';
 
@@ -111,4 +150,4 @@ function canSaveDeal(deals,user,existingId){
 }
 
 export{plan,isPaid,canExport,canSeeAnalysis,canRollUp,canBrand,branding,dealLimit,
-  accessibleIds,canSaveDeal,FREE_DEAL_LIMIT,OWNER_IDS};
+  accessibleIds,canSaveDeal,grandfathered,FREE_DEAL_LIMIT,OWNER_IDS,PAYWALL_ON,PAYWALL_FROM};

@@ -6,7 +6,8 @@
 // every unknown state resolves to "free" for features and to "keep the data"
 // for storage.
 import { plan, isPaid, canExport, canSeeAnalysis, canRollUp, dealLimit,
-  accessibleIds, canSaveDeal, canBrand, branding, FREE_DEAL_LIMIT, OWNER_IDS } from '../src/lib/plan.js';
+  accessibleIds, canSaveDeal, canBrand, branding, grandfathered,
+  FREE_DEAL_LIMIT, OWNER_IDS, PAYWALL_ON, PAYWALL_FROM } from '../src/lib/plan.js';
 
 let failures = 0;
 const check = (label, ok, detail = '') => {
@@ -20,14 +21,53 @@ const deal = (id, daysAgo) => ({
   savedAt: new Date(Date.UTC(2026, 0, 1) + (100 - daysAgo) * 86400000).toISOString(),
 });
 
+// These shapes carry no id and no created_at, so the switch cannot grant them
+// anything — they exercise the metadata reader alone.
 console.log('anything unrecognised is free, so a bad read withholds rather than gives away:');
 for (const bad of [undefined, null, {}, { user_metadata: null }, { user_metadata: {} },
   asUser(''), asUser('PRO'), asUser('premium'), asUser(0), asUser(true), asUser('free')]) {
-  check(`plan(${JSON.stringify(bad)}) → free`, plan(bad) === 'free');
+  const want = (bad && !PAYWALL_ON) ? 'pro' : 'free';
+  check(`plan(${JSON.stringify(bad)}) → ${want}`, plan(bad) === want);
 }
 check('a signed-out visitor is free', plan(null) === 'free');
 check('pro is recognised', plan(asUser('pro')) === 'pro');
 check('plus is recognised', plan(asUser('plus')) === 'plus');
+
+console.log('\nthe paywall switch, and who it spares:');
+{
+  const signedIn = { id: 'someone', created_at: '2026-01-01T00:00:00Z' };
+  if (!PAYWALL_ON) {
+    // the state we actually ship in today
+    check('switch off: a signed-in account gets pro', plan(signedIn) === 'pro');
+    check('switch off: exports work', canExport(signedIn) === true);
+    check('switch off: no deal cap', dealLimit(signedIn) === Infinity);
+    // Broker is withheld on purpose — its feature is replacing our name on
+    // exports, and word of mouth is the point of the free period
+    check('switch off: branding is still withheld', canBrand(signedIn) === false);
+    check('switch off: a signed-OUT visitor is still free', plan(null) === 'free');
+    check('switch off: PAYWALL_FROM grandfathers nobody yet', PAYWALL_FROM === null);
+  } else {
+    check('switch on: a signed-in account with no subscription is free',
+      plan(signedIn) === 'free');
+  }
+  // a real subscription outranks the switch in both directions
+  check('a paying broker is broker either way',
+    plan({ id: 'p', user_metadata: { plan: 'plus' } }) === 'plus');
+  check('the owner is broker either way',
+    plan({ id: OWNER_IDS[0] }) === 'plus');
+}
+
+console.log('\ngrandfathering is by signup date, and fails closed:');
+{
+  // PAYWALL_FROM is null today, so the predicate must refuse everyone rather
+  // than accidentally granting access on a missing cutoff
+  check('no cutoff set: nobody is grandfathered',
+    grandfathered({ created_at: '2020-01-01T00:00:00Z' }) === false);
+  check('no user: not grandfathered', grandfathered(null) === false);
+  check('no created_at: not grandfathered', grandfathered({ id: 'x' }) === false);
+  check('unparseable date: not grandfathered',
+    grandfathered({ created_at: 'not a date' }) === false);
+}
 
 console.log('\nowner accounts hold the top tier regardless of billing:');
 {
@@ -45,7 +85,7 @@ console.log('\nowner accounts hold the top tier regardless of billing:');
   check('an owner is plus even with free metadata', plan(withOwner(OWNED)) === 'plus');
   check('an owner can export', canExport(withOwner(OWNED)) === true);
   check('an owner is uncapped', dealLimit(withOwner(OWNED)) === Infinity);
-  check('a non-owner with the same shape is still free', plan(withOwner('someone-else')) === 'free');
+  check('a non-owner with the same shape is never plus', plan(withOwner('someone-else')) !== 'plus');
   OWNER_IDS.length = 0; realList.forEach((v) => OWNER_IDS.push(v));
   check('the list is restored after the test', OWNER_IDS.length === realList.length);
 }
@@ -88,7 +128,12 @@ console.log('\nonly the free tier is capped:');
   // who already pays is ever metered
   check('pro is uncapped', dealLimit(asUser('pro')) === Infinity);
   check('broker is uncapped', dealLimit(asUser('plus')) === Infinity);
-  check('an unknown plan gets the free cap', dealLimit(asUser('nonsense')) === FREE_DEAL_LIMIT);
+  // a junk plan string must never buy anything — with the switch off it
+  // still lands on pro like any other account, but never on broker
+  check('an unknown plan is never broker', plan(asUser('nonsense')) !== 'plus');
+  check('an unknown plan cannot brand', canBrand(asUser('nonsense')) === false);
+  check('an unknown plan gets the free cap once the switch is on',
+    PAYWALL_ON ? dealLimit(asUser('nonsense')) === FREE_DEAL_LIMIT : true);
 }
 
 console.log('\nover the cap it is the MOST RECENT that stay open:');

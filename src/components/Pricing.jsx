@@ -1,5 +1,5 @@
 import{useState}from'react';
-import{plan}from'../lib/plan.js';
+import{plan,PAYWALL_ON}from'../lib/plan.js';
 import{startCheckout}from'../lib/billing.js';
 // ─── PRICING ──────────────────────────────────────────────────────────────
 // What each plan costs and what it actually changes. Written as differences
@@ -58,11 +58,25 @@ function Pricing({user,onBack,onSignIn,notify}){
     <div className="fu" style={{maxWidth:1000,margin:'0 auto',padding:'32px 24px 60px'}}>
       <button className="btn-s" onClick={onBack} style={{marginBottom:20}}>&larr; Back</button>
       <h2 style={{fontSize:'var(--fs-9)',fontWeight:700,marginBottom:6}}>Plans</h2>
-      <p style={{fontSize:'var(--fs-5)',color:'var(--muted)',lineHeight:1.6,marginBottom:26}}>
+      <p style={{fontSize:'var(--fs-5)',color:'var(--muted)',lineHeight:1.6,marginBottom:PAYWALL_ON?26:18}}>
         The model is free to use and always will be — every number it produces stays on
         screen on any plan. What you pay for is the layer that tells you whether those
         numbers are any good, and the documents you send to a lender.
       </p>
+
+      {/* While the switch is off these are a statement of intent, not a price
+          list. Showing them anyway is deliberate: it sets the expectation
+          honestly and makes the grandfathering promise concrete. */}
+      {!PAYWALL_ON&&(
+        <div style={{background:'var(--accent-tint)',border:'1px solid var(--accent)',padding:'14px 18px',marginBottom:26,lineHeight:1.6}}>
+          <div style={{fontSize:'var(--fs-5)',fontWeight:600,color:'var(--text)'}}>Everything below is free right now.</div>
+          <div style={{fontSize:'var(--fs-4)',color:'var(--muted)',marginTop:4}}>
+            Paid plans have not started. Every account gets the full product while
+            SmartCapStack finds its footing &mdash; and when charging does begin, accounts
+            that already exist keep that access for good. Sign up now and it stays free.
+          </div>
+        </div>
+      )}
 
       {/* Equal heights, deliberately. With alignItems:'start' each card shrank
           to its own content, which made Broker — the dearest plan — the
@@ -99,7 +113,11 @@ function Pricing({user,onBack,onSignIn,notify}){
               </ul>
 
               <div style={{marginTop:18}}>
-                {t.id==='free'?(
+                {!PAYWALL_ON?(
+                  <div style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>
+                    {t.id==='free'?'No card. No expiry.':'Included free for now.'}
+                  </div>
+                ):t.id==='free'?(
                   <div style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>No card. No expiry.</div>
                 ):isCurrent?(
                   <div style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>This is your plan.</div>
