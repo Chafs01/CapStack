@@ -135,6 +135,7 @@ const PLAN_SUB={
 };
 function Profile({user,onSignIn,onSignOut,onLoadDeal,onStart,notify,onUpgrade,onManageBilling}){
   const [count,setCount]=useState(null);
+  const [dealLoadError,setDealLoadError]=useState(false);
   // Someone granted access by the switch is not a subscriber, and saying
   // "Pro — $10 / month" to a person who has paid nothing is a lie the first
   // invoice would expose.
@@ -143,11 +144,12 @@ function Profile({user,onSignIn,onSignOut,onLoadDeal,onStart,notify,onUpgrade,on
 
   useEffect(()=>{
     let live=true;
+    setDealLoadError(false);
     loadDeals(user).then(d=>{
       if(!live)return;
       setCount(d.length);
       setLatest(d.reduce((a,x)=>(!a||new Date(x.savedAt)>new Date(a.savedAt)?x:a),null));
-    }).catch(()=>{if(live)setCount(0);});
+    }).catch(()=>{if(live){setCount(null);setLatest(null);setDealLoadError(true);}});
     return()=>{live=false;};
   },[user]);
 
@@ -211,8 +213,8 @@ function Profile({user,onSignIn,onSignOut,onLoadDeal,onStart,notify,onUpgrade,on
             <Row label="Sign-in method" value={provider==='google'?'Google':(provider||'Email')}
               sub={provider==='google'?'Your password is managed by Google — there is nothing to reset here.':undefined}/>
             <Row label="Member since" value={fmtDate(user.created_at)}/>
-            <Row label="Deals stored" value={count===null?'—':`${count} saved to your account`}
-              sub={latest?`Most recent: ${latest.name} on ${fmtDate(latest.savedAt)}`:'Nothing saved yet.'}/>
+            <Row label="Deals stored" value={dealLoadError?'Could not load':(count===null?'—':`${count} saved to your account`)}
+              sub={dealLoadError?'Your cloud deals are still safe. Refresh to try again.':(latest?`Most recent: ${latest.name} on ${fmtDate(latest.savedAt)}`:'Nothing saved yet.')}/>
           </>
         ):(
           <>
@@ -220,7 +222,7 @@ function Profile({user,onSignIn,onSignOut,onLoadDeal,onStart,notify,onUpgrade,on
               sub="You can underwrite, export, and share without signing in."/>
             <Row label="Where your deals live" value="This browser only"
               sub="Saved deals are kept in this browser's storage. Clearing site data or switching device loses them — signing in syncs them instead."/>
-            <Row label="Deals in this browser" value={count===null?'—':`${count} saved locally`}
+            <Row label="Deals in this browser" value={dealLoadError?'Could not load':(count===null?'—':`${count} saved locally`)}
               sub={latest?`Most recent: ${latest.name} on ${fmtDate(latest.savedAt)}`:'Nothing saved yet.'}/>
           </>
         )}

@@ -1,4 +1,4 @@
-import{useState,useEffect}from'react';
+import{useState,useEffect,useRef}from'react';
 import{f}from'../engine/format.js';
 import{calcIRR,holdPeriod}from'../engine/finance.js';
 import{buildPF}from'../engine/buildPF.js';
@@ -16,6 +16,25 @@ import{LockedBtn}from'./ui.jsx';
 function DealNotes({id,initial,user,onSaved}){
   const [val,setVal]=useState(initial);
   const [open,setOpen]=useState(!!initial);
+  const [state,setState]=useState('saved');
+  const latest=useRef(initial);
+  const touched=useRef(false);
+  const queue=useRef(Promise.resolve());
+  useEffect(()=>{latest.current=val;
+    if(!touched.current)return;
+    setState('saving');
+    const timer=setTimeout(()=>{
+      const saving=latest.current;
+      // Serialize writes so a slow older request can never arrive after a
+      // newer one and put stale notes back in the database.
+      queue.current=queue.current.catch(()=>{}).then(()=>updateDealNotes(id,saving,user));
+      queue.current.then(()=>{
+        // Do not call an older request "saved" after the user has typed more.
+        if(latest.current===saving)setState('saved');
+      }).catch(()=>{if(latest.current===saving)setState('error');});
+    },500);
+    return()=>clearTimeout(timer);
+  },[val,id,user]);
   if(!open)return(
     <button onClick={()=>setOpen(true)} style={{marginTop:10,marginLeft:33,background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontSize:'var(--fs-3)',padding:0,fontFamily:"'Inter',sans-serif"}}>
       {val?'Show notes':'+ Add notes'}
@@ -32,10 +51,12 @@ function DealNotes({id,initial,user,onSaved}){
         </button>
       </div>
       <textarea value={val} placeholder="Notes: address, broker, thesis, next steps..." autoFocus
-        onChange={e=>{setVal(e.target.value);updateDealNotes(id,e.target.value,user);onSaved&&onSaved(e.target.value);}}
+        onChange={e=>{touched.current=true;setVal(e.target.value);onSaved&&onSaved(e.target.value);}}
         onKeyDown={e=>{if(e.key==='Escape')setOpen(false);}}
         style={{width:'100%',minHeight:54,padding:'9px 12px',border:'1px solid var(--border2)',borderRadius:8,fontSize:'var(--fs-4)',fontFamily:"'Inter',sans-serif",color:'var(--text)',resize:'vertical',outline:'none',background:'var(--surface2)'}}/>
-      <div style={{fontSize:'var(--fs-2)',color:'var(--muted2)',marginTop:3}}>Saved as you type</div>
+      <div style={{fontSize:'var(--fs-2)',color:state==='error'?'var(--neg)':'var(--muted2)',marginTop:3}}>
+        {state==='saving'?'Saving…':state==='error'?'Could not save notes — check your connection and try typing again.':'Saved'}
+      </div>
     </div>
   );
 }
@@ -71,7 +92,11 @@ function calcPortfolio(deals){
 
 function PortfolioView({onBack,user}){
   const [deals,setDeals]=useState([]);
-  useEffect(()=>{loadDeals(user).then(setDeals);},[user]);
+  const [loadError,setLoadError]=useState('');
+  useEffect(()=>{let live=true;setLoadError('');
+    loadDeals(user).then(d=>{if(live)setDeals(d)}).catch(e=>{if(live)setLoadError(e.message||'Could not load saved deals.')});
+    return()=>{live=false};
+  },[user]);
   const P=calcPortfolio(deals);
   const kpi=(label,val,sub)=>(
     <div className="glass" style={{padding:'18px 20px',flex:1,minWidth:150}}>
@@ -84,8 +109,9 @@ function PortfolioView({onBack,user}){
     <div className="fu" style={{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px'}}>
       <button className="btn-s" onClick={onBack} style={{marginBottom:18}}>&larr; Back to saved deals</button>
       <h2 style={{fontSize:'var(--fs-9)',fontWeight:800,marginBottom:6}}>Portfolio Roll-Up</h2>
+      {loadError&&<div style={{background:'var(--neg-tint)',border:'1px solid var(--neg)',padding:'12px 15px',marginBottom:16,color:'var(--neg)'}}>{loadError}</div>}
       <p style={{fontSize:'var(--fs-3)',color:'var(--muted)',marginBottom:20}}>Aggregated across {P.total} saved {P.total===1?'deal':'deals'}, recomputed live. The pooled IRR assumes deals begin at the same time.</p>
-      {P.total===0?(
+      {loadError?null:P.total===0?(
         <div className="glass" style={{padding:'48px 24px',textAlign:'center',color:'var(--muted)'}}>No saved deals to roll up yet.</div>
       ):(<>
         <div style={{display:'flex',gap:12,flexWrap:'wrap',marginBottom:14}}>
@@ -130,11 +156,16 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify,embedded,onUpgrade}){
   const [sel,setSel]=useState([]);
   const [compare,setCompare]=useState(false);
   const [localCount,setLocalCount]=useState(0);
+  const [loadError,setLoadError]=useState('');
 
   useEffect(()=>{
+    let live=true;
     setLoadingDeals(true);
-    loadDeals(user).then(d=>{setDeals(d);setLoadingDeals(false);});
+    setLoadError('');
+    loadDeals(user).then(d=>{if(live){setDeals(d);setLoadingDeals(false);}})
+      .catch(e=>{if(live){setDeals([]);setLoadError(e.message||'Could not load your saved deals.');setLoadingDeals(false);}});
     setLocalCount(user?loadDealsLocal().length:0);
+    return()=>{live=false};
   },[user]);
 
   const migrate=async()=>{
@@ -155,16 +186,18 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify,embedded,onUpgrade}){
   const del=async id=>{
     const entry=deals.find(x=>x.id===id);
     setConfirmId(null);
-    await deleteDeal(id,user);
-    setDeals(d=>d.filter(x=>x.id!==id));
-    setSel(s=>s.filter(x=>x!==id));
-    notify&&notify(`"${(entry&&entry.name)||'Deal'}" deleted`,entry?{label:'Undo',run:async()=>{
+    try{
+      await deleteDeal(id,user);
+      setDeals(d=>d.filter(x=>x.id!==id));
+      setSel(s=>s.filter(x=>x!==id));
+      notify&&notify(`"${(entry&&entry.name)||'Deal'}" deleted`,entry?{label:'Undo',run:async()=>{
       try{
         await restoreDeal(entry,user);
         setDeals(await loadDeals(user));
         notify&&notify('Deal restored');
       }catch(e){notify&&notify('Could not restore: '+e.message);}
-    }}:null);
+      }}:null);
+    }catch(e){notify&&notify(e.message||'Could not delete the deal. Nothing was removed.');}
   };
   const [editingId,setEditingId]=useState(null);
   const [editName,setEditName]=useState('');
@@ -199,6 +232,9 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify,embedded,onUpgrade}){
         <span style={{fontSize:'var(--fs-4)',color:'var(--accent)',fontWeight:500}}>{localCount} deal{localCount!==1?'s':''} saved in this browser {localCount!==1?'are':'is'} not in your account yet.</span>
         <button className="btn-p" style={{padding:'6px 14px',fontSize:'var(--fs-3)',flexShrink:0}} onClick={migrate}>Upload to account</button>
       </div>}
+      {loadError&&<div style={{background:'var(--neg-tint)',border:'1px solid var(--neg)',padding:'12px 15px',marginBottom:18,color:'var(--neg)',lineHeight:1.5}}>
+        {loadError} Your cloud deals have not been replaced or removed. Refresh to try again.
+      </div>}
       <div style={{display:'flex',justifyContent:embedded?'flex-end':'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:12}}>
         {!embedded&&<h2 style={{fontSize:'var(--fs-9)',fontWeight:800}}>Saved Deals</h2>}
         <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
@@ -211,7 +247,7 @@ function SavedDeals({onLoad,onClose,user,onSignIn,notify,embedded,onUpgrade}){
       </div>
       {loadingDeals?(
         <div style={{padding:'48px 24px',textAlign:'center',color:'var(--muted2)',fontSize:'var(--fs-5)'}}>Loading deals...</div>
-      ):deals.length===0?(
+      ):loadError?null:deals.length===0?(
         <div className="glass" style={{padding:'48px 24px',textAlign:'center',color:'var(--muted2)'}}>
           <div style={{fontSize:'var(--fs-5)',marginBottom:6}}>No saved deals yet.</div>
           <div style={{fontSize:'var(--fs-4)'}}>Run an analysis and click Save to keep it here. {user?'Deals sync across devices.':'Deals stay in this browser.'}</div>

@@ -7,8 +7,14 @@ async function loadDeals(user){
   if(user&&sb){
     try{
       const{data,error}=await sb.from('deals').select('*').order('saved_at',{ascending:false});
-      if(!error&&data)return data.map(normalizeDeal).filter(isDealLike);
-    }catch(e){/* network down — fall through to local */}
+      if(error)throw error;
+      return (data||[]).map(normalizeDeal).filter(isDealLike);
+    }catch(e){
+      // A signed-in user's source of truth is the cloud. Falling back to an
+      // unrelated browser list makes a network failure look like cloud deals
+      // vanished, which is much more alarming than an honest load error.
+      throw new Error((e&&e.message)||'Could not load your saved deals.');
+    }
   }
   return loadDealsLocal();
 }
@@ -22,7 +28,10 @@ async function renameDeal(id,name,user){
   }
 }
 async function deleteDeal(id,user){
-  if(user&&sb){await sb.from('deals').delete().eq('id',id);}
+  if(user&&sb){
+    const{error}=await sb.from('deals').delete().eq('id',id);
+    if(error)throw new Error(error.message);
+  }
   else{saveDealsLocal(loadDealsLocal().filter(x=>x.id!==id));}
 }
 function dealSummary(res,inp){
@@ -97,7 +106,10 @@ async function migrateLocalDeals(user){
   return rows.length;
 }
 async function updateDealNotes(id,notes,user){
-  if(user&&sb){await sb.from('deals').update({notes}).eq('id',id);}
+  if(user&&sb){
+    const{error}=await sb.from('deals').update({notes}).eq('id',id);
+    if(error)throw new Error(error.message);
+  }
   else{const d=loadDealsLocal();const x=d.find(r=>r.id===id);if(x){x.notes=notes;saveDealsLocal(d);}}
 }
 
