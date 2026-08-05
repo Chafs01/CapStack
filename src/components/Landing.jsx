@@ -76,8 +76,8 @@ function Landing({onStart,onSample,onDemo}){
       </div>
 
       {/* ── HOW IT WORKS ── */}
-      <Sec eyebrow="Method" title={<>Three inputs to a<br/>full pro forma.</>}
-        intro="No spreadsheet wrangling, no template licences. The model is built the moment you finish typing.">
+      <Sec eyebrow="Method" title={<>Four clear steps to a<br/>full pro forma.</>}
+        intro="No spreadsheet wrangling, no template licences. Work through the property, operations, financing, and exit assumptions, then the model builds instantly.">
         <Row label="Asset type" text="Multifamily, commercial, mixed-use, ground-up development, or LIHTC. Inputs and outputs adapt to the deal structure."/>
         <Row label="Assumptions" text="Unit mix, operating expenses, debt terms, and exit. Drop in a rent roll and the unit mix fills itself in."/>
         <Row label="Analysis" text="Cash flows over a hold of up to 20 years, levered returns, sensitivity, waterfall, and an investment memo. Then export to Excel."/>
@@ -129,7 +129,7 @@ function Landing({onStart,onSample,onDemo}){
       {/* ── PIPELINE ── */}
       <Sec eyebrow="Your pipeline" title={<>Save deals. Compare them.<br/>Roll up the book.</>}
         foot={<button style={{...link,fontWeight:600}} onClick={onStart}>Run a deal &rarr;</button>}>
-        <Row label="Save to the cloud" text="Create a free account and your deals sync across devices. No account? They stay in your browser."/>
+        <Row label="Save to the cloud" text="Create a free account to build analyses and keep every saved deal synced across devices."/>
         <Row label="Compare side by side" text="Line up any two saved deals metric for metric to see which one actually pencils."/>
         <Row label="Portfolio roll-up" text="Aggregate every saved deal into pooled IRR, equity-weighted returns, and allocation by asset type."/>
       </Sec>

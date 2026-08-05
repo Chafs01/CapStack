@@ -1,10 +1,11 @@
-import{useState,useEffect,useRef}from'react';
+import{useState,useEffect,useRef,useId}from'react';
 // ─── SMALL COMPONENTS ─────────────────────────────────────────────────────
 
 // Money/number fields get thousands separators when idle and right-aligned
 // tabular numerals, so figures read like a statement instead of a serial number.
 // Text fields (strings) are untouched and stay left-aligned.
 function Fld({label,hint,value,onChange,prefix,suffix,disabled,type='text',align}){
+  const id=useId();
   const [txt,setTxt]=useState(value==null?'':String(value));
   const [foc,setFoc]=useState(false);
   useEffect(()=>{if(!foc)setTxt(value==null?'':String(value))},[value,foc]);
@@ -17,12 +18,12 @@ function Fld({label,hint,value,onChange,prefix,suffix,disabled,type='text',align
   const right=align==='right'||(align===undefined&&numeric);
   return(
     <div style={{marginBottom:16}}>
-      <label className="fld-l">
+      <label className="fld-l" htmlFor={id}>
         {label}{hint&&<span className="fld-h"> ({hint})</span>}
       </label>
       <div style={{position:'relative',display:'flex',alignItems:'center'}}>
         {prefix&&<span className="fld-fix" style={{left:12}}>{prefix}</span>}
-        <input type={type} className="input-f" data-num={right?'1':'0'} disabled={disabled}
+        <input id={id} type={type} className="input-f" data-num={right?'1':'0'} disabled={disabled}
           placeholder={numeric?'0':undefined}
           value={foc?txt:idle}
           onFocus={()=>{setFoc(true);setTxt(empty?'':String(value))}}
@@ -57,13 +58,14 @@ function NumIn({value,onChange,placeholder='0',style,...rest}){
 }
 
 function Slider({label,min,max,step,value,onChange,fmt2}){
+  const id=useId();
   return(
     <div style={{marginBottom:16}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:7}}>
-        <label className="fld-l" style={{marginBottom:0}}>{label}</label>
+        <label className="fld-l" htmlFor={id} style={{marginBottom:0}}>{label}</label>
         <span className="mono" style={{fontSize:'var(--fs-4)',color:'var(--accent)',fontWeight:700}}>{fmt2?fmt2(value):value}</span>
       </div>
-      <input type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(parseFloat(e.target.value))}/>
+      <input id={id} type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(parseFloat(e.target.value))}/>
       <div className="mono" style={{display:'flex',justifyContent:'space-between',fontSize:'var(--fs-1)',color:'var(--muted2)',marginTop:4}}>
         <span>{fmt2?fmt2(min):min}</span><span>{fmt2?fmt2(max):max}</span>
       </div>

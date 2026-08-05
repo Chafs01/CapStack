@@ -10,6 +10,7 @@
 //
 // Pure — no React, no formatting — so the thresholds and branches are
 // directly testable.
+import { calcRefinance } from './refinance.js';
 
 // Conventional underwriting thresholds. Exported so the narrative notes on the
 // dashboard read from the same numbers as the panel and cannot drift.
@@ -134,6 +135,26 @@ function dealHealth(res, inp) {
       'Debt service is well covered with room to absorb underperformance.');
   }
 
+  // A refinance can turn healthy acquisition debt into a loan the property
+  // cannot carry. It is a separate lender decision and deserves its own check
+  // rather than hiding behind the Year 1 DSCR above.
+  const refi=calcRefinance(res,inp);
+  const refiDSCR=num(refi?.refiDSCR);
+  if(refi&&refiDSCR!==null){
+    if(refiDSCR<failAt){
+      add('refi-dscr','fail',`Refinance DSCR ${refiDSCR.toFixed(2)}x is below lender minimums`,
+        `The proposed Year ${refi.refiYear} loan produces more cash out, but the property does not support its new debt service at typical lender coverage.`,
+        'Reduce the refinance LTV, use a lower rate, or wait for more NOI growth.');
+    }else if(refiDSCR<thinAt){
+      add('refi-dscr','warn',`Refinance DSCR ${refiDSCR.toFixed(2)}x is thin`,
+        `Coverage after the Year ${refi.refiYear} refinance leaves little room for underperformance.`,
+        'Stress the refinance against a lower valuation and higher interest rate.');
+    }else{
+      add('refi-dscr','pass',`Refinance DSCR ${refiDSCR.toFixed(2)}x is healthy`,
+        `The proposed Year ${refi.refiYear} debt is covered at the underwritten NOI.`);
+    }
+  }
+
   // ── year 1 cash flow ────────────────────────────────────────────────────
   const cf = num(y1.cfbt);
   if (cf !== null) {
@@ -163,8 +184,12 @@ function dealHealth(res, inp) {
 
   // ── expense ratio plausibility ──────────────────────────────────────────
   const expR = num(y1.expR);
-  if (expR !== null && expR > 0) {
-    if (expR > T.expenseHigh) {
+  if (expR !== null) {
+    if (expR <= 0) {
+      add('expense-ratio', 'fail', 'No operating expenses are included',
+        'A property cannot operate at zero cost, so NOI, cap rate, DSCR, and returns are materially overstated.',
+        'Enter property taxes, insurance, repairs, utilities, management, and any other recurring costs.');
+    } else if (expR > T.expenseHigh) {
       add('expense-ratio', 'warn', `Expense ratio of ${(expR * 100).toFixed(0)}% is high`,
         'Above the typical range for a stabilised residential profile.',
         'Verify taxes, insurance, and maintenance reflect actuals rather than placeholders.');
@@ -182,6 +207,20 @@ function dealHealth(res, inp) {
   const basis = costBasis(res, inp);
   const loan = permanentLoan(res, inp);
   if (basis && loan !== null && basis > 0 && loan > 0) {
+    const rate=num(inp.interestRate)||0;
+    const amort=num(inp.amortYears)||0;
+    if(rate<=0){
+      add('debt-terms','fail','Debt has no interest rate',
+        'The model is carrying a loan without a financing cost, which materially overstates cash flow and returns.',
+        'Enter the lender’s annual interest rate.');
+    }else if(amort<=0){
+      add('debt-terms','fail','Debt has no amortization period',
+        'The loan payment cannot be underwritten without an amortization term.',
+        'Enter the lender’s amortization period.');
+    }else{
+      add('debt-terms','pass','Debt terms are complete',
+        `${rate.toFixed(2)}% interest with ${amort}-year amortization.`);
+    }
     const lev = loan / basis;
     const lbl = (t === 'development' || t === 'affordable') ? 'LTC' : 'LTV';
     if (lev > 1) {

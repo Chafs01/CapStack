@@ -89,7 +89,7 @@ const evil = {
 };
 let html = null;
 globalThis.window.open = () => ({ document: { write: (h) => { html = h; }, close() {} } });
-openMemo(buildPF(evil), evil);
+check('memo reports that its window opened',openMemo(buildPF(evil), evil)===true);
 check('memo was generated', !!html);
 check('no executable <script> reaches the memo', !/<script/i.test(html), (html.match(/<script[^>]*>/i) || [])[0]);
 check('no <img> tag reaches the memo', !/<img/i.test(html), (html.match(/<img[^>]*>/i) || [])[0]);
@@ -112,6 +112,11 @@ check('ampersands and quotes are escaped exactly once',
 
 // the memo must not render as dark-on-dark for a reader in dark mode
 check('memo pins itself to a light background', /background:#fff/.test(html) && /color-scheme:light/.test(html));
+let alerted=false;
+globalThis.alert=()=>{alerted=true};
+globalThis.window.open=()=>null;
+check('blocked memo reports failure',openMemo(buildPF(clean),clean)===false);
+check('blocked memo tells the user about pop-ups',alerted);
 
 // and it should carry the cash flows, not just the narrative
 check('memo includes the annual cash flow table', /ANNUAL CASH FLOW/.test(html) && /<table class="cf">/.test(html));

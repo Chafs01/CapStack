@@ -596,7 +596,7 @@ function LihtcPanel({L,res}){
 // analysis is readable, but the tools are not. Reading someone's finished deal
 // has no substitute value for underwriting your own, so it stays open — what
 // is withheld is the working model, which is the product.
-function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabel,canDownload,onRunOwn,user,onUpgrade}){
+function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabel,canDownload,onRunOwn,user,onUpgrade,onNotice}){
   const [tab,setTab]=useState('charts');
   const hp=inp.holdingPeriod||7;
   const {rows,ret,sum,exit,equity,totalCost,acqC,LF,rehab}=res;
@@ -616,6 +616,10 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
   // from exactly the person deciding whether to sign up at all.
   const showAnalysis=viewOnly||canSeeAnalysis(user);
   const brand=branding(user);
+  const showMemo=()=>{
+    const opened=openMemo(res,inp,brand);
+    if(onNotice)onNotice(opened?'Memo opened in a new tab. If you do not see it, allow pop-ups for SmartCapStack.':'Allow pop-ups for SmartCapStack, then try the memo again.');
+  };
   const NOTES=analystNotes(res,inp);
   const chartData=rows.slice(0,hp).map(r=>({yr:`Yr ${r.yr}`,NOI:Math.round(r.noi),'Cash Flow':Math.round(r.cfbt)}));
   const ratesData=rows.slice(0,hp).map(r=>({yr:`Yr ${r.yr}`,'Cap Rate':+(r.capR*100).toFixed(2),'CoC Return':+(r.coc*100).toFixed(2)}));
@@ -667,7 +671,7 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
                   than a model, so an account is enough to take one.
                   Signed out, the option is not shown at all: a button that
                   exists only to refuse you is worse than no button. */}
-              {canDownload&&<button className="btn-s" onClick={()=>openMemo(res,inp,brand)}>Memo / PDF</button>}
+              {canDownload&&<button className="btn-s" onClick={showMemo}>Memo / PDF</button>}
               <button className="btn-p" onClick={onRunOwn}>Run your own deal &rarr;</button>
             </>
           ):(
@@ -679,7 +683,7 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
                 ?<button className="btn-s" onClick={onShare}>Share link</button>
                 :<LockedBtn label="Share link" why="Upgrade to send a link to this analysis." onUpgrade={onUpgrade}/>)}
               {paid
-                ?<button className="btn-s" onClick={()=>openMemo(res,inp,brand)}>Memo / PDF</button>
+                ?<button className="btn-s" onClick={showMemo}>Memo / PDF</button>
                 :<LockedBtn label="Memo / PDF" why="Upgrade to produce a formatted investment memo." onUpgrade={onUpgrade}/>}
               {/* No Markdown button. It produced a .md file — a developer's
                   format, in a tool for people buying buildings — and it sat in

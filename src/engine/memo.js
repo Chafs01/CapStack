@@ -383,8 +383,9 @@ function memoHTML(res,inp,opts){
 
 function openMemo(res,inp,brand){
   const w=window.open('','_blank');
-  if(w){w.document.write(memoHTML(res,inp,brand?{brand}:undefined));w.document.close();}
-  else alert('Please allow pop-ups to generate the memo.');
+  if(w){w.document.write(memoHTML(res,inp,brand?{brand}:undefined));w.document.close();return true;}
+  alert('Please allow pop-ups to generate the memo.');
+  return false;
 }
 
 function downloadMemo(res,inp){

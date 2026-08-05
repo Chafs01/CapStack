@@ -2,6 +2,9 @@ import{useState,useEffect,useRef}from'react';
 import{f}from'../engine/format.js';
 import{calcIRR,holdPeriod}from'../engine/finance.js';
 import{buildPF}from'../engine/buildPF.js';
+import{calcRefinance}from'../engine/refinance.js';
+import{calcAfterTax}from'../engine/afterTax.js';
+import{calcWaterfall}from'../engine/waterfall.js';
 import{ASSETS,dealTypeLabel}from'./Step1.jsx';
 import{loadDeals,loadDealsLocal,renameDeal,deleteDeal,restoreDeal,migrateLocalDeals,updateDealNotes}from'../lib/deals.js';
 import{accessibleIds,canRollUp,isPaid,FREE_DEAL_LIMIT}from'../lib/plan.js';
@@ -328,24 +331,40 @@ function CompareView({a,b,onBack}){
   const rA=buildPF(a.inp), rB=buildPF(b.inp);
   const isAff=x=>(x.inp.assetType||'').toLowerCase()==='affordable';
   const bothAff=isAff(a)&&isAff(b);
+  const na='n/a';
+  const money=v=>isFinite(+v)?f.$(+v):na;
+  const pct=v=>isFinite(+v)?f.pct(+v,1):na;
+  const dscr=v=>isFinite(+v)&&+v>0?(+v).toFixed(2)+'x':na;
+  const ppu=d=>(+d.inp.numUnits||0)>0?money((+d.inp.purchasePrice||0)/+d.inp.numUnits):na;
+  const refi=d=>calcRefinance(d===a?rA:rB,d.inp);
+  const tax=d=>d.inp.afterTax?calcAfterTax(d===a?rA:rB,d.inp):null;
+  const wf=d=>d.inp.waterfallEnabled?calcWaterfall(d===a?rA:rB,d.inp):null;
   const rows=bothAff?[
-    ['Total Uses',d=>f.$(d.lihtc.totalUses)],
-    ['LIHTC Equity',d=>f.$(d.lihtc.lihtcEquity)],
-    ['Annual Credit',d=>f.$(d.lihtc.annualCredit)],
-    ['Permanent Loan',d=>f.$(d.lihtc.permLoan)],
-    ['Deferred Dev Fee',d=>f.$(d.lihtc.deferredFee)],
-    ['Funding Gap',d=>f.$(d.lihtc.fundingGap)],
-    ['Year 1 NOI',d=>f.$(d.sum.noi)],
-    ['Year 1 DSCR',d=>d.sum.dscr?d.sum.dscr.toFixed(2)+'x':'n/a'],
+    {s:'Capital stack'},{l:'Total Uses',v:(d,r)=>money(r.lihtc.totalUses)},
+    {l:'LIHTC Equity',v:(d,r)=>money(r.lihtc.lihtcEquity)},{l:'Annual Credit',v:(d,r)=>money(r.lihtc.annualCredit)},
+    {l:'Permanent Loan',v:(d,r)=>money(r.lihtc.permLoan)},{l:'Deferred Developer Fee',v:(d,r)=>money(r.lihtc.deferredFee)},
+    {l:'Funding Gap',v:(d,r)=>money(r.lihtc.fundingGap)},
+    {s:'Operations'},{l:'Year 1 NOI',v:(d,r)=>money(r.sum.noi)},{l:'Year 1 DSCR',v:(d,r)=>dscr(r.sum.dscr)},
   ]:[
-    ['Levered IRR',d=>f.pct(d.ret.irr,1)],
-    ['Equity Multiple',d=>f.x(d.ret.em)],
-    ['Equity Required',d=>f.$(d.equity)],
-    ['Year 1 Cap Rate',d=>f.pct(d.sum.capR,2)],
-    ['Year 1 Cash-on-Cash',d=>f.pct(d.sum.coc,1)],
-    ['Year 1 DSCR',d=>d.sum.dscr?d.sum.dscr.toFixed(2)+'x':'n/a'],
-    ['Year 1 NOI',d=>f.$(d.sum.noi)],
-    ['Net Sale Proceeds',d=>f.$(d.exit.proceeds)],
+    {s:'Acquisition & operations'},
+    {l:'Purchase Price',v:d=>money(d.inp.purchasePrice)},{l:'Units',v:d=>(+d.inp.numUnits||0).toLocaleString('en-US')},
+    {l:'Price / Unit',v:d=>ppu(d)},{l:'Average Monthly Rent',v:d=>money(d.inp.avgRent)},
+    {l:'Physical Vacancy',v:d=>(+d.inp.vacancyRate||0).toFixed(1)+'%'},{l:'Credit Loss',v:d=>(+d.inp.creditLoss||0).toFixed(1)+'%'},
+    {l:'Year 1 NOI',v:(d,r)=>money(r.sum.noi)},{l:'Expense Ratio',v:(d,r)=>pct(r.rows[0]&&r.rows[0].expR)},
+    {s:'Debt & exit'},
+    {l:'Loan Amount',v:d=>money(d.inp.loanAmount)},{l:'Loan-to-Value',v:d=>(+d.inp.purchasePrice>0?((+d.inp.loanAmount||0)/+d.inp.purchasePrice*100).toFixed(1)+'%':na)},
+    {l:'Interest Rate',v:d=>(+d.inp.interestRate||0).toFixed(2)+'%'},{l:'Interest-Only Period',v:d=>(+d.inp.ioPeriod||0)+' yrs'},
+    {l:'Holding Period',v:d=>(+d.inp.holdingPeriod||0)+' yrs'},{l:'Revenue Growth',v:d=>(+d.inp.revenueGrowth||0).toFixed(1)+'%'},
+    {l:'Expense Growth',v:d=>(+d.inp.expenseGrowth||0).toFixed(1)+'%'},{l:'Exit Pricing',v:d=>d.inp.exitMethod==='ppu'?money(d.inp.exitPPU)+' / unit':(+d.inp.exitCapRate||0).toFixed(2)+'% cap'},
+    {s:'Headline returns'},
+    {l:'Levered IRR',v:(d,r)=>pct(r.ret.irr)},{l:'Equity Multiple',v:(d,r)=>f.x(r.ret.em)},
+    {l:'Equity Required',v:(d,r)=>money(r.equity)},{l:'Year 1 Cap Rate',v:(d,r)=>f.pct(r.sum.capR,2)},
+    {l:'Year 1 Cash-on-Cash',v:(d,r)=>pct(r.sum.coc)},{l:'Year 1 DSCR',v:(d,r)=>dscr(r.sum.dscr)},
+    {l:'Net Sale Proceeds',v:(d,r)=>money(r.exit.proceeds)},
+    {s:'Advanced analysis'},
+    {l:'Refinance IRR',v:d=>refi(d)?pct(refi(d).refiIRR):na},{l:'DSCR at Refinance',v:d=>refi(d)?dscr(refi(d).refiDSCR):na},
+    {l:'After-Tax IRR',v:d=>tax(d)?pct(tax(d).atIRR):na},{l:'After-Tax Multiple',v:d=>tax(d)?f.x(tax(d).atEM):na},
+    {l:'LP IRR',v:d=>wf(d)?pct(wf(d).lpIRR):na},{l:'GP IRR',v:d=>wf(d)?pct(wf(d).gpIRR):na},
   ];
   return(
     <div className="fu" style={{maxWidth:1080,margin:'0 auto',padding:'32px 24px 60px'}}>
@@ -360,13 +379,13 @@ function CompareView({a,b,onBack}){
           </tr></thead>
           <tbody>
             <tr className="sec"><td colSpan={3}>{a.assetType} vs. {b.assetType}</td></tr>
-            {rows.map((r,i)=>(
-              <tr key={i}>
-                <td style={{fontWeight:600,color:'var(--muted)'}}>{r[0]}</td>
-                <td style={{textAlign:'right',fontWeight:700}}>{r[1](rA)}</td>
-                <td style={{textAlign:'right',fontWeight:700}}>{r[1](rB)}</td>
-              </tr>
-            ))}
+            {rows.map((row,i)=>row.s
+              ?<tr className="sec" key={i}><td colSpan={3}>{row.s}</td></tr>
+              :<tr key={i}>
+                <td style={{fontWeight:600,color:'var(--muted)'}}>{row.l}</td>
+                <td style={{textAlign:'right',fontWeight:700}}>{row.v(a,rA)}</td>
+                <td style={{textAlign:'right',fontWeight:700}}>{row.v(b,rB)}</td>
+              </tr>)}
           </tbody>
         </table>
       </div>

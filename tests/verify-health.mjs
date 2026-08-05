@@ -31,7 +31,8 @@ const mk = (over = {}) => {
     lihtc: r.lihtc,
     // 1.1% of price — the US median, so the tax-basis check reads clean and
     // this fixture keeps testing what it means to test
-  }, { assetType: 'Multifamily', purchasePrice: 1000000, propertyTax: 11000, loanAmount: 700000, vacancyRate: 5, ...inp }];
+  }, { assetType: 'Multifamily', purchasePrice: 1000000, propertyTax: 11000, loanAmount: 700000,
+    interestRate: 6, amortYears: 30, vacancyRate: 5, ...inp }];
 };
 
 console.log('readiness — an unfinished form is not a failing deal:');
@@ -92,12 +93,29 @@ for (const [expR, want] of [[0.70, 'warn'], [0.56, 'warn'], [0.55, 'pass'], [0.4
 }
 check('an implausibly low ratio explains itself as a missing cost',
   /left out|missing/i.test(findingOf(dealHealth(...mk({ y1: { expR: 0.10 } })), 'expense-ratio').detail));
+check('zero expenses are a hard failure, not silently skipped',
+  statusOf(dealHealth(...mk({ y1: { expR: 0 } })), 'expense-ratio') === 'fail');
 
 console.log('\nleverage:');
 check('LTV 90% warns', statusOf(dealHealth(...mk({ inp: { loanAmount: 900000 } })), 'leverage') === 'warn');
 check('LTV 80% passes', statusOf(dealHealth(...mk({ inp: { loanAmount: 800000 } })), 'leverage') === 'pass');
 check('an all-cash deal raises no leverage finding',
   statusOf(dealHealth(...mk({ inp: { loanAmount: 0 } })), 'leverage') === undefined);
+check('a financed deal with no rate fails',
+  statusOf(dealHealth(...mk({ inp: { interestRate: 0 } })), 'debt-terms') === 'fail');
+check('complete debt terms pass',
+  statusOf(dealHealth(...mk()), 'debt-terms') === 'pass');
+
+console.log('\nrefinance coverage is assessed separately from acquisition debt:');
+{
+  const base={...DEFS.multifamily,refiEnabled:true,refiYear:3};
+  const weak={...base,refiLTV:90,refiRate:12};
+  const strong={...base,refiLTV:45,refiRate:4};
+  check('an unsupported refinance fails',statusOf(dealHealth(buildPF(weak),weak),'refi-dscr')==='fail');
+  check('a supportable refinance passes',statusOf(dealHealth(buildPF(strong),strong),'refi-dscr')==='pass');
+  check('a deal with refinance off has no refinance finding',
+    statusOf(dealHealth(buildPF(DEFS.multifamily),DEFS.multifamily),'refi-dscr')===undefined);
+}
 
 console.log('\ncap-rate plausibility catches a mistyped price:');
 for (const [capR, want] of [[0.001, 'warn'], [0.029, 'warn'], [0.03, 'pass'], [0.06, 'pass'], [0.12, 'pass'], [0.13, 'warn'], [0.9, 'warn']]) {

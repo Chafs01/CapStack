@@ -144,7 +144,6 @@ function App(){
           setInp(shared);
           setAssetType(shared.propClass||(shared.assetType||'multifamily').toLowerCase());
           setRes(r);setStep(4);setView('app');setIsShared(true);setIsDemo(false);
-          clearHash();
           window.scrollTo({top:0});
         }catch(e){notify('That shared link could not be opened.');}
       });
@@ -155,6 +154,13 @@ function App(){
     window.addEventListener('hashchange',open);
     return()=>{cancelled=true;window.removeEventListener('hashchange',open);};
   },[notify]);
+
+  // The payload belongs on the shared results screen and nowhere else. Keep it
+  // there for refresh/re-forwarding, then remove it as soon as the recipient
+  // deliberately navigates to another part of the product.
+  useEffect(()=>{
+    if(isShared&&(view!=='app'||step!==4)){clearHash();setIsShared(false);}
+  },[isShared,view,step]);
 
   useEffect(()=>{
     if(!sb)return; // no Supabase config — calculator still works standalone
@@ -291,6 +297,9 @@ function App(){
   // dashboard. Borrowed inputs are cleared too; the user's own entry is left
   // alone, since it is still theirs and autosave is holding a copy.
   const startFresh=useCallback(()=>{
+    // Keep a shared deal's payload in the address until the recipient chooses
+    // to leave it. That makes refresh and forwarding the current URL reliable.
+    if(isShared)clearHash();
     setStep(0);
     setRes(null);
     setCurrentDealId(null);
@@ -479,7 +488,7 @@ function App(){
                 <Dashboard res={res} inp={inp} user={user} onUpgrade={goPricing}
                   viewOnly={isShared||isDemo}
                   viewOnlyLabel={isDemo?'Sample · view only':undefined}
-                  canDownload={!!user}
+                  canDownload={!!user} onNotice={notify}
                   onRunOwn={requireAuth(startFresh)} onExport={requireAuth(async()=>{track('excel_exported');
                   // a link home, so the workbook is portable rather than a dead end
                   let back;try{back=shareURL(await encodeDeal(inp));}catch(e){}

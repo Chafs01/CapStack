@@ -35,15 +35,15 @@ function CreditEditor({rows,onChange}){
         return(
         <div key={i} style={{marginBottom:8}}>
           <div style={{display:'grid',gridTemplateColumns:C,gap:8,alignItems:'center'}}>
-            <select className="input-f" value={r.type||'Historic'} onChange={e=>pickType(i,e.target.value)} style={{height:38}}>
+            <select aria-label={`Credit ${i+1} type`} className="input-f" value={r.type||'Historic'} onChange={e=>pickType(i,e.target.value)} style={{height:38}}>
               {CREDIT_TYPES.map(c=><option key={c.id} value={c.id}>{c.id}</option>)}
             </select>
             <div style={{position:'relative'}}>
               <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>$</span>
-              <NumIn value={r.basis} onChange={v=>set(i,{basis:pn(v)})} style={{paddingLeft:24}}/>
+              <NumIn aria-label={`Credit ${i+1} eligible basis`} value={r.basis} onChange={v=>set(i,{basis:pn(v)})} style={{paddingLeft:24}}/>
             </div>
-            <input className="input-f" value={r.rate!=null?r.rate:''} onChange={e=>set(i,{rate:parseFloat(e.target.value)||0})} placeholder="0"/>
-            <input className="input-f" value={r.price!=null?r.price:''} onChange={e=>set(i,{price:parseFloat(e.target.value)||0})} placeholder="0.90"/>
+            <input aria-label={`Credit ${i+1} rate`} className="input-f" value={r.rate!=null?r.rate:''} onChange={e=>set(i,{rate:parseFloat(e.target.value)||0})} placeholder="0"/>
+            <input aria-label={`Credit ${i+1} price`} className="input-f" value={r.price!=null?r.price:''} onChange={e=>set(i,{price:parseFloat(e.target.value)||0})} placeholder="0.90"/>
             <div className="mono" style={{fontSize:'var(--fs-4)',fontWeight:700,color:'var(--purple)',paddingLeft:2}}>{f.$((+r.basis||0)*((+r.rate||0)/100)*(r.price!=null?+r.price:0.9))}</div>
             <button onClick={()=>del(i)} title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
           </div>
@@ -78,13 +78,13 @@ function UnitMixEditor({rows,onChange}){
       {rows.map((r,i)=>(
         <div key={i}>
           <div style={{display:'grid',gridTemplateColumns:C,gap:8,marginBottom:r.type==='Other'?4:8,alignItems:'center'}}>
-            <select className="input-f" value={r.type||'1BR'} onChange={e=>set(i,{type:e.target.value})} style={{height:38}}>
+            <select aria-label={`Unit type ${i+1}`} className="input-f" value={r.type||'1BR'} onChange={e=>set(i,{type:e.target.value})} style={{height:38}}>
               {UNIT_TYPES.map(u=><option key={u} value={u}>{u}</option>)}
             </select>
-            <NumIn value={r.count} onChange={v=>set(i,{count:pn(v)})}/>
+            <NumIn aria-label={`Unit type ${i+1} count`} value={r.count} onChange={v=>set(i,{count:pn(v)})}/>
             <div style={{position:'relative'}}>
               <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>$</span>
-              <NumIn value={r.rent} onChange={v=>set(i,{rent:pn(v)})} style={{paddingLeft:24}}/>
+              <NumIn aria-label={`Unit type ${i+1} monthly rent`} value={r.rent} onChange={v=>set(i,{rent:pn(v)})} style={{paddingLeft:24}}/>
             </div>
             <button onClick={()=>del(i)} title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
           </div>
@@ -129,16 +129,16 @@ function OpExEditor({rows,onChange,units}){
       {rows.map((r,i)=>(
         <div key={i}>
           <div style={{display:'grid',gridTemplateColumns:C,gap:8,marginBottom:r.cat==='Custom'?4:8,alignItems:'center'}}>
-            <select className="input-f" value={r.cat||'Custom'} onChange={e=>set(i,{cat:e.target.value})} style={{height:38}}>
+            <select aria-label={`Expense ${i+1} category`} className="input-f" value={r.cat||'Custom'} onChange={e=>set(i,{cat:e.target.value})} style={{height:38}}>
               {OPEX_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
             </select>
             {/* changing basis clears the figure: 300 a door is not 300 a year */}
-            <select className="input-f" value={r.basis||'amount'} onChange={e=>set(i,{basis:e.target.value,amount:0})} style={{height:38}}>
+            <select aria-label={`Expense ${i+1} basis`} className="input-f" value={r.basis||'amount'} onChange={e=>set(i,{basis:e.target.value,amount:0})} style={{height:38}}>
               {EXPENSE_BASES.map(([v,l])=><option key={v} value={v}>{l}</option>)}
             </select>
             <div style={{position:'relative'}}>
               <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>{BASIS_SUFFIX[r.basis||'amount']}</span>
-              <NumIn value={r.amount} onChange={v=>set(i,{amount:pn(v)})} style={{paddingLeft:24}}/>
+              <NumIn aria-label={`Expense ${i+1} amount`} value={r.amount} onChange={v=>set(i,{amount:pn(v)})} style={{paddingLeft:24}}/>
             </div>
             <button onClick={()=>del(i)} aria-label="Remove" title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
           </div>
@@ -178,15 +178,15 @@ function OtherIncomeEditor({rows,onChange,units}){
       {rows.map((r,i)=>(
         <div key={i}>
           <div style={{display:'grid',gridTemplateColumns:C,gap:8,marginBottom:r.cat==='Custom'?4:8,alignItems:'center'}}>
-            <select className="input-f" value={r.cat||'Custom'} onChange={e=>set(i,{cat:e.target.value})} style={{height:38}}>
+            <select aria-label={`Income ${i+1} source`} className="input-f" value={r.cat||'Custom'} onChange={e=>set(i,{cat:e.target.value})} style={{height:38}}>
               {OTHER_INCOME_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
             </select>
-            <select className="input-f" value={r.basis||'amount'} onChange={e=>set(i,{basis:e.target.value,amount:0})} style={{height:38}}>
+            <select aria-label={`Income ${i+1} basis`} className="input-f" value={r.basis||'amount'} onChange={e=>set(i,{basis:e.target.value,amount:0})} style={{height:38}}>
               {INCOME_BASES.map(([v,l])=><option key={v} value={v}>{l}</option>)}
             </select>
             <div style={{position:'relative'}}>
               <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>$</span>
-              <NumIn value={r.amount} onChange={v=>set(i,{amount:pn(v)})} style={{paddingLeft:24}}/>
+              <NumIn aria-label={`Income ${i+1} amount`} value={r.amount} onChange={v=>set(i,{amount:pn(v)})} style={{paddingLeft:24}}/>
             </div>
             <button onClick={()=>del(i)} aria-label="Remove" title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
           </div>
@@ -246,16 +246,16 @@ function DevCostEditor({rows,onChange,cats,bases,label,noun,placeholder,sf,units
       {rows.map((r,i)=>(
         <div key={i}>
           <div style={{display:'grid',gridTemplateColumns:C,gap:8,marginBottom:r.cat==='Custom'?4:8,alignItems:'center'}}>
-            <select className="input-f" value={r.cat||'Custom'} onChange={e=>set(i,{cat:e.target.value})} style={{height:38}}>
+            <select aria-label={`${label} ${i+1} category`} className="input-f" value={r.cat||'Custom'} onChange={e=>set(i,{cat:e.target.value})} style={{height:38}}>
               {cats.map(c=><option key={c} value={c}>{c}</option>)}
             </select>
             {/* changing basis clears the figure: $22 a foot is not $22 total */}
-            <select className="input-f" value={r.basis||'amount'} onChange={e=>set(i,{basis:e.target.value,amount:0})} style={{height:38}}>
+            <select aria-label={`${label} ${i+1} basis`} className="input-f" value={r.basis||'amount'} onChange={e=>set(i,{basis:e.target.value,amount:0})} style={{height:38}}>
               {bases.map(([v,l])=><option key={v} value={v}>{l}</option>)}
             </select>
             <div style={{position:'relative'}}>
               <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>{BASIS_SUFFIX[r.basis||'amount']}</span>
-              <NumIn value={r.amount} onChange={v=>set(i,{amount:pn(v)})} style={{paddingLeft:24}}/>
+              <NumIn aria-label={`${label} ${i+1} amount`} value={r.amount} onChange={v=>set(i,{amount:pn(v)})} style={{paddingLeft:24}}/>
             </div>
             <button onClick={()=>del(i)} aria-label="Remove" title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
           </div>
@@ -299,12 +299,12 @@ function CompEditor({rows,onChange}){
         const per=compPPU(r);
         return(
           <div key={i} style={{display:'grid',gridTemplateColumns:C,gap:8,marginBottom:8,alignItems:'center'}}>
-            <input className="input-f" value={r.label||''} onChange={e=>set(i,{label:e.target.value})} placeholder={`Comp ${i+1} — address`}/>
+            <input aria-label={`Comparable ${i+1} property`} className="input-f" value={r.label||''} onChange={e=>set(i,{label:e.target.value})} placeholder={`Comp ${i+1} — address`}/>
             <div style={{position:'relative'}}>
               <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>$</span>
-              <NumIn value={r.price} onChange={v=>set(i,{price:pn(v)})} style={{paddingLeft:24}}/>
+              <NumIn aria-label={`Comparable ${i+1} sale price`} value={r.price} onChange={v=>set(i,{price:pn(v)})} style={{paddingLeft:24}}/>
             </div>
-            <NumIn value={r.units} onChange={v=>set(i,{units:pn(v)})}/>
+            <NumIn aria-label={`Comparable ${i+1} units`} value={r.units} onChange={v=>set(i,{units:pn(v)})}/>
             <div className="mono" style={{fontSize:'var(--fs-4)',fontWeight:700,color:per==null?'var(--muted2)':'var(--text)',paddingLeft:2}}>
               {per==null?'\u2014':f.$f(per)}
             </div>
@@ -342,11 +342,11 @@ function RetailEditor({rows,onChange,label}){
       </div>
       {rows.map((r,i)=>(
         <div key={i} style={{display:'grid',gridTemplateColumns:C,gap:8,marginBottom:8,alignItems:'center'}}>
-          <input className="input-f" value={r.name||''} onChange={e=>set(i,{name:e.target.value})} placeholder="Tenant name"/>
-          <NumIn value={r.sf} onChange={v=>set(i,{sf:pn(v)})}/>
+          <input aria-label={`Tenant ${i+1} name`} className="input-f" value={r.name||''} onChange={e=>set(i,{name:e.target.value})} placeholder="Tenant name"/>
+          <NumIn aria-label={`Tenant ${i+1} square feet`} value={r.sf} onChange={v=>set(i,{sf:pn(v)})}/>
           <div style={{position:'relative'}}>
             <span style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)',color:'var(--muted2)',fontSize:'var(--fs-4)'}}>$</span>
-            <NumIn value={r.rentPerSF} onChange={v=>set(i,{rentPerSF:pn(v)})} style={{paddingLeft:24}}/>
+            <NumIn aria-label={`Tenant ${i+1} rent per square foot`} value={r.rentPerSF} onChange={v=>set(i,{rentPerSF:pn(v)})} style={{paddingLeft:24}}/>
           </div>
           <button onClick={()=>del(i)} title="Remove" style={{background:'none',border:'1px solid var(--border)',borderRadius:3,color:'var(--neg)',cursor:'pointer',width:30,height:30,fontSize:'var(--fs-5)',lineHeight:1}}>&times;</button>
         </div>
