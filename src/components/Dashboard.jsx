@@ -660,7 +660,7 @@ function Dashboard({res,inp,onExport,onBack,onSave,onShare,viewOnly,viewOnlyLabe
             <Chip>{hp}-Year Hold</Chip>
             {inp.address&&<Chip>{inp.address}</Chip>}
           </div>
-          <h2 style={{fontSize:'var(--fs-9)',fontWeight:700}}>{inp.propertyName||'Pro Forma Analysis'}</h2>
+          <h2 style={{fontSize:'var(--fs-9)',fontWeight:700}}>{inp.propertyName||'Analysis'}</h2>
         </div>
         {/* must be allowed to shrink, or flexWrap never engages and the last
             action is clipped off the right edge on a phone */}

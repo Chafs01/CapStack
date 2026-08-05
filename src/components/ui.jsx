@@ -17,7 +17,7 @@ function Fld({label,hint,value,onChange,prefix,suffix,disabled,type='text',align
   const idle=empty?'':(numeric&&Math.abs(value)>=1000?value.toLocaleString('en-US'):String(value));
   const right=align==='right'||(align===undefined&&numeric);
   return(
-    <div style={{marginBottom:16}}>
+    <div className="fld-wrap" style={{marginBottom:16}}>
       <label className="fld-l" htmlFor={id}>
         {label}{hint&&<span className="fld-h"> ({hint})</span>}
       </label>

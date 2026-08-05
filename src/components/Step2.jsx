@@ -1,43 +1,14 @@
-import{useState,useRef}from'react';
 import{f,pn}from'../engine/format.js';
-import{parseFile,extractFields,extractRentRoll}from'../engine/parse.js';
 import{Fld,Card}from'./ui.jsx';
 import{UnitMixEditor,RetailEditor,CreditEditor,DevCostEditor,
   HARD_COST_CATEGORIES,SOFT_COST_CATEGORIES,HARD_COST_BASES,SOFT_COST_BASES,
   REHAB_CATEGORIES,REHAB_BASES}from'./editors.jsx';
 import{getHardCost,getSoftCost,getRehab}from'../engine/income.js';
-// ─── STEP 2 PROPERTY + UPLOAD ─────────────────────────────────────────────
+// ─── STEP 2 PROPERTY DETAILS ──────────────────────────────────────────────
 const G2={display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 16px'};
 const G3={display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'0 16px'};
-// Labels/formats for the "here's what the file actually filled in" receipt.
-const FIELD_L={purchasePrice:'Purchase price',loanAmount:'Loan amount',numUnits:'Units',avgRent:'Average rent',
-  stabilizedNOI:'Stabilized NOI',totalSF:'Total SF',avgRentPerSF:'Rent per SF',propertyTax:'Property taxes',insurance:'Insurance'};
-// f.$f, not f.$ — this is a receipt of what was read, so it shows the exact
-// figure rather than rounding $1,650 to "$2K".
-const FIELD_F={purchasePrice:f.$f,loanAmount:f.$f,avgRent:f.$f,stabilizedNOI:f.$f,propertyTax:f.$f,insurance:f.$f,
-  totalSF:v=>v.toLocaleString('en-US'),avgRentPerSF:v=>'$'+v};
 
 function Step2({inp,onChange,assetType}){
-  const [dov,setDov]=useState(false);
-  const [parsed,setParsed]=useState(null);
-  const ref=useRef();
-  const [rollInfo,setRollInfo]=useState(null);
-  const [filled,setFilled]=useState([]);
-  const handleFile=f2=>{
-    if(!f2)return;
-    parseFile(f2,res=>{
-      setParsed(res);
-      const ex=extractFields(res.data);
-      const roll=extractRentRoll(res.data);
-      if(roll){ex.unitMix=roll.unitMix;ex.numUnits=roll.numUnits;ex.avgRent=roll.avgRent;setRollInfo(roll);}
-      else setRollInfo(null);
-      // Show the user exactly which fields the file moved, so a partial or
-      // failed read is obvious instead of hiding behind a green checkmark.
-      setFilled(Object.keys(ex).filter(k=>k!=='unitMix').map(k=>[FIELD_L[k]||k,FIELD_F[k]?FIELD_F[k](ex[k]):ex[k]]));
-      if(Object.keys(ex).length)onChange(ex);
-    });
-  };
-  const got=!!rollInfo||filled.length>0;
   const t=assetType.toLowerCase();
   const isCost=t==='development'||t==='affordable'; // land cost basis, not a purchase price
   const setMix=mix=>{
@@ -121,46 +92,8 @@ function Step2({inp,onChange,assetType}){
     <div className="fu">
       <div style={{marginBottom:18}}>
         <h2 style={{fontSize:'var(--fs-9)',fontWeight:700,marginBottom:6}}>Property Details</h2>
-        <p style={{color:'var(--muted)',fontSize:'var(--fs-5)',lineHeight:1.55}}>Enter the deal manually, or drop in a rent roll and we'll fill what we can.</p>
+        <p style={{color:'var(--muted)',fontSize:'var(--fs-5)',lineHeight:1.55}}>Enter the property facts and operating assumptions you have verified.</p>
       </div>
-
-      <Card title="Start from a file" sub="Optional — rent roll, OM financials, or lease abstract"
-        info={<>Drop in a rent roll, an offering memorandum's financial page, or a CSV and
-          the fields it recognises are filled in for you. It reads what it can and shows
-          you exactly which fields it moved, so a partial read is obvious rather than
-          silent. Nothing is locked — everything it fills stays editable, and you can skip
-          this entirely and type the deal in yourself.</>}>
-        <div className={`upload-z${dov?' dov':''}`}
-          onDragOver={e=>{e.preventDefault();setDov(true)}} onDragLeave={()=>setDov(false)}
-          onDrop={e=>{e.preventDefault();setDov(false);handleFile(e.dataTransfer.files[0])}}
-          onClick={()=>ref.current?.click()}>
-          <input ref={ref} type="file" accept=".csv,.xlsx,.xls" style={{display:'none'}} onChange={e=>handleFile(e.target.files[0])}/>
-          <div style={{marginBottom:8}}>{parsed?
-            <span style={{color:got?'var(--pos)':'var(--muted2)',fontSize:'var(--fs-9)',fontWeight:700}}>{got?'✓':'—'}</span>:
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{verticalAlign:'middle'}}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>}
-          </div>
-          <div style={{fontSize:'var(--fs-5)',fontWeight:600,color:'var(--text)',marginBottom:4}}>
-            {!parsed?'Drop a file, or click to browse'
-              :got?`Read ${parsed.data.length} row${parsed.data.length!==1?'s':''} — ${filled.length+(rollInfo?1:0)} field${filled.length+(rollInfo?1:0)!==1?'s':''} filled in below`
-              :"Couldn't read this one — enter the deal manually below"}
-          </div>
-          <div style={{fontSize:'var(--fs-3)',color:'var(--muted2)'}}>
-            {!parsed?'.csv, .xlsx, .xls'
-              :got?`${parsed.headers.length} columns detected — check every value before you rely on it`
-              :'Works best with one header row and columns named like Unit Type, Rent, Purchase Price'}
-          </div>
-          {(rollInfo||filled.length>0)&&<div style={{marginTop:12,padding:'10px 14px',background:'var(--pos-tint)',border:'1px solid var(--pos-brd)',borderRadius:'var(--r-md)',fontSize:'var(--fs-3)',color:'var(--pos)',display:'inline-block',fontWeight:600,textAlign:'left'}}>
-            {rollInfo&&<div style={{marginBottom:filled.length?6:0}}>
-              Rent roll detected — {rollInfo.numUnits} units across {rollInfo.unitMix.length} floor plan{rollInfo.unitMix.length!==1?'s':''}, loaded into the unit mix below.
-            </div>}
-            {filled.map(([l,v])=>(
-              <div key={l} style={{display:'flex',gap:10,justifyContent:'space-between'}}>
-                <span>{l}</span><span className="mono">{String(v)}</span>
-              </div>
-            ))}
-          </div>}
-        </div>
-      </Card>
 
       <Card title="Property"
         info={<>The basics of what you are buying. Purchase price is the contract price,

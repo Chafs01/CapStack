@@ -26,6 +26,14 @@ import{saveDraft,loadDraft,clearDraft,hasContent}from'./lib/draft.js';
 const Dashboard=lazy(()=>import('./components/Dashboard.jsx').then(m=>({default:m.Dashboard})));
 // ─── MAIN APP ─────────────────────────────────────────────────────────────
 const STEPS=['Asset Type','Property Info','Income & Expenses','Financing'];
+const STEP_SHORT=['Asset type','Property','Operations','Capital'];
+const STEP_SUB=['Choose the model','What you are buying','Income and expenses','Debt, hold, and exit'];
+const ASSET_SHORT={residential:'Residential 1–4',multifamily:'Multifamily',commercial:'Commercial',
+  'mixed-use':'Mixed-Use',development:'Development',affordable:'Affordable / LIHTC'};
+function dealTypeLabelForWizard(inp,fallback){
+  const key=inp&&inp.propClass?inp.propClass:fallback;
+  return ASSET_SHORT[key]||'New analysis';
+}
 
 function draftAge(at){
   const mins=Math.max(0,Math.round((Date.now()-at)/60000));
@@ -375,7 +383,7 @@ function App(){
             <div style={{fontWeight:600,fontSize:'var(--fs-5)',letterSpacing:'-.01em',color:'var(--text)'}}>SmartCapStack</div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap',justifyContent:'flex-end'}}>
-          {view!=='landing'&&step<4&&step>0&&<span className="mono hide-m" style={{fontSize:'var(--fs-2)',color:'var(--on-dark-dim)'}}>STEP {step}/{STEPS.length}</span>}
+          {view==='app'&&step<4&&<span className="mono hide-m" style={{fontSize:'var(--fs-2)',color:'var(--on-dark-dim)'}}>STEP {step+1}/{STEPS.length}</span>}
           {view==='landing'&&<button className="btn-p" style={{padding:'7px 18px',fontSize:'var(--fs-4)'}} onClick={requireAuth(startFresh)}>Start an analysis</button>}
           {/* Two entries, not one. Showing saved deals used to mean opening the
               account page, which puts an email address and a plan on screen —
@@ -423,7 +431,7 @@ function App(){
           <AuthView onClose={closeAuth} onUser={u=>setUser(u)}/>
         </ErrorBoundary>
       )}
-      <div style={{maxWidth:step<4?720:1080,margin:'0 auto',padding:'40px 24px 72px',display:(view==='app')?'block':'none'}}>
+      <div className={step<4?'wizard-page':'results-page'} style={{display:(view==='app')?'block':'none'}}>
         {/* Sample numbers must never be mistaken for the user's own deal. */}
         {draft&&!isDemo&&!isShared&&(
           <div className="demo-bar">
@@ -455,15 +463,24 @@ function App(){
           </div>
         )}
         {step<4?(
-          <>
-            <div className="eyebrow" style={{marginBottom:14}}>Step {step+1} of {STEPS.length}</div>
+          <div className="wizard-shell">
+            <aside className="wizard-rail" aria-label="Analysis progress">
+              <div className="wizard-rail-label">Build the deal</div>
+              {STEPS.map((_,i)=><button type="button" key={i}
+                className={'wizard-step '+(i===step?'active':i<step?'done':'pending')}
+                onClick={()=>i<step&&setStep(i)} disabled={i>step}>
+                <span className="wizard-step-num">{i<step?'✓':i+1}</span>
+                <span><b>{STEP_SHORT[i]}</b><small>{STEP_SUB[i]}</small></span>
+              </button>)}
+            </aside>
+            <main className="wizard-main">
+              <div className="wizard-context">Step {step+1} of {STEPS.length} &middot; {dealTypeLabelForWizard(inp,assetType)}</div>
+              {step===0&&<Step1 val={assetType} onChange={handleAsset}/>}
+              {step===1&&<Step2 inp={inp} onChange={update} assetType={inp.assetType}/>}
+              {step===2&&<Step3 inp={inp} onChange={update}/>}
+              {step===3&&<Step4 inp={inp} onChange={update}/>}
 
-            {step===0&&<Step1 val={assetType} onChange={handleAsset}/>}
-            {step===1&&<Step2 inp={inp} onChange={update} assetType={inp.assetType}/>}
-            {step===2&&<Step3 inp={inp} onChange={update}/>}
-            {step===3&&<Step4 inp={inp} onChange={update}/>}
-
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:24,paddingTop:20,borderTop:'1px solid var(--border)'}}>
+              <div className="wizard-actions">
               <button className="btn-s" onClick={()=>setStep(s=>Math.max(0,s-1))} disabled={step===0}>← Back</button>
               {/* only offered once there is something to clear */}
               {hasContent(inp)&&<button className="btn-s" onClick={clearFields} style={{color:'var(--muted2)'}}>Clear fields</button>}
@@ -472,11 +489,12 @@ function App(){
               ):(
                 <button className="btn-p" onClick={handleCalc} disabled={loading}
                   style={{minWidth:190,display:'flex',alignItems:'center',gap:8,justifyContent:'center'}}>
-                  {loading?'Calculating…':'Generate Pro Forma'}
+                  {loading?'Calculating…':'Generate Analysis'}
                 </button>
               )}
             </div>
-          </>
+            </main>
+          </div>
         ):(
           res&&(
             <Suspense fallback={<div style={{padding:'80px 24px',textAlign:'center',color:'var(--muted2)',fontSize:'var(--fs-5)'}}>Preparing results…</div>}>

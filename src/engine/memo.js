@@ -225,7 +225,7 @@ function memoHTML(res,inp,opts){
   const sections=generateMemo(res,inp);
   const t=(inp.assetType||'').toLowerCase();
   const isAff=t==='affordable';
-  const name=esc(inp.propertyName||'Pro Forma Analysis');
+  const name=esc(inp.propertyName||'Analysis');
   const address=esc(inp.address||'');
   const assetType=esc(inp.assetType||'');
   const hp=holdPeriod(inp);
@@ -397,7 +397,7 @@ function downloadMemo(res,inp){
   const isAff=(inp.assetType||'').toLowerCase()==='affordable';
   // Markdown output, not HTML — escaping entities here would corrupt the file
   // ("Smith & Co" becoming "Smith &amp; Co"), so values stay raw.
-  const name=inp.propertyName||'Pro Forma Analysis';
+  const name=inp.propertyName||'Analysis';
   const hp=holdPeriod(inp);
   const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
   const m=(l,v)=>`| ${l} | ${v} |`;

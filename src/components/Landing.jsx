@@ -79,7 +79,7 @@ function Landing({onStart,onSample,onDemo}){
       <Sec eyebrow="Method" title={<>Four clear steps to a<br/>full pro forma.</>}
         intro="No spreadsheet wrangling, no template licences. Work through the property, operations, financing, and exit assumptions, then the model builds instantly.">
         <Row label="Asset type" text="Multifamily, commercial, mixed-use, ground-up development, or LIHTC. Inputs and outputs adapt to the deal structure."/>
-        <Row label="Assumptions" text="Unit mix, operating expenses, debt terms, and exit. Drop in a rent roll and the unit mix fills itself in."/>
+        <Row label="Assumptions" text="Enter the unit mix, operating expenses, debt terms, and exit assumptions you have verified."/>
         <Row label="Analysis" text="Cash flows over a hold of up to 20 years, levered returns, sensitivity, waterfall, and an investment memo. Then export to Excel."/>
       </Sec>
 
@@ -95,7 +95,7 @@ function Landing({onStart,onSample,onDemo}){
           {['Scenario analysis (downside / base / upside)','Refinance & cash-out modelling',
             'After-tax IRR with depreciation & recapture','Construction draw schedules & capitalised interest',
             'Automated debt sizing (DSCR, LTV, debt yield)','Investment memo generator',
-            'Rent-roll file import (CSV / Excel)','Deal comparison & portfolio roll-up'].map(x=>(
+            'Deal comparison & portfolio roll-up'].map(x=>(
             <div key={x} style={{display:'flex',gap:10,alignItems:'baseline',fontSize:'var(--fs-4)',color:'var(--muted)'}}>
               <span style={{color:'var(--text)'}}>&mdash;</span>{x}
             </div>
