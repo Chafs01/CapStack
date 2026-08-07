@@ -129,7 +129,7 @@ function Landing({onStart,onSample,onDemo}){
       {/* ── PIPELINE ── */}
       <Sec eyebrow="Your pipeline" title={<>Save deals. Compare them.<br/>Roll up the book.</>}
         foot={<button style={{...link,fontWeight:600}} onClick={onStart}>Run a deal &rarr;</button>}>
-        <Row label="Save to the cloud" text="Create a free account to build analyses and keep every saved deal synced across devices."/>
+        <Row label="Save to the cloud" text="Build and review an analysis without an account. Create one only when you want to save it and keep it synced across devices."/>
         <Row label="Compare side by side" text="Line up any two saved deals metric for metric to see which one actually pencils."/>
         <Row label="Portfolio roll-up" text="Aggregate every saved deal into pooled IRR, equity-weighted returns, and allocation by asset type."/>
       </Sec>

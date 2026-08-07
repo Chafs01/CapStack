@@ -18,9 +18,11 @@ import{ErrorBoundary}from'./components/ErrorBoundary.jsx';
 import{initTelemetry,track}from'./lib/telemetry.js';
 import{encodeDeal,decodeDeal,shareURL,readDealFromHash,clearHash}from'./lib/share.js';
 import{routeFor,pathFor}from'./lib/routes.js';
-import{branding}from'./lib/plan.js';
+import{branding,canSaveDeal}from'./lib/plan.js';
 import{openBillingPortal,checkoutOutcome,clearCheckoutParam}from'./lib/billing.js';
 import{saveDraft,loadDraft,clearDraft,hasContent}from'./lib/draft.js';
+import{persistDeal,loadDeals}from'./lib/deals.js';
+import{storePendingSave,loadPendingSave,clearPendingSave}from'./lib/pendingSave.js';
 // The dashboard carries the charting library and only renders after a pro
 // forma is generated, so it loads as its own chunk.
 const Dashboard=lazy(()=>import('./components/Dashboard.jsx').then(m=>({default:m.Dashboard})));
@@ -69,6 +71,8 @@ function App(){
   const [authReady,setAuthReady]=useState(!sb);
   const [showReset,setShowReset]=useState(false);
   const [showSave,setShowSave]=useState(false);
+  const [pendingSave,setPendingSave]=useState(()=>loadPendingSave());
+  const pendingSaveBusy=useRef(false);
   const [currentDealId,setCurrentDealId]=useState(null);
   const [isDemo,setIsDemo]=useState(false);
   const [isShared,setIsShared]=useState(false);
@@ -183,36 +187,32 @@ function App(){
     return()=>subscription.unsubscribe();
   },[]);
 
-  const update=useCallback(upd=>setInp(prev=>({...prev,...upd})),[]);
+  // Once an assumption changes, the old analysis is stale. Remove the shortcut
+  // back to it so the user must regenerate rather than accidentally presenting
+  // results calculated from the previous inputs.
+  const update=useCallback(upd=>{setInp(prev=>({...prev,...upd}));setRes(null);},[]);
 
   const openAuth=useCallback(()=>{
     if(view!=='signin')setAuthFrom(view);
     setView('signin');
     window.scrollTo({top:0});
   },[view]);
-  // An account is required to use the tool. Three deliberate exceptions: the
-  // landing page and the legal pages stay public so the product can be found
-  // and signed up for; a share link still opens for its recipient, because that
-  // link is how people arrive and asking a lender to make an account before
-  // reading a memo someone sent them is how it stops working; and the sample
-  // analysis stays open, because asking someone to sign up before they have
-  // seen what the thing produces is asking on no evidence.
-  //
-  // All three are read-only. Entering your own deal is what needs an account.
-  //
-  // With no Supabase configured nobody can sign in at all, so enforcing the
-  // gate would lock the calculator shut with no way through. It stays open.
+  // The calculator is public. Authentication is asked for only when the user
+  // reaches an account feature: saving, saved deals, account settings, or an
+  // export. That lets a first-time visitor experience the product before being
+  // asked for personal information.
   const needsAuth=!!sb&&authReady&&!user;
   const requireAuth=useCallback(fn=>(...args)=>{
     if(!!sb&&!user){openAuth();return;}
     return fn(...args);
   },[user,openAuth]);
-  // Catches the ways in that are not a button: a restored draft, a signed-out
-  // session expiring mid-deal, or a bookmark straight to the wizard.
+  // Account pages remain private even when reached through Back, a bookmark,
+  // or an expired session. The analysis wizard and results do not belong here:
+  // they are intentionally public.
   useEffect(()=>{
-    if(!needsAuth||isShared||isDemo)return;
-    if(view==='app'||view==='profile'||view==='deals')openAuth();
-  },[needsAuth,isShared,isDemo,view,openAuth]);
+    if(!needsAuth)return;
+    if(view==='profile'||view==='deals')openAuth();
+  },[needsAuth,view,openAuth]);
   // Signing out is a deliberate exit, so it ends on the landing page. Leaving
   // the user on the account page shows them a page about an account they no
   // longer have, and letting the gate catch them instead would answer "sign me
@@ -231,6 +231,10 @@ function App(){
     setAuthFrom(null);
     window.scrollTo({top:0});
   },[authFrom]);
+  const cancelAuth=useCallback(()=>{
+    if(pendingSave){clearPendingSave();setPendingSave(null);}
+    closeAuth();
+  },[pendingSave,closeAuth]);
 
   const handleAsset=useCallback(a=>{
     setAssetType(a);
@@ -238,7 +242,10 @@ function App(){
     // Clicking the type you already picked is a confirming gesture, not a
     // request to erase everything typed since. Switching type genuinely
     // invalidates the inputs, and demo/shared data is never the user's to keep.
-    if(a!==assetType||isDemo||isShared)setInp(BLANKS[a]||BLANKS.multifamily);
+    if(a!==assetType||isDemo||isShared){
+      setInp(BLANKS[a]||BLANKS.multifamily);
+      setRes(null);
+    }
     setIsDemo(false);
     setIsShared(false);
   },[assetType,isDemo,isShared]);
@@ -365,6 +372,57 @@ function App(){
   },[notify]);
 
   const handleSave=()=>setShowSave(true);
+  const beginSaveAuth=useCallback(name=>{
+    const pending=storePendingSave(inp,name);
+    setPendingSave(pending);
+    setShowSave(false);
+    setAuthFrom('app');
+    setView('signin');
+    window.scrollTo({top:0});
+  },[inp]);
+
+  // Finish the user's explicit save request after any successful sign-in. The
+  // pending record lives in localStorage so email confirmation and OAuth can
+  // leave the page entirely without losing the finished analysis.
+  useEffect(()=>{
+    if(!user||!pendingSave||pendingSaveBusy.current)return;
+    pendingSaveBusy.current=true;
+    let live=true;
+    (async()=>{
+      try{
+        const savedInp={...pendingSave.inp,
+          propertyName:pendingSave.name||pendingSave.inp.propertyName||'Untitled Deal'};
+        const savedRes=buildPF(savedInp);
+        // Put the finished analysis back on screen immediately. If the cloud
+        // write fails, the promised "click Save to try again" action is real.
+        if(live){
+          setInp(savedInp);setRes(savedRes);
+          setAssetType(savedInp.propClass||(savedInp.assetType||'multifamily').toLowerCase());
+          setIsDemo(false);setIsShared(false);
+          setStep(4);setView('app');setAuthFrom(null);
+        }
+        const existing=await loadDeals(user);
+        if(!canSaveDeal(existing,user,null)){
+          if(live){
+            clearPendingSave();setPendingSave(null);
+            notify('Signed in — your free saved-deal slot is already full.');
+          }
+          return;
+        }
+        const id=await persistDeal(savedInp,savedRes,user,{id:pendingSave.id,
+          create:true,name:savedInp.propertyName});
+        if(!live)return;
+        setCurrentDealId(id);
+        clearPendingSave();setPendingSave(null);
+        clearDraft();setDraft(null);
+        track('deal_saved',{signedIn:true,afterAuth:true});
+        notify('Account ready — deal saved');
+      }catch(e){
+        if(live)notify('You are signed in, but the deal could not be saved. Click Save to try again.');
+      }finally{pendingSaveBusy.current=false;}
+    })();
+    return()=>{live=false};
+  },[user,pendingSave,notify]);
   const handleLoadDeal=(d)=>{
     setAssetType(d.inp&&d.inp.propClass?d.inp.propClass:(d.assetType?d.assetType.toLowerCase():'multifamily'));
     setInp(d.inp);
@@ -384,7 +442,7 @@ function App(){
         </div>
         <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap',justifyContent:'flex-end'}}>
           {view==='app'&&step<4&&<span className="mono hide-m" style={{fontSize:'var(--fs-2)',color:'var(--on-dark-dim)'}}>STEP {step+1}/{STEPS.length}</span>}
-          {view==='landing'&&<button className="btn-p" style={{padding:'7px 18px',fontSize:'var(--fs-4)'}} onClick={requireAuth(startFresh)}>Start an analysis</button>}
+          {view==='landing'&&<button className="btn-p" style={{padding:'7px 18px',fontSize:'var(--fs-4)'}} onClick={startFresh}>Start an analysis</button>}
           {/* Two entries, not one. Showing saved deals used to mean opening the
               account page, which puts an email address and a plan on screen —
               fine in private, wrong when the screen is being recorded. */}
@@ -405,7 +463,7 @@ function App(){
         </div>
       </div>
 
-      {view==='landing'&&<Landing onStart={requireAuth(startFresh)} onDemo={handleDemo}
+      {view==='landing'&&<Landing onStart={startFresh} onDemo={handleDemo}
         onSample={requireAuth(()=>{const sd={...DEFS.multifamily,propertyName:'Sample Deal'};exportXLSX(buildPF(sd),sd);})}/>}
       {view==='profile'&&(
         <ErrorBoundary resetKey={user?user.id:'anon'} onBack={()=>{setView('app');setStep(0);}}>
@@ -428,7 +486,8 @@ function App(){
       {view==='legal'&&<Legal tab={legalTab} onTab={setLegalTab} onBack={()=>setView('landing')}/>}
       {view==='signin'&&(
         <ErrorBoundary resetKey="signin" onBack={()=>setView('landing')}>
-          <AuthView onClose={closeAuth} onUser={u=>setUser(u)}/>
+          <AuthView onClose={closeAuth} onCancel={cancelAuth} onUser={u=>setUser(u)}
+            initialMode={pendingSave?'signup':'login'} purpose={pendingSave?'save':undefined}/>
         </ErrorBoundary>
       )}
       <div className={step<4?'wizard-page':'results-page'} style={{display:(view==='app')?'block':'none'}}>
@@ -446,7 +505,7 @@ function App(){
           <div className="demo-bar">
             <span><strong>Shared analysis.</strong> Someone sent you their underwriting to read. The full analysis is below &mdash; running your own deal takes about four minutes.</span>
             <span style={{display:'flex',gap:18,flexShrink:0}}>
-              <button onClick={requireAuth(startFresh)}>Run my own deal</button>
+              <button onClick={startFresh}>Run my own deal</button>
             </span>
           </div>
         )}
@@ -458,7 +517,7 @@ function App(){
                 theirs, one keystroke away from thinking it was their deal. The
                 only way on from here is to start their own. */}
             <span style={{display:'flex',gap:18,flexShrink:0}}>
-              <button onClick={requireAuth(()=>{handleAsset('multifamily');setRes(null);setStep(0);window.scrollTo({top:0});})}>Start your own analysis</button>
+              <button onClick={()=>{handleAsset('multifamily');setRes(null);setStep(0);window.scrollTo({top:0});}}>Start your own analysis</button>
             </span>
           </div>
         )}
@@ -507,7 +566,7 @@ function App(){
                   viewOnly={isShared||isDemo}
                   viewOnlyLabel={isDemo?'Sample · view only':undefined}
                   canDownload={!!user} onNotice={notify}
-                  onRunOwn={requireAuth(startFresh)} onExport={requireAuth(async()=>{track('excel_exported');
+                  onRunOwn={startFresh} onExport={requireAuth(async()=>{track('excel_exported');
                   // a link home, so the workbook is portable rather than a dead end
                   let back;try{back=shareURL(await encodeDeal(inp));}catch(e){}
                   exportXLSX(res,inp,back,branding(user));})} onBack={()=>setStep(3)} onSave={handleSave} onShare={handleShare}/>
@@ -528,7 +587,7 @@ function App(){
           setInp(prev=>({...prev,propertyName:name}));
           notify(mode==='updated'?'Deal updated':(user?'Saved to your account':'Saved in this browser'));
         }}
-        onSignIn={()=>{setShowSave(false);openAuth();}}/>}
+        onSignIn={beginSaveAuth}/>}
       <Toast msg={toast} action={toastAct}/>
       <div style={{textAlign:'center',padding:'18px 20px',borderTop:'1px solid var(--border)',color:'var(--muted2)',fontSize:'var(--fs-2)'}}>
         <span style={{color:'var(--muted)',fontWeight:600}}>SmartCapStack</span>

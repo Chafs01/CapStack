@@ -62,12 +62,17 @@ async function persistDeal(inp,res,user,opts){
     notes:inp.dealNotes||''
   };
   if(user&&sb){
-    if(opts.id){
+    if(opts.id&&!opts.create){
       // update in place; leave notes untouched
       const{error}=await sb.from('deals').update({name:entry.name,asset_type:entry.assetType,saved_at:entry.savedAt,inp_data:entry.inp,summary:entry.summary}).eq('id',entry.id);
       if(error)throw new Error(error.message);
     }else{
-      const{error}=await sb.from('deals').insert({id:entry.id,user_id:user.id,name:entry.name,asset_type:entry.assetType,saved_at:entry.savedAt,inp_data:entry.inp,summary:entry.summary,notes:entry.notes});
+      const row={id:entry.id,user_id:user.id,name:entry.name,asset_type:entry.assetType,
+        saved_at:entry.savedAt,inp_data:entry.inp,summary:entry.summary,notes:entry.notes};
+      // Save-after-auth carries a stable id through redirects. Upsert makes a
+      // lost response safe to retry without creating a duplicate deal.
+      const q=opts.create?sb.from('deals').upsert(row,{onConflict:'id'}):sb.from('deals').insert(row);
+      const{error}=await q;
       if(error)throw new Error(error.message);
     }
   } else {

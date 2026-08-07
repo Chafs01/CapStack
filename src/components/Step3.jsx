@@ -1,7 +1,5 @@
 import{f,pn}from'../engine/format.js';
-import{getGPI,getDevCost,getOtherIncome,lossRate}from'../engine/income.js';
 import{Fld,Card}from'./ui.jsx';
-import{summaryFigures}from'../lib/figures.js';
 import{OpExEditor,OtherIncomeEditor}from'./editors.jsx';
 // ─── STEP 3 INCOME & EXPENSES ─────────────────────────────────────────────
 // Legacy deals carry six named expense fields; new ones carry a list. The
@@ -54,18 +52,6 @@ function Step3({inp,onChange}){
     ? 'spent in Year 1 only — does not repeat or grow'
     : (units>0?`${f.$((inp.capexAnnual||0)/units)} per unit / yr`:'annual reserve for capital work');
 
-  const gpi=getGPI(inp);
-  const vac=gpi*lossRate(inp);
-  const egi=gpi-vac+getOtherIncome(inp);
-  const mgmt=egi*(inp.managementFeePct||0)/100;
-  const opex=(inp.propertyTax||0)+(inp.insurance||0)+mgmt+(inp.maintenance||0)+(inp.utilities||0)+(inp.reserves||0)+(inp.administrative||0);
-  const noi=egi-opex;
-  const capBasis=t==='development'?getDevCost(inp):(inp.purchasePrice||0);
-  const capR=capBasis>0?noi/capBasis:0;
-  // Color marks an exception worth a second look — not every figure. An
-  // untouched form has no exceptions to mark, so nothing on it reads red.
-  const S=summaryFigures({gpi,egi,opex,noi,capBasis,capR});
-  const DASH='—';
   return(
     <div className="fu">
       <div style={{marginBottom:18}}>
@@ -120,16 +106,6 @@ function Step3({inp,onChange}){
             <Fld label="Property Management Fee" suffix="%" hint="of EGI — grows with income, so it is kept separate" value={inp.managementFeePct||0} onChange={v=>onChange({managementFeePct:pn(v)})}/>
           </div>
         )}
-        <div style={{display:'flex',gap:28,flexWrap:'wrap',alignItems:'baseline',paddingTop:16,borderTop:'1px solid var(--border)'}}>
-          <div>
-            <span style={{color:'var(--muted)',fontSize:'var(--fs-4)'}}>Implied Cap Rate&nbsp;&nbsp;</span>
-            <span className="mono" style={{fontWeight:700,fontSize:'var(--fs-5)',color:S.capR.tone==='neg'?'var(--neg)':S.capR.tone==='idle'?'var(--muted2)':'var(--text)'}}>{S.capR.ready?f.pct(capR,2):DASH}</span>
-          </div>
-          <div>
-            <span style={{color:'var(--muted)',fontSize:'var(--fs-4)'}}>Year 1 NOI&nbsp;&nbsp;</span>
-            <span className="mono" style={{fontWeight:700,fontSize:'var(--fs-5)',color:S.noi.tone==='neg'?'var(--neg)':S.noi.tone==='idle'?'var(--muted2)':'var(--text)'}}>{S.noi.ready?f.$f(noi):DASH}</span>
-          </div>
-        </div>
       </Card>
 
       <Card title="Capital Expenditure" sub="Roofs, HVAC, unit turns — money spent on the asset, not on running it"
@@ -161,12 +137,8 @@ function Step3({inp,onChange}){
         </p>
       </Card>
 
-      {/* No Year 1 roll-up here. Gross income, EGI, NOI and the expense ratio
-          are results, and the results screen is where they belong — restating
-          them mid-build invites people to read conclusions off a form they
-          haven't finished. The two figures that stay are the ones you steer by
-          while typing expenses: NOI and the implied cap rate, both inside the
-          expense card. */}
+      {/* No roll-up here. Income, NOI, cap rate, and every other calculated
+          result belong on the analysis screen after Generate Analysis. */}
     </div>
   );
 }

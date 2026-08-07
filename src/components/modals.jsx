@@ -61,8 +61,8 @@ function PwMeter({pw}){
 
 // ─── AUTH MODAL ───────────────────────────────────────────────────────────
 // mode: 'login' | 'signup' | 'reset' (request a reset email)
-function AuthView({onClose,onUser}){
-  const [mode,setMode]=useState('login');
+function AuthView({onClose,onCancel,onUser,initialMode='login',purpose}){
+  const [mode,setMode]=useState(initialMode);
   const [email,setEmail]=useState('');
   const [pw,setPw]=useState('');
   const [pw2,setPw2]=useState('');
@@ -189,15 +189,17 @@ function AuthView({onClose,onUser}){
             <p className="mono" style={{fontSize:'var(--fs-4)',fontWeight:600,marginBottom:20,wordBreak:'break-all'}}>{sent.email}</p>
             <p style={{color:'var(--muted)',fontSize:'var(--fs-3)',lineHeight:1.65,marginBottom:24}}>
               {sent.kind==='confirm'
-                ?'Then come back and sign in. If it has not arrived in a minute, check your spam folder.'
+                ?(purpose==='save'
+                  ?'Then come back and sign in. Your finished analysis is safe in this browser and will save automatically.'
+                  :'Then come back and sign in. If it has not arrived in a minute, check your spam folder.')
                 :'The link sets a new password. If it has not arrived in a minute, check your spam folder.'}
             </p>
             <button className="btn-p" onClick={onClose}>Done</button>
           </>)}
         </>):(<>
-        <h2 style={{fontSize:'var(--fs-8)',fontWeight:700,marginBottom:4}}>{title}</h2>
+        <h2 style={{fontSize:'var(--fs-8)',fontWeight:700,marginBottom:4}}>{purpose==='save'&&mode==='signup'?'Create an account to save':title}</h2>
         <p style={{color:'var(--muted)',fontSize:'var(--fs-4)',marginBottom:22}}>
-          {mode==='reset'?"Enter your account email and we'll send you a link to set a new password.":'Save your deals to the cloud and access them from any device.'}
+          {mode==='reset'?"Enter your account email and we'll send you a link to set a new password.":purpose==='save'?'Your finished analysis is safe. Sign in or create a free account and it will be saved automatically.':'Save your deals to the cloud and access them from any device.'}
         </p>
         {GOOGLE_AUTH&&mode!=='reset'&&<button onClick={google} disabled={busy} style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'11px 16px',background:'var(--surface)',border:'1px solid var(--border2)',borderRadius:8,fontSize:'var(--fs-5)',fontWeight:600,color:'var(--text)',cursor:'pointer',fontFamily:"'Inter',sans-serif",marginBottom:EMAIL_AUTH?18:8}}>
           <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
@@ -234,7 +236,7 @@ function AuthView({onClose,onUser}){
         </div>}
         </>)}
       </div>
-      <button className="btn-s" onClick={onClose}>← Back</button>
+      <button className="btn-s" onClick={onCancel||onClose}>← Back</button>
     </div>
   );
 }
@@ -293,6 +295,7 @@ function SaveModal({inp,res,user,existingId,onClose,onSaved,onSignIn,onUpgrade})
   // opens; null means "not counted yet", which never blocks a save.
   const [count,setCount]=useState(null);
   useEffect(()=>{let live=true;
+    if(!user){setCount(null);return()=>{live=false};}
     loadDeals(user).then(d=>{if(live)setCount(Array.isArray(d)?d.length:0)}).catch(()=>{});
     return()=>{live=false};
   },[user]);
@@ -301,6 +304,7 @@ function SaveModal({inp,res,user,existingId,onClose,onSaved,onSignIn,onUpgrade})
   // "Save as new copy" needs a free slot even when the deal it copies has one
   const copyAtCap=count!=null&&!canSaveDeal(known,user,null);
   const doSave=async asNew=>{
+    if(!user){onSignIn(name||inp.propertyName||'Untitled Deal');return;}
     if(asNew?copyAtCap:atCap)return;
     setBusy(true);setErr('');
     try{
@@ -318,7 +322,7 @@ function SaveModal({inp,res,user,existingId,onClose,onSaved,onSignIn,onUpgrade})
         <button onClick={onClose} style={{position:'absolute',top:12,right:14,background:'none',border:'none',fontSize:'var(--fs-8)',cursor:'pointer',color:'var(--muted)',lineHeight:1}}>&times;</button>
         <h2 style={{fontSize:'var(--fs-8)',fontWeight:700,marginBottom:4}}>{existingId?'Update deal':'Save deal'}</h2>
         <p style={{color:'var(--muted)',fontSize:'var(--fs-4)',marginBottom:18}}>
-          {user?'Saved to your account and synced across devices.':"You're not signed in — this deal will only be saved in this browser."}
+          {user?'Saved to your account and synced across devices.':'Create a free account to save this analysis and access it from any device.'}
         </p>
         <Fld label="Deal name" value={name} onChange={v=>setName(v)}/>
         {err&&<div style={{color:'var(--neg)',fontSize:'var(--fs-4)',marginBottom:10,marginTop:-4}}>{err}</div>}
@@ -331,10 +335,10 @@ function SaveModal({inp,res,user,existingId,onClose,onSaved,onSignIn,onUpgrade})
           </div>
         )}
         <button className="btn-p" onClick={()=>doSave(false)} disabled={busy||atCap} style={{width:'100%',marginTop:4,opacity:atCap?.5:1,cursor:atCap?'not-allowed':undefined}}>
-          {busy?'Saving…':atCap?'Free plan is full':(existingId?'Update deal':'Save deal')}
+          {busy?'Saving…':!user?'Create free account to save':atCap?'Free plan is full':(existingId?'Update deal':'Save deal')}
         </button>
         {existingId&&<button className="btn-s" onClick={()=>doSave(true)} disabled={busy||copyAtCap} style={{width:'100%',marginTop:8,opacity:copyAtCap?.5:1,cursor:copyAtCap?'not-allowed':undefined}}>Save as new copy</button>}
-        {!user&&<button onClick={onSignIn} style={{display:'block',margin:'14px auto 0',background:'none',border:'none',color:'var(--accent)',cursor:'pointer',fontWeight:600,fontSize:'var(--fs-4)',fontFamily:"'Inter',sans-serif"}}>Sign in to save to the cloud</button>}
+        {!user&&<p style={{fontSize:'var(--fs-3)',color:'var(--muted2)',lineHeight:1.55,marginTop:14,textAlign:'center'}}>Already have an account? The next screen also lets you sign in.</p>}
       </div>
     </div>
   );

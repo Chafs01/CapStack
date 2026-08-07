@@ -1,8 +1,9 @@
 import{useState,useEffect,useRef,useId}from'react';
+import{formatNumberInput,rawNumberInput}from'../lib/numberInput.js';
 // ─── SMALL COMPONENTS ─────────────────────────────────────────────────────
 
-// Money/number fields get thousands separators when idle and right-aligned
-// tabular numerals, so figures read like a statement instead of a serial number.
+// Money/number fields get thousands separators while typing and when idle, and
+// right-aligned tabular numerals, so figures read like a statement instead of a serial number.
 // Text fields (strings) are untouched and stay left-aligned.
 function Fld({label,hint,value,onChange,prefix,suffix,disabled,type='text',align}){
   const id=useId();
@@ -25,9 +26,14 @@ function Fld({label,hint,value,onChange,prefix,suffix,disabled,type='text',align
         {prefix&&<span className="fld-fix" style={{left:12}}>{prefix}</span>}
         <input id={id} type={type} className="input-f" data-num={right?'1':'0'} disabled={disabled}
           placeholder={numeric?'0':undefined}
+          inputMode={numeric?'decimal':undefined}
           value={foc?txt:idle}
-          onFocus={()=>{setFoc(true);setTxt(empty?'':String(value))}}
-          onChange={e=>{setTxt(e.target.value);onChange(e.target.value)}}
+          onFocus={()=>{setFoc(true);setTxt(empty?'':numeric?formatNumberInput(value):String(value))}}
+          onChange={e=>{
+            const next=numeric?formatNumberInput(e.target.value):e.target.value;
+            setTxt(next);
+            onChange(numeric?rawNumberInput(next):next);
+          }}
           onBlur={()=>setFoc(false)}
           style={{paddingLeft:prefix?26:13,paddingRight:suffix?36:13}}/>
         {suffix&&<span className="fld-fix" style={{right:12}}>{suffix}</span>}
@@ -39,8 +45,8 @@ function Fld({label,hint,value,onChange,prefix,suffix,disabled,type='text',align
 // The bare input the row editors use. Same idle-formatting rule as Fld — a
 // figure carries thousands separators when you aren't typing in it — but with
 // no label or wrapper, since the editors lay out their own grid and supply
-// their own $ / % prefix. Commas only ever appear when the field is blurred,
-// so they never fight the cursor, and pn() strips them on the way back in.
+// their own $ / % prefix. The displayed string groups digits immediately;
+// callers still receive the raw number text without commas.
 function NumIn({value,onChange,placeholder='0',style,...rest}){
   const[txt,setTxt]=useState('');
   const[foc,setFoc]=useState(false);
@@ -50,8 +56,8 @@ function NumIn({value,onChange,placeholder='0',style,...rest}){
   return(
     <input className="input-f" inputMode="decimal" placeholder={placeholder}
       value={foc?txt:idle}
-      onFocus={()=>{setFoc(true);setTxt(n===0?'':raw)}}
-      onChange={e=>{setTxt(e.target.value);onChange(e.target.value)}}
+      onFocus={()=>{setFoc(true);setTxt(n===0?'':formatNumberInput(raw))}}
+      onChange={e=>{const next=formatNumberInput(e.target.value);setTxt(next);onChange(rawNumberInput(next))}}
       onBlur={()=>setFoc(false)}
       style={style} {...rest}/>
   );
